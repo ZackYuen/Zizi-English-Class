@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孜孜學拼音</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        h2 { margin: 10px 0; color: #333; }
+        
+        #display-panel {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+            border: 4px solid #4a90e2;
+            margin-bottom: 15px;
+        }
+        
+        .emoji { font-size: 80px; margin: 10px 0; }
+        
+        /* 拼讀字母區 */
+        #word-blocks {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .letter-block {
+            font-size: 50px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            background-color: #fafafa;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 0 #ccc;
+        }
+        .letter-block:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #ccc;
+        }
+        .vowel { color: #e63946; border-color: #ffb3c1; } /* 元音紅色 */
+        .consonant { color: #1d3557; border-color: #a8dadc; } /* 輔音藍色 */
+
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+        .btn {
+            background-color: #ffb703; color: #023047; border: none; padding: 12px 25px;
+            font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 4px 0 #fb8500;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: 0 0 0 #fb8500; }
+
+        /* A-Z 鍵盤 */
+        #grid-container {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 500px;
+        }
+        .key {
+            background-color: white; border: 2px solid #ccc; border-radius: 8px;
+            padding: 12px 0; text-align: center; font-size: 22px; font-weight: bold;
+            cursor: pointer; user-select: none; color: #333;
+        }
+        .key:active { background-color: #e0f7fa; }
+    </style>
+</head>
+<body>
+
+    <h2>孜孜學拼音</h2>
+    
+    <div id="display-panel">
+        <div class="emoji" id="emoji-display">🐜</div>
+        <div id="word-blocks">
+            <!-- JS 自動生成字母方塊 -->
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="blendWord()">🗣️ 慢速拼讀</button>
+            <button class="btn" onclick="speakFullWord()" style="background-color:#8ecae6;">🔊 讀全字</button>
+        </div>
+    </div>
+
+    <div id="grid-container"></div>
+
+<script>
+    // 嚴選 CVC 及基礎拼讀單字，避開複雜發音規則
+    const wordsData = [
+        { l: 'A', w: 'ant', e: '🐜' }, { l: 'B', w: 'bug', e: '🐛' },
+        { l: 'C', w: 'cat', e: '🐱' }, { l: 'D', w: 'dog', e: '🐶' },
+        { l: 'E', w: 'egg', e: '🥚' }, { l: 'F', w: 'fox', e: '🦊' },
+        { l: 'G', w: 'gum', e: '🍬' }, { l: 'H', w: 'hat', e: '🎩' },
+        { l: 'I', w: 'ink', e: '🖋️' }, { l: 'J', w: 'jam', e: '🍯' },
+        { l: 'K', w: 'kid', e: '👦' }, { l: 'L', w: 'log', e: '🪵' },
+        { l: 'M', w: 'map', e: '🗺️' }, { l: 'N', w: 'net', e: '🥅' },
+        { l: 'O', w: 'ox', e: '🐂' },  { l: 'P', w: 'pig', e: '🐷' },
+        { l: 'Q', w: 'quiz', e: '📝' }, { l: 'R', w: 'rat', e: '🐀' },
+        { l: 'S', w: 'sun', e: '☀️' }, { l: 'T', w: 'tub', e: '🛁' },
+        { l: 'U', w: 'up', e: '⬆️' },  { l: 'V', w: 'van', e: '🚐' },
+        { l: 'W', w: 'web', e: '🕸️' }, { l: 'X', w: 'box', e: '📦' },
+        { l: 'Y', w: 'yam', e: '🍠' }, { l: 'Z', w: 'zip', e: '🤐' }
+    ];
+
+    // 模擬 Phonics 單音 (TTS 讀單字母會讀字母名，需改寫成近似拼音提示)
+    const phonicsSounds = {
+        'a':'ah', 'b':'buh', 'c':'kuh', 'd':'duh', 'e':'eh', 'f':'fff',
+        'g':'guh', 'h':'huh', 'i':'ih', 'j':'juh', 'k':'kuh', 'l':'lll',
+        'm':'mmm', 'n':'nnn', 'o':'aw', 'p':'puh', 'q':'kwuh', 'r':'rrr',
+        's':'sss', 't':'tuh', 'u':'uh', 'v':'vvv', 'w':'wuh', 'x':'ks',
+        'y':'yuh', 'z':'zzz'
+    };
+
+    let currentIndex = 0;
+    const vowels = ['a', 'e', 'i', 'o', 'u'];
+    let isSpeaking = false;
+
+    // 建立 A-Z 鍵盤
+    const grid = document.getElementById('grid-container');
+    wordsData.forEach((item, index) => {
+        const key = document.createElement('div');
+        key.className = 'key';
+        key.innerText = item.l;
+        key.onclick = () => loadWord(index);
+        grid.appendChild(key);
+    });
+
+    function loadWord(index) {
+        currentIndex = index;
+        document.getElementById('emoji-display').innerText = wordsData[index].e;
+        
+        const blocksContainer = document.getElementById('word-blocks');
+        blocksContainer.innerHTML = '';
+        
+        const word = wordsData[index].w.toLowerCase();
+        
+        // 將單字拆開做獨立方塊
+        for(let i = 0; i < word.length; i++) {
+            let char = word[i];
+            let block = document.createElement('div');
+            block.innerText = char.toUpperCase();
+            
+            // 判斷元音/輔音分配顏色
+            if (vowels.includes(char)) {
+                block.className = 'letter-block vowel';
+            } else {
+                block.className = 'letter-block consonant';
+            }
+            
+            // 獨立字母發音
+            block.onclick = () => speakPhonics(char);
+            blocksContainer.appendChild(block);
+        }
+    }
+
+    function speakPhonics(char) {
+        window.speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance(phonicsSounds[char]);
+        msg.lang = 'en-US';
+        msg.rate = 0.8;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function speakFullWord() {
+        window.speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance(wordsData[currentIndex].w);
+        msg.lang = 'en-US';
+        msg.rate = 0.8;
+        window.speechSynthesis.speak(msg);
+    }
+
+    // 自動拼讀示範功能 (例如: k... a... t... cat)
+    function blendWord() {
+        if(isSpeaking) return;
+        isSpeaking = true;
+        window.speechSynthesis.cancel();
+        
+        const word = wordsData[currentIndex].w.toLowerCase();
+        let delay = 0;
+        const speed = 700; // 每個音間隔毫秒
+        
+        for(let i = 0; i < word.length; i++) {
+            setTimeout(() => {
+                speakPhonics(word[i]);
+            }, delay);
+            delay += speed;
+        }
+        
+        setTimeout(() => {
+            speakFullWord();
+            isSpeaking = false;
+        }, delay + 300);
+    }
+
+    // 初始化
+    window.onload = () => loadWord(0);
+</script>
+</body>
+</html>
