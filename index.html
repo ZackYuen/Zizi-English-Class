@@ -8,11 +8,10 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-
     <h2>Zizi's Phonics Fun 🚀</h2>
-    
     <div id="display-panel">
         <div id="canvas-container">
+            <canvas id="tracing-layer" width="300" height="300"></canvas>
             <canvas id="letter-canvas" width="300" height="300"></canvas>
         </div>
         <div id="word-display" style="font-size: 24px; font-weight: bold; margin-top: 15px;">
@@ -24,9 +23,7 @@
             <button class="btn" style="background-color:#f72585; color:white;" onclick="startListening()">🎤 讀俾我聽</button>
         </div>
     </div>
-
     <div id="grid-container"></div>
-
     <script src="script.js"></script>
 </body>
 </html>
