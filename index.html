@@ -3,122 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 🚀</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <title>孜孜學英文</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        body { font-family: 'Comic Sans MS', sans-serif; background-color: #ffecd2; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; user-select: none; overscroll-behavior: none; }
-        h1 { color: #ff595e; margin: 5px 0; font-size: 26px; text-shadow: 2px 2px 0px #fff; }
+        body { font-family: 'Comic Sans MS', sans-serif; background-color: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; overscroll-behavior: none; user-select: none; }
+        h1 { color: #ff595e; margin: 5px 0; font-size: 28px; }
         
-        #display-panel { background-color: #fff; border-radius: 25px; box-shadow: 0 8px 0 #e0e0e0; width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 6px solid #8ac926; box-sizing: border-box; }
+        #app-container { background: white; border-radius: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 5px solid #8ac926; box-sizing: border-box; }
         
-        #realtime-score { font-size: 30px; font-weight: bold; color: #ff595e; margin-bottom: 5px; transition: color 0.3s; }
-        #status-text { font-size: 15px; color: #1982c4; font-weight: bold; height: 20px; margin-bottom: 5px; }
+        #score-board { font-size: 26px; font-weight: bold; color: #ff595e; margin-bottom: 5px; transition: color 0.3s; }
+        #instruction { font-size: 16px; color: #1982c4; font-weight: bold; margin-bottom: 10px; line-height: 1.4; min-height: 44px; }
         
-        #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #f8f9fa; border: 4px dashed #1982c4; border-radius: 20px; overflow: hidden; transition: transform 0.6s ease; }
+        #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #fafafa; border: 3px dashed #1982c4; border-radius: 15px; transition: transform 0.6s ease-in-out; }
         
-        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-        .kid-btn { border: none; padding: 12px 18px; font-size: 18px; border-radius: 18px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 5px 0 rgba(0,0,0,0.2); transition: transform 0.1s; }
-        .kid-btn:active { transform: translateY(5px); box-shadow: none; }
+        canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 15px; }
+        #guide-layer { z-index: 1; pointer-events: none; }
+        #draw-layer { z-index: 2; touch-action: none; }
         
-        #grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 400px; margin-top: 20px; }
-        .key { background: white; border: 4px solid #ffca3a; border-radius: 15px; padding: 15px 0; text-align: center; font-size: 26px; font-weight: bold; color: #ff595e; cursor: pointer; box-shadow: 0 5px 0 #e0a900; }
-        .key:active { transform: translateY(5px); box-shadow: none; background: #fff3cd; }
+        .controls { display: flex; justify-content: center; gap: 12px; margin-top: 15px; }
+        .btn { border: none; padding: 12px 16px; font-size: 18px; border-radius: 15px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        #keyboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; max-width: 400px; margin-top: 20px; }
+        .key { background: white; border: 3px solid #ffca3a; border-radius: 10px; padding: 12px 0; text-align: center; font-size: 24px; font-weight: bold; color: #ff595e; cursor: pointer; box-shadow: 0 4px 0 #e0a900; }
+        .key:active { transform: translateY(4px); box-shadow: none; }
     </style>
 </head>
 <body>
 
     <h1>🌟 孜孜學英文 🌟</h1>
     
-    <div id="display-panel">
-        <div id="realtime-score">完成度: 0%</div>
-        <div id="status-text">由綠色呼吸點出發！</div>
+    <div id="app-container">
+        <div id="score-board">完成度: 0%</div>
+        <div id="instruction">跟住 1, 2, 3 順序畫啦！</div>
         
-        <div id="canvas-wrapper"></div>
+        <div id="canvas-wrapper">
+            <canvas id="guide-layer" width="300" height="300"></canvas>
+            <canvas id="draw-layer" width="300" height="300"></canvas>
+        </div>
         
         <div class="controls">
-            <button class="kid-btn" style="background-color:#ff595e;" onclick="actionClear()">🧽 抹走</button>
-            <button class="kid-btn" style="background-color:#8ac926;" onclick="actionMagic()">✨ 變魔術</button>
-            <button class="kid-btn" style="background-color:#1982c4;" onclick="actionListen()">🎤 我識讀</button>
+            <button class="btn" style="background-color:#ff595e;" onclick="clearCanvas()">🧽 抹走</button>
+            <button class="btn" style="background-color:#8ac926;" onclick="triggerMagic()">✨ 變魔術</button>
+            <button class="btn" style="background-color:#1982c4;" onclick="triggerListen()">🎤 我識讀</button>
         </div>
     </div>
 
-    <div id="grid-container"></div>
+    <div id="keyboard"></div>
 
     <script>
-        const wordsData = [
-            { l: 'A', w: 'ant', sp: 'A. A, N, T. Ant.', emoji: '🐜', startX: 150, startY: 60 }, 
-            { l: 'B', w: 'bug', sp: 'B. B, U, G. Bug.', emoji: '🐛', startX: 105, startY: 60 }, 
-            { l: 'C', w: 'cat', sp: 'C. C, A, T. Cat.', emoji: '🐱', startX: 195, startY: 85 }, 
-            { l: 'D', w: 'dog', sp: 'D. D, O, G. Dog.', emoji: '🐶', startX: 105, startY: 60 }, 
-            { l: 'E', w: 'egg', sp: 'E. E, G, G. Egg.', emoji: '🥚', startX: 105, startY: 60 }, 
-            { l: 'F', w: 'fox', sp: 'F. F, O, X. Fox.', emoji: '🦊', startX: 105, startY: 60 }
-        ];
-        
-        let currentIndex = 0;
-        let pgGuide, pgDraw;
-        let currentCoverage = 0;
-        let isMagicMode = false;
-        
-        const magicAudio = new Audio();
-
-        function setup() {
-            let canvas = createCanvas(300, 300);
-            canvas.parent('canvas-wrapper'); 
-            
-            pgGuide = createGraphics(300, 300); 
-            pgDraw = createGraphics(300, 300);  
-            
-            initKeyboard();
-            actionClear(); 
-        }
-
-        function draw() {
-            background('#f8f9fa');
-            
-            if (!isMagicMode) {
-                drawAnimatedGuide(); 
-                image(pgGuide, 0, 0); 
-                image(pgDraw, 0, 0);  
-                
-                if (mouseIsPressed && frameCount % 30 === 0) {
-                    calcCoverage();
-                }
-            } else {
-                textAlign(CENTER, CENTER);
-                textSize(120);
-                text(wordsData[currentIndex].emoji, 150, 130);
-                textSize(40);
-                fill('#1d3557');
-                textStyle(BOLD);
-                text(wordsData[currentIndex].w.toUpperCase(), 150, 230);
-            }
-        }
-
-        function drawAnimatedGuide() {
-            pgGuide.clear();
-            const currentItem = wordsData[currentIndex];
-            
-            pgGuide.drawingContext.setLineDash([15, 20]);
-            pgGuide.drawingContext.lineDashOffset = -frameCount * 0.5; 
-            
-            pgGuide.fill('#f8f9fa'); 
-            pgGuide.stroke('#cccccc');
-            pgGuide.strokeWeight(8);
-            pgGuide.textSize(220);
-            pgGuide.textAlign(CENTER, CENTER);
-            pgGuide.textStyle(BOLD);
-            pgGuide.text(currentItem.l, 150, 165); 
-            
-            pgGuide.drawingContext.setLineDash([]); 
-            let pulse = sin(frameCount * 0.1) * 3; 
-            
-            pgGuide.noStroke();
-            pgGuide.fill('#06d6a0');
-            pgGuide.circle(currentItem.startX, currentItem.startY, 30 + pulse);
-            
-            pgGuide.fill(255);
-            pgGuide.textSize(18);
-            pgGuide.text('1', currentItem.startX, current
+        // 字母筆順與 Google TTS 拼字字串
+        const alphabetData = [
+            { l: 'A', w: 'ant', ph: 'A. A, N, T. Ant.', emoji: '🐜', strokes: [{x:150, y:45}, {x:100, y:165}] }, 
+            { l: 'B', w: 'bug', ph: 'B. B, U, G. Bug.', emoji: '🐛', strokes: [{x:95, y:45}, {x:95, y:150}] }, 
+            { l: 'C', w: 'cat', ph: 'C. C, A, T. Cat.', emoji: '🐱', strokes: [{x:210, y:
