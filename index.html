@@ -3,38 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 🚀</title>
-    <link rel="stylesheet" href="style.css">
+    <title>孜孜學英文 - Debug</title>
+    
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+        // 初始化手機 Developer Tools
+        var vConsole = new window.VConsole();
+        console.log("vConsole 載入成功，開始執行主程式...");
+    </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body { font-family: 'Comic Sans MS', sans-serif; background-color: #ffecd2; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; overscroll-behavior: none; }
+        h1 { color: #ff595e; margin: 10px 0; font-size: 26px; }
+        
+        #display-panel { background-color: #fff; border-radius: 20px; width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 5px solid #8ac926; box-sizing: border-box; }
+        #current-letter { color: #ffca3a; font-size: 30px; font-weight: bold; -webkit-text-stroke: 1px #d00000; }
+        
+        #canvas-container { position: relative; width: 300px; height: 300px; margin: 10px auto; background: #f8f9fa; border: 4px dashed #1982c4; border-radius: 20px; }
+        #tracing-layer, #letter-canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; touch-action: none; }
+        #tracing-layer { pointer-events: none; z-index: 1; }
+        #letter-canvas { z-index: 2; }
+        
+        .controls { display: flex; justify-content: center; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+        .kid-btn { border: none; padding: 10px 15px; font-size: 18px; border-radius: 15px; cursor: pointer; font-weight: bold; color: white; }
+        
+        #grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 400px; margin-top: 20px; }
+        .key { background: white; border: 3px solid #ffca3a; border-radius: 12px; padding: 12px 0; text-align: center; font-size: 24px; font-weight: bold; color: #ff595e; cursor: pointer; }
+    </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🌟 孜孜學英文 🌟</h1>
-        <p class="subtitle">寫出 <span id="current-letter" class="highlight">A</span>，變魔術！</p>
-    </div>
+    <h1>🌟 孜孜學英文 🌟</h1>
     
     <div id="display-panel">
+        <div>請寫出: <span id="current-letter">A</span></div>
         <div id="canvas-container">
             <canvas id="tracing-layer" width="300" height="300"></canvas>
             <canvas id="letter-canvas" width="300" height="300"></canvas>
         </div>
-        
         <div class="controls">
-            <button class="kid-btn btn-clear" onclick="clearCanvas()">
-                <span class="icon">🧽</span> 抹乾淨
-            </button>
-            <button class="kid-btn btn-magic" onclick="checkAndTransform()">
-                <span class="icon">✨</span> 變魔術
-            </button>
-            <button class="kid-btn btn-mic" onclick="startListening()">
-                <span class="icon">🎤</span> 我識讀
-            </button>
+            <button class="kid-btn" style="background-color:#ff595e;" onclick="clearCanvas()">🧽 抹走</button>
+            <button class="kid-btn" style="background-color:#8ac926;" onclick="checkAndTransform()">✨ 變魔術</button>
+            <button class="kid-btn" style="background-color:#1982c4;" onclick="startListening()">🎤 讀俾我聽</button>
         </div>
     </div>
 
     <div id="grid-container"></div>
 
-    <script src="script.js"></script>
+    <script>
+        try {
+            const wordsData = [
+                { l: 'A', w: 'ant' }, { l: 'B', w: 'bug' }, { l: 'C', w: 'cat' }, 
+                { l: 'D', w: 'dog' }, { l: 'E', w: 'egg' }, { l: 'F', w: 'fox' }
+            ];
+            let currentIndex = 0;
+
+            const canvas = document.getElementById('letter-canvas');
+            const ctx = canvas.getContext('2d');
+            const tracingLayer = document.getElementById('tracing-layer');
+            const tCtx = tracingLayer.getContext('2d');
+
+            ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#ff9f1c'; 
+
+            function initKeyboard() {
+                const grid = document.getElementById('grid-container');
+                grid.innerHTML = '';
+                wordsData.forEach((item, index) => {
+                    const key = document.createElement('div');
+                    key.className = 'key';
+                    key.innerText = item.l;
+                    key.onclick = () => loadWord(index);
+                    grid.appendChild(key);
+                });
+            }
+
+            function loadWord(index) {
+                currentIndex = index;
+                document.getElementById('current-letter').innerText = wordsData[index].l;
+                clearCanvas();
+                drawTracingGuide(wordsData[index].l);
+            }
+
+            function drawTracingGuide(letter) {
+                console.log("正在繪製虛線: " + letter);
+                tCtx.clearRect(0, 0, 300, 300);
+                tCtx.font = 'bold 220px Arial';
+                tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+                tCtx.setLineDash([12, 12]); tCtx.strokeStyle = '#aaaaaa'; tCtx.lineWidth = 8;
+                tCtx.strokeText(letter, 150, 160);
+            }
+
+            function clearCanvas() { ctx.clearRect(0, 0, 300, 300); }
+
+            // 手機觸控事件
+            let drawing = false;
+            function getTouchPos(e) {
+                let rect = canvas.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
+
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault(); 
+                drawing = true;
+                let pos = getTouchPos(e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (!drawing) return;
+                let pos = getTouchPos(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', function(e) { e.preventDefault(); drawing = false; });
+
+            // 變身與發音
+            async function checkAndTransform() {
+                // 解決 iOS 必須同步觸發 Audio 嘅限制
+                const tempAudio = new Audio();
+                tempAudio.play().catch(() => {});
+
+                const imgData = ctx.getImageData(0, 0, 300, 300);
+                let hasDrawn = false;
+                for(let i=3; i<imgData.data.length; i+=4) { if(imgData.data[i] > 50) { hasDrawn = true; break; } }
+                
+                if(!hasDrawn) {
+                    console.warn("未偵測到畫布上有線條");
+                    alert("請先畫線！");
+                    return;
+                }
+
+                canvas.style.transition = "all 0.5s";
+                canvas.style.transform = "scale(1.2) rotate(15deg)";
+                canvas.style.opacity = "0";
+                
+                setTimeout(async () => {
+                    try {
+                        let apiKey = localStorage.getItem('google_tts_key');
+                        if (!apiKey) {
+                            apiKey = prompt("請輸入 Google API Key:");
+                            if (apiKey) localStorage.setItem('google_tts_key', apiKey);
+                        }
+                        
+                        if (apiKey) {
+                            const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+                                method: 'POST',
+                                body: JSON.stringify({input:{text: wordsData[currentIndex].w}, voice:{languageCode:'en-US', name:'en-US-Wavenet-F'}, audioConfig:{audioEncoding:'MP3'}})
+                            });
+                            const data = await res.json();
+                            if(data.audioContent) {
+                                tempAudio.src = `data:audio/mp3;base64,${data.audioContent}`;
+                                tempAudio.play();
+                                if(typeof confetti === 'function') confetti();
+                            } else {
+                                console.error("TTS API Error:", data);
+                            }
+                        }
+                    } catch(err) {
+                        console.error("發音 API 錯誤:", err);
+                    }
+                    
+                    canvas.style.transform = "scale(1) rotate(0)";
+                    canvas.style.opacity = "1";
+                    clearCanvas();
+                }, 500);
+            }
+
+            // 語音辨識
+            function startListening() {
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRec) {
+                    console.error("此瀏覽器不支援 SpeechRecognition");
+                    alert("瀏覽器未支援語音辨識功能。");
+                    return;
+                }
+                const recognition = new SpeechRec();
+                recognition.lang = 'en-US';
+                recognition.onresult = function(e) {
+                    const spoken = e.results[0][0].transcript.toLowerCase();
+                    console.log("辨識結果: " + spoken);
+                    if(spoken.includes(wordsData[currentIndex].w)) {
+                        alert("叻仔！");
+                        if(typeof confetti === 'function') confetti();
+                    } else {
+                        alert("你讀咗: " + spoken);
+                    }
+                };
+                recognition.start();
+            }
+
+            // 啟動
+            window.onload = function() {
+                console.log("Window Onload 觸發");
+                initKeyboard();
+                loadWord(0);
+            };
+
+        } catch (globalError) {
+            console.error("全域嚴重錯誤:", globalError);
+        }
+    </script>
 </body>
 </html>
