@@ -11,7 +11,7 @@
         
         #display-panel { background-color: #fff; border-radius: 25px; box-shadow: 0 8px 0 #e0e0e0; width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 6px solid #8ac926; box-sizing: border-box; }
         #current-letter { color: #ffca3a; font-size: 32px; font-weight: bold; -webkit-text-stroke: 1px #d00000; }
-        #status-text { font-size: 16px; color: #1982c4; font-weight: bold; height: 24px; margin-bottom: 5px; }
+        #status-text { font-size: 14px; color: #1982c4; font-weight: bold; height: 20px; margin-bottom: 5px; }
         
         #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #f8f9fa; border: 4px dashed #1982c4; border-radius: 20px; transition: transform 0.6s ease; }
         #tracing-layer, #letter-canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; }
@@ -32,7 +32,7 @@
     <h1>🌟 孜孜學英文 🌟</h1>
     
     <div id="display-panel">
-        <div id="status-text">載入中...</div>
+        <div id="status-text">由綠色點點開始畫啦！</div>
         <div id="canvas-wrapper">
             <canvas id="tracing-layer" width="300" height="300"></canvas>
             <canvas id="letter-canvas" width="300" height="300"></canvas>
@@ -48,19 +48,14 @@
     <div id="grid-container"></div>
 
     <script>
-        // 放在最頂部：萬一出錯，直接在 iPhone 彈窗報錯
-        window.onerror = function(msg, url, line) {
-            alert("腳本錯誤: " + msg + "\n行數: " + line);
-            return true;
-        };
-
+        // 加入起筆坐標 (startX, startY)，引導孜孜落筆
         const wordsData = [
-            { l: 'A', w: 'ant', sp: 'A. A, N, T. Ant.', emoji: '🐜' }, 
-            { l: 'B', w: 'bug', sp: 'B. B, U, G. Bug.', emoji: '🐛' }, 
-            { l: 'C', w: 'cat', sp: 'C. C, A, T. Cat.', emoji: '🐱' }, 
-            { l: 'D', w: 'dog', sp: 'D. D, O, G. Dog.', emoji: '🐶' }, 
-            { l: 'E', w: 'egg', sp: 'E. E, G, G. Egg.', emoji: '🥚' }, 
-            { l: 'F', w: 'fox', sp: 'F. F, O, X. Fox.', emoji: '🦊' }
+            { l: 'A', w: 'ant', sp: 'A. A, N, T. Ant.', emoji: '🐜', startX: 150, startY: 60 }, 
+            { l: 'B', w: 'bug', sp: 'B. B, U, G. Bug.', emoji: '🐛', startX: 105, startY: 60 }, 
+            { l: 'C', w: 'cat', sp: 'C. C, A, T. Cat.', emoji: '🐱', startX: 195, startY: 85 }, 
+            { l: 'D', w: 'dog', sp: 'D. D, O, G. Dog.', emoji: '🐶', startX: 105, startY: 60 }, 
+            { l: 'E', w: 'egg', sp: 'E. E, G, G. Egg.', emoji: '🥚', startX: 105, startY: 60 }, 
+            { l: 'F', w: 'fox', sp: 'F. F, O, X. Fox.', emoji: '🦊', startX: 105, startY: 60 }
         ];
         let currentIndex = 0;
 
@@ -72,205 +67,4 @@
         const statusText = document.getElementById('status-text');
 
         ctx.lineWidth = 30; 
-        ctx.lineCap = 'round'; 
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#ff9f1c'; 
-
-        const magicAudio = new Audio();
-
-        function initKeyboard() {
-            const grid = document.getElementById('grid-container');
-            grid.innerHTML = '';
-            wordsData.forEach((item, index) => {
-                const key = document.createElement('div');
-                key.className = 'key';
-                key.innerText = item.l;
-                key.onclick = () => loadWord(index);
-                grid.appendChild(key);
-            });
-        }
-
-        let animationId;
-        let dashOffset = 0;
-        
-        function animateTracingGuide() {
-            tCtx.clearRect(0, 0, 300, 300);
-            tCtx.font = 'bold 220px Arial';
-            tCtx.textAlign = 'center'; 
-            tCtx.textBaseline = 'middle';
-            tCtx.setLineDash([15, 20]); 
-            tCtx.lineDashOffset = -dashOffset; 
-            tCtx.strokeStyle = '#cccccc'; 
-            tCtx.lineWidth = 6;
-            tCtx.strokeText(wordsData[currentIndex].l, 150, 160);
-            
-            dashOffset += 1; 
-            animationId = requestAnimationFrame(animateTracingGuide);
-        }
-
-        function loadWord(index) {
-            currentIndex = index;
-            window.clearCanvas();
-        }
-
-        window.clearCanvas = function() {
-            ctx.clearRect(0, 0, 300, 300);
-            cancelAnimationFrame(animationId);
-            dashOffset = 0;
-            animateTracingGuide();
-            statusText.innerText = `請寫出: ${wordsData[currentIndex].l}`;
-            statusText.style.color = "#1982c4";
-        };
-
-        let drawing = false;
-
-        function getTouchPos(e) {
-            let rect = canvas.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function unlockAudio() {
-            magicAudio.play().catch(()=>{});
-            magicAudio.pause();
-        }
-
-        canvas.addEventListener('touchstart', function(e) {
-            e.preventDefault(); 
-            drawing = true;
-            unlockAudio();
-            let pos = getTouchPos(e);
-            ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-            if (!drawing) return;
-            let pos = getTouchPos(e);
-            ctx.lineTo(pos.x, pos.y); ctx.stroke();
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', function(e) { e.preventDefault(); drawing = false; });
-        canvas.addEventListener('mousedown', function(e) { drawing = true; unlockAudio(); let pos = getTouchPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); });
-        canvas.addEventListener('mousemove', function(e) { if (!drawing) return; let pos = getTouchPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); });
-        canvas.addEventListener('mouseup', function() { drawing = false; });
-
-        function calculateCoverage() {
-            const guideData = tCtx.getImageData(0, 0, 300, 300).data;
-            const userData = ctx.getImageData(0, 0, 300, 300).data;
-            
-            let totalGuidePixels = 0;
-            let coveredPixels = 0;
-
-            for(let i = 3; i < guideData.length; i += 4) {
-                if(guideData[i] > 50) {
-                    totalGuidePixels++;
-                    if(userData[i] > 50) {
-                        coveredPixels++;
-                    }
-                }
-            }
-            if(totalGuidePixels === 0) return 0;
-            return Math.round((coveredPixels / totalGuidePixels) * 100);
-        }
-
-        window.checkAndTransform = async function() {
-            unlockAudio(); 
-            const coverage = calculateCoverage();
-            
-            if(coverage < 50) {
-                statusText.innerText = `完成度: ${coverage}%。要畫滿 50% 先得㗎！`;
-                statusText.style.color = "red";
-                return;
-            }
-
-            statusText.innerText = `完成度: ${coverage}%！魔術成功！✨`;
-            statusText.style.color = "green";
-            cancelAnimationFrame(animationId); 
-
-            wrapper.style.transform = "scale(0.1) rotate(360deg)";
-            
-            let audioPromise = null;
-            let apiKey = localStorage.getItem('google_tts_key');
-            if (!apiKey) {
-                apiKey = prompt("請輸入 Google API Key:");
-                if(apiKey) localStorage.setItem('google_tts_key', apiKey);
-            }
-
-            if (apiKey) {
-                const spText = wordsData[currentIndex].sp;
-                audioPromise = fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        input: { text: spText }, 
-                        voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' }, 
-                        audioConfig: { audioEncoding: 'MP3' }
-                    })
-                }).then(res => res.json());
-            }
-
-            setTimeout(async () => {
-                ctx.clearRect(0, 0, 300, 300);
-                tCtx.clearRect(0, 0, 300, 300); 
-                
-                ctx.font = '120px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(wordsData[currentIndex].emoji, 150, 120);
-                
-                ctx.font = 'bold 40px Comic Sans MS';
-                ctx.fillStyle = '#1d3557';
-                ctx.fillText(wordsData[currentIndex].w.toUpperCase(), 150, 220);
-                
-                wrapper.style.transform = "scale(1) rotate(0deg)";
-                if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-
-                if (audioPromise) {
-                    try {
-                        const data = await audioPromise;
-                        if(data.audioContent) {
-                            magicAudio.src = `data:audio/mp3;base64,${data.audioContent}`;
-                            magicAudio.play();
-                        }
-                    } catch(e) { console.log("播放失敗"); }
-                }
-            }, 600);
-        };
-
-        window.startListening = function() {
-            try {
-                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRec) {
-                    statusText.innerText = "呢部機未支援語音辨識。";
-                    return;
-                }
-                const recognition = new SpeechRec();
-                recognition.lang = 'en-US';
-                statusText.innerText = "🎤 聽緊...請讀出單字";
-                
-                recognition.onresult = function(e) {
-                    const spoken = e.results[0][0].transcript.toLowerCase();
-                    const targetWord = wordsData[currentIndex].w;
-                    
-                    if(spoken.includes(targetWord)) {
-                        statusText.innerText = `叻仔！讀中咗 "${targetWord}"！`;
-                        statusText.style.color = "green";
-                        if(typeof confetti === 'function') confetti();
-                    } else {
-                        statusText.innerText = `差少少，你讀咗 "${spoken}"`;
-                        statusText.style.color = "red";
-                    }
-                };
-                recognition.start();
-            } catch(e) {
-                statusText.innerText = "無法開啟咪高風。";
-            }
-        };
-
-        // 唔經 window.onload，直接喺最底層即刻初始化
-        initKeyboard();
-        loadWord(0);
-    </script>
-</body>
-</html>
+        ctx.lineCap = 'round';
