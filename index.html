@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文</title>
+    <title>孜孜學英文 - 完整版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { font-family: 'Comic Sans MS', sans-serif; background-color: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; overscroll-behavior: none; user-select: none; }
         h1 { color: #ff595e; margin: 5px 0; font-size: 28px; }
         
+        /* 啟動畫面：專門用來呃 iOS 權限 */
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 236, 210, 0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #start-btn { padding: 20px 40px; font-size: 30px; border-radius: 30px; background: #ff595e; color: white; border: none; font-weight: bold; box-shadow: 0 8px 0 #c1121f; cursor: pointer; }
+        #start-btn:active { transform: translateY(8px); box-shadow: none; }
+
         #app-container { background: white; border-radius: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 5px solid #8ac926; box-sizing: border-box; }
         
         #score-board { font-size: 26px; font-weight: bold; color: #ff595e; margin-bottom: 5px; transition: color 0.3s; }
-        #instruction { font-size: 16px; color: #1982c4; font-weight: bold; margin-bottom: 10px; line-height: 1.4; min-height: 44px; }
+        #instruction { font-size: 16px; color: #1982c4; font-weight: bold; margin-bottom: 10px; min-height: 24px; }
         
         #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #fafafa; border: 3px dashed #1982c4; border-radius: 15px; transition: transform 0.6s ease-in-out; }
         
-        canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 15px; }
+        canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 15px; touch-action: none; }
         #guide-layer { z-index: 1; pointer-events: none; }
-        #draw-layer { z-index: 2; touch-action: none; }
+        #draw-layer { z-index: 2; }
         
         .controls { display: flex; justify-content: center; gap: 12px; margin-top: 15px; }
         .btn { border: none; padding: 12px 16px; font-size: 18px; border-radius: 15px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
@@ -31,11 +36,16 @@
 </head>
 <body>
 
+    <div id="start-overlay">
+        <h2 style="color: #1982c4; margin-bottom: 30px;">準備好未呀？</h2>
+        <button id="start-btn" onclick="unlockSystem()">🚀 開始啦！</button>
+    </div>
+
     <h1>🌟 孜孜學英文 🌟</h1>
     
     <div id="app-container">
         <div id="score-board">完成度: 0%</div>
-        <div id="instruction">跟住 1, 2, 3 順序畫啦！</div>
+        <div id="instruction">由綠色點點開始畫啦！</div>
         
         <div id="canvas-wrapper">
             <canvas id="guide-layer" width="300" height="300"></canvas>
@@ -52,8 +62,300 @@
     <div id="keyboard"></div>
 
     <script>
-        // 字母筆順與 Google TTS 拼字字串
+        // 資料庫：包含發音字串、Emoji 同埋筆順起點
         const alphabetData = [
-            { l: 'A', w: 'ant', ph: 'A. A, N, T. Ant.', emoji: '🐜', strokes: [{x:150, y:45}, {x:100, y:165}] }, 
-            { l: 'B', w: 'bug', ph: 'B. B, U, G. Bug.', emoji: '🐛', strokes: [{x:95, y:45}, {x:95, y:150}] }, 
-            { l: 'C', w: 'cat', ph: 'C. C, A, T. Cat.', emoji: '🐱', strokes: [{x:210, y:
+            { l: 'A', w: 'ant', ph: 'A. A, N, T. Ant.', emoji: '🐜', startX: 150, startY: 45 }, 
+            { l: 'B', w: 'bug', ph: 'B. B, U, G. Bug.', emoji: '🐛', startX: 95, startY: 45 }, 
+            { l: 'C', w: 'cat', ph: 'C. C, A, T. Cat.', emoji: '🐱', startX: 210, startY: 65 }, 
+            { l: 'D', w: 'dog', ph: 'D. D, O, G. Dog.', emoji: '🐶', startX: 95, startY: 45 }, 
+            { l: 'E', w: 'egg', ph: 'E. E, G, G. Egg.', emoji: '🥚', startX: 100, startY: 45 }, 
+            { l: 'F', w: 'fox', ph: 'F. F, O, X. Fox.', emoji: '🦊', startX: 100, startY: 45 }
+        ];
+        
+        let currentIndex = 0;
+        let isMagicMode = false;
+        
+        const guideCanvas = document.getElementById('guide-layer');
+        const guideCtx = guideCanvas.getContext('2d', { willReadFrequently: true });
+        const drawCanvas = document.getElementById('draw-layer');
+        const drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
+        
+        drawCtx.lineWidth = 28;
+        drawCtx.lineCap = 'round';
+        drawCtx.lineJoin = 'round';
+        drawCtx.strokeStyle = '#ff9f1c'; 
+
+        const magicAudio = new Audio();
+        // 極短空白音頻 (用來解鎖背景播放)
+        const silentWav = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
+        // --- 系統解鎖 (按「開始啦！」觸發) ---
+        function unlockSystem() {
+            // 1. 解鎖 Google Audio
+            magicAudio.src = silentWav;
+            magicAudio.play().catch(()=>{});
+            
+            // 2. 解鎖 iOS 內置 SpeechSynthesis
+            const utterance = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(utterance);
+            
+            // 3. 隱藏覆蓋層，顯示主畫面
+            document.getElementById('start-overlay').style.display = 'none';
+            initApp();
+        }
+
+        function initApp() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = '';
+            alphabetData.forEach((item, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'key';
+                btn.innerText = item.l;
+                btn.onclick = () => loadLetter(index);
+                kb.appendChild(btn);
+            });
+            loadLetter(0);
+        }
+
+        function loadLetter(index) {
+            currentIndex = index;
+            isMagicMode = false;
+            document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
+            clearCanvas();
+        }
+
+        // --- 畫底稿及筆順提示 ---
+        function drawGuide() {
+            guideCtx.clearRect(0, 0, 300, 300);
+            const data = alphabetData[currentIndex];
+            
+            // 虛線字母
+            guideCtx.font = 'bold 240px Arial';
+            guideCtx.textAlign = 'center'; 
+            guideCtx.textBaseline = 'middle';
+            guideCtx.setLineDash([15, 15]); 
+            guideCtx.strokeStyle = '#d1d1d1'; 
+            guideCtx.lineWidth = 6;
+            guideCtx.strokeText(data.l, 150, 160);
+            
+            // 起點綠色圓形 + 數字 1
+            guideCtx.setLineDash([]);
+            guideCtx.beginPath();
+            guideCtx.arc(data.startX, data.startY, 16, 0, Math.PI * 2);
+            guideCtx.fillStyle = '#06d6a0';
+            guideCtx.fill();
+            
+            guideCtx.fillStyle = '#ffffff';
+            guideCtx.font = 'bold 18px Arial';
+            guideCtx.fillText('1', data.startX, data.startY + 2);
+        }
+
+        window.clearCanvas = function() {
+            if (isMagicMode) return loadLetter(currentIndex);
+            drawCtx.clearRect(0, 0, 300, 300);
+            drawGuide();
+            updateScore(true);
+        };
+
+        // --- PointerEvent 觸控邏輯 (極度流暢) ---
+        let drawing = false;
+
+        function getPointerPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        drawCanvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); 
+            if (isMagicMode) return;
+            drawCanvas.setPointerCapture(e.pointerId); // 鎖定指標，防止滑出邊界斷線
+            drawing = true;
+            const pos = getPointerPos(e);
+            drawCtx.beginPath();
+            drawCtx.moveTo(pos.x, pos.y);
+            drawCtx.lineTo(pos.x, pos.y); // 確保點一下都畫到一點
+            drawCtx.stroke();
+        });
+
+        drawCanvas.addEventListener('pointermove', (e) => {
+            e.preventDefault();
+            if (!drawing || isMagicMode) return;
+            const pos = getPointerPos(e);
+            drawCtx.lineTo(pos.x, pos.y);
+            drawCtx.stroke();
+            throttledCalc();
+        });
+
+        drawCanvas.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            drawing = false;
+            drawCanvas.releasePointerCapture(e.pointerId);
+            calcCoverage();
+        });
+
+        // --- 計分優化 (每秒 4 次) ---
+        let lastCalc = 0;
+        function throttledCalc() {
+            const now = Date.now();
+            if (now - lastCalc > 250) { 
+                calcCoverage();
+                lastCalc = now;
+            }
+        }
+
+        let currentScore = 0;
+        function calcCoverage() {
+            const guideData = guideCtx.getImageData(0, 0, 300, 300).data;
+            const drawData = drawCtx.getImageData(0, 0, 300, 300).data;
+            let totalGuide = 0;
+            let covered = 0;
+
+            for (let i = 3; i < guideData.length; i += 16) {
+                if (guideData[i] > 50) { 
+                    totalGuide++;
+                    if (drawData[i] > 50) covered++; 
+                }
+            }
+            
+            if (totalGuide === 0) return;
+            currentScore = Math.round((covered / totalGuide) * 100);
+            updateScore(false);
+        }
+
+        function updateScore(reset) {
+            const sb = document.getElementById('score-board');
+            const inst = document.getElementById('instruction');
+            if (reset) {
+                currentScore = 0;
+                sb.innerText = `完成度: 0%`;
+                sb.style.color = "#ff595e";
+                inst.innerText = `由綠色點出發，跟住虛線畫！`;
+                inst.style.color = "#1982c4";
+                return;
+            }
+            
+            sb.innerText = `完成度: ${currentScore}%`;
+            if (currentScore >= 50) {
+                sb.style.color = "#06d6a0"; 
+                inst.innerText = "畫得好靚！撳 ✨ 變魔術啦！";
+                inst.style.color = "#06d6a0";
+            }
+        }
+
+        // --- 變身及 Google TTS 發音 ---
+        function playFallbackSpeech(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; 
+            window.speechSynthesis.speak(utterance);
+        }
+
+        window.triggerMagic = async function() {
+            const inst = document.getElementById('instruction');
+
+            if (currentScore < 50) {
+                inst.innerText = "未畫完喎！畫滿 50% 先得㗎！";
+                inst.style.color = "#ff595e";
+                return;
+            }
+
+            let apiKey = localStorage.getItem('google_tts_key');
+            if (!apiKey) {
+                apiKey = prompt("請輸入 Google API Key 以啟用真人發音:");
+                if (apiKey) localStorage.setItem('google_tts_key', apiKey);
+            }
+
+            isMagicMode = true;
+            inst.innerText = "魔術啟動中...✨";
+            inst.style.color = "#8ac926";
+            
+            const wrapper = document.getElementById('canvas-wrapper');
+            wrapper.style.transform = "scale(0.1) rotate(360deg)";
+            
+            const data = alphabetData[currentIndex];
+            let audioReady = false;
+
+            if (apiKey) {
+                try {
+                    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            input: { text: data.ph },
+                            voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
+                            audioConfig: { audioEncoding: 'MP3' }
+                        })
+                    });
+                    const result = await res.json();
+                    
+                    if (result.error) {
+                        console.error("Google API 錯誤:", result.error);
+                    } else if (result.audioContent) {
+                        magicAudio.src = `data:audio/mp3;base64,${result.audioContent}`;
+                        audioReady = true;
+                    }
+                } catch (err) {
+                    console.error("Fetch Error:", err);
+                }
+            }
+
+            // 動畫 0.6 秒後顯示物件
+            setTimeout(() => {
+                guideCtx.clearRect(0, 0, 300, 300);
+                drawCtx.clearRect(0, 0, 300, 300);
+                
+                drawCtx.font = '120px Arial';
+                drawCtx.textAlign = 'center';
+                drawCtx.textBaseline = 'middle';
+                drawCtx.fillText(data.emoji, 150, 120);
+                
+                drawCtx.font = 'bold 45px Comic Sans MS';
+                drawCtx.fillStyle = '#1d3557';
+                drawCtx.fillText(data.w.toUpperCase(), 150, 230);
+                
+                wrapper.style.transform = "scale(1) rotate(0deg)";
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                
+                if (audioReady) {
+                    inst.innerText = "魔術成功！";
+                    magicAudio.play().catch(() => playFallbackSpeech(data.ph));
+                } else {
+                    inst.innerText = "使用內置語音。";
+                    playFallbackSpeech(data.ph);
+                }
+            }, 600);
+        };
+
+        // --- 語音辨識 ---
+        window.triggerListen = function() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) {
+                alert("呢部機暫時未支援語音辨識功能。");
+                return;
+            }
+            
+            const recognition = new SpeechRec();
+            recognition.lang = 'en-US';
+            document.getElementById('instruction').innerText = "🎤 聽緊...請對住咪高風讀出單字";
+            document.getElementById('instruction').style.color = "#ff9f1c";
+            
+            recognition.onresult = (e) => {
+                const spoken = e.results[0][0].transcript.toLowerCase();
+                const targetWord = alphabetData[currentIndex].w;
+                
+                if (spoken.includes(targetWord)) {
+                    document.getElementById('instruction').innerText = `叻仔！讀中咗 "${targetWord}"！`;
+                    document.getElementById('instruction').style.color = "#06d6a0";
+                    confetti();
+                } else {
+                    document.getElementById('instruction').innerText = `差少少，你讀咗 "${spoken}"`;
+                    document.getElementById('instruction').style.color = "#ff595e";
+                }
+            };
+            recognition.onerror = () => {
+                document.getElementById('instruction').innerText = "聽唔清楚，再撳多次試下。";
+            };
+            recognition.start();
+        };
+    </script>
+</body>
+</html>
