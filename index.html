@@ -2,25 +2,233 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>孜孜學英文</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孜孜學英文 🚀</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'Comic Sans MS', sans-serif; background-color: #ffecd2; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; user-select: none; }
+        h1 { color: #ff595e; margin: 5px 0; font-size: 26px; text-shadow: 2px 2px 0px #fff; }
+        
+        #display-panel { background-color: #fff; border-radius: 25px; box-shadow: 0 8px 0 #e0e0e0; width: 100%; max-width: 400px; padding: 20px; text-align: center; border: 6px solid #8ac926; box-sizing: border-box; }
+        #current-letter { color: #ffca3a; font-size: 32px; font-weight: bold; -webkit-text-stroke: 1px #d00000; }
+        
+        #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 15px auto; background: #f8f9fa; border: 4px dashed #1982c4; border-radius: 20px; transition: transform 0.6s ease; }
+        #tracing-layer, #letter-canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; }
+        #tracing-layer { pointer-events: none; z-index: 1; }
+        #letter-canvas { z-index: 2; touch-action: none; }
+        
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .kid-btn { border: none; padding: 12px 18px; font-size: 18px; border-radius: 18px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 5px 0 rgba(0,0,0,0.2); }
+        .kid-btn:active { transform: translateY(5px); box-shadow: none; }
+        
+        #grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 400px; margin-top: 20px; }
+        .key { background: white; border: 4px solid #ffca3a; border-radius: 15px; padding: 15px 0; text-align: center; font-size: 26px; font-weight: bold; color: #ff595e; cursor: pointer; box-shadow: 0 5px 0 #e0a900; }
+        .key:active { transform: translateY(5px); box-shadow: none; background: #fff3cd; }
+    </style>
 </head>
 <body>
-    <div id="debug" style="color:red;">載入中...</div>
+
+    <h1>🌟 孜孜學英文 🌟</h1>
+    
     <div id="display-panel">
-        <canvas id="letter-canvas" width="300" height="300" style="border:1px solid #000; touch-action:none;"></canvas>
-        <button onclick="window.checkAndTransform()">✨ 變魔術</button>
+        <div>寫出: <span id="current-letter">A</span></div>
+        <div id="canvas-wrapper">
+            <canvas id="tracing-layer" width="300" height="300"></canvas>
+            <canvas id="letter-canvas" width="300" height="300"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button class="kid-btn" style="background-color:#ff595e;" onclick="window.clearCanvas()">🧽 抹乾淨</button>
+            <button class="kid-btn" style="background-color:#8ac926;" onclick="window.checkAndTransform()">✨ 變魔術</button>
+            <button class="kid-btn" style="background-color:#1982c4;" onclick="window.startListening()">🎤 我識讀</button>
+        </div>
     </div>
 
+    <div id="grid-container"></div>
+
     <script>
-        // 確保所有函數都掛載喺 window 物件，防止找不到變數
-        window.checkAndTransform = function() {
-            alert("變魔術功能啟動！");
-            console.log("變魔術執行成功");
+        // 強化 Phonics 資料庫：包含發音格式 (ph) 與 魔術物件 (emoji)
+        const wordsData = [
+            { l: 'A', w: 'ant', ph: 'A, a, ant.', emoji: '🐜' }, 
+            { l: 'B', w: 'bug', ph: 'B, b, bug.', emoji: '🐛' }, 
+            { l: 'C', w: 'cat', ph: 'C, c, cat.', emoji: '🐱' }, 
+            { l: 'D', w: 'dog', ph: 'D, d, dog.', emoji: '🐶' }, 
+            { l: 'E', w: 'egg', ph: 'E, e, egg.', emoji: '🥚' }, 
+            { l: 'F', w: 'fox', ph: 'F, f, fox.', emoji: '🦊' }
+        ];
+        let currentIndex = 0;
+
+        const canvas = document.getElementById('letter-canvas');
+        const ctx = canvas.getContext('2d');
+        const tracingLayer = document.getElementById('tracing-layer');
+        const tCtx = tracingLayer.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+
+        // 粗畫筆設定
+        ctx.lineWidth = 28; 
+        ctx.lineCap = 'round'; 
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#ff9f1c'; 
+
+        // 啟動載入
+        window.onload = function() {
+            initKeyboard();
+            loadWord(0);
         };
 
-        document.getElementById('debug').innerText = "✅ Script 已成功載入";
-        document.getElementById('debug').style.color = "green";
+        function initKeyboard() {
+            const grid = document.getElementById('grid-container');
+            grid.innerHTML = '';
+            wordsData.forEach((item, index) => {
+                const key = document.createElement('div');
+                key.className = 'key';
+                key.innerText = item.l;
+                key.onclick = () => loadWord(index);
+                grid.appendChild(key);
+            });
+        }
+
+        function loadWord(index) {
+            currentIndex = index;
+            document.getElementById('current-letter').innerText = wordsData[index].l;
+            window.clearCanvas();
+            drawTracingGuide(wordsData[index].l);
+        }
+
+        // 畫出深灰色虛線字母
+        function drawTracingGuide(letter) {
+            tCtx.clearRect(0, 0, 300, 300);
+            tCtx.font = 'bold 220px Arial';
+            tCtx.textAlign = 'center'; 
+            tCtx.textBaseline = 'middle';
+            tCtx.setLineDash([12, 12]); 
+            tCtx.strokeStyle = '#cccccc'; 
+            tCtx.lineWidth = 6;
+            tCtx.strokeText(letter, 150, 160);
+        }
+
+        window.clearCanvas = function() {
+            ctx.clearRect(0, 0, 300, 300);
+            drawTracingGuide(wordsData[currentIndex].l); // 抹乾淨後保留虛線
+        };
+
+        // --- iPhone 穩定觸控事件 ---
+        let drawing = false;
+
+        function getTouchPos(e) {
+            let rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault(); 
+            drawing = true;
+            let pos = getTouchPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            if (!drawing) return;
+            let pos = getTouchPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', function(e) { e.preventDefault(); drawing = false; });
+        canvas.addEventListener('mousedown', function(e) { drawing = true; let pos = getTouchPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); });
+        canvas.addEventListener('mousemove', function(e) { if (!drawing) return; let pos = getTouchPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); });
+        canvas.addEventListener('mouseup', function() { drawing = false; });
+
+        // --- 核心功能：變魔術 (檢查、變物件、Phonics 發音) ---
+        window.checkAndTransform = async function() {
+            // 1. 像素檢查：判斷孜孜係咪真係畫夠線條
+            const imgData = ctx.getImageData(0, 0, 300, 300);
+            let pixelCount = 0;
+            for(let i=3; i<imgData.data.length; i+=4) { 
+                if(imgData.data[i] > 50) pixelCount++; 
+            }
+            
+            // 如果像素太少（例如點一下），拒絕變身
+            if(pixelCount < 100) {
+                alert("孜孜，畫多幾筆填滿個字先啦！");
+                return;
+            }
+
+            // 2. 視覺特效：畫布旋轉縮小
+            wrapper.style.transform = "scale(0.1) rotate(360deg)";
+            
+            setTimeout(async () => {
+                // 3. 變出物件：清空畫布，畫上對應嘅 Emoji
+                ctx.clearRect(0, 0, 300, 300);
+                tCtx.clearRect(0, 0, 300, 300); // 隱藏虛線
+                ctx.font = '180px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(wordsData[currentIndex].emoji, 150, 160);
+                
+                // 畫布彈回原狀
+                wrapper.style.transform = "scale(1) rotate(0deg)";
+                
+                // 4. 噴紙炮
+                if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+
+                // 5. Google TTS Phonics 發音 (例如: "A, a, ant.")
+                let apiKey = localStorage.getItem('google_tts_key');
+                if (!apiKey) {
+                    apiKey = prompt("為咗標準美式發音，請輸入 Google TTS API Key:");
+                    if (apiKey) localStorage.setItem('google_tts_key', apiKey);
+                }
+                
+                if (apiKey) {
+                    try {
+                        const phonicsText = wordsData[currentIndex].ph;
+                        const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                input: { text: phonicsText }, 
+                                voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' }, 
+                                audioConfig: { audioEncoding: 'MP3' }
+                            })
+                        });
+                        const data = await res.json();
+                        if(data.audioContent) {
+                            new Audio(`data:audio/mp3;base64,${data.audioContent}`).play();
+                        }
+                    } catch(e) { console.error("發音失敗"); }
+                }
+            }, 600);
+        };
+
+        // --- 互動功能：語音辨識 ---
+        window.startListening = function() {
+            try {
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRec) {
+                    alert("呢部機嘅瀏覽器未支援語音辨識。");
+                    return;
+                }
+                const recognition = new SpeechRec();
+                recognition.lang = 'en-US';
+                recognition.onresult = function(e) {
+                    const spoken = e.results[0][0].transcript.toLowerCase();
+                    const targetWord = wordsData[currentIndex].w;
+                    
+                    if(spoken.includes(targetWord)) {
+                        alert("叻仔！讀得好啱！");
+                        if(typeof confetti === 'function') confetti();
+                    } else {
+                        alert("差少少，你讀咗: " + spoken + "。再試多次啦！");
+                    }
+                };
+                recognition.start();
+            } catch(e) {
+                alert("無法開啟咪高風。");
+            }
+        };
     </script>
 </body>
 </html>
