@@ -17,7 +17,6 @@
         #realtime-score { font-size: 30px; font-weight: bold; color: #ff595e; margin-bottom: 5px; transition: color 0.3s; }
         #status-text { font-size: 15px; color: #1982c4; font-weight: bold; height: 20px; margin-bottom: 5px; }
         
-        /* Canvas 容器，p5.js 會自動將畫布放入去 */
         #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #f8f9fa; border: 4px dashed #1982c4; border-radius: 20px; overflow: hidden; transition: transform 0.6s ease; }
         
         .controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
@@ -49,7 +48,6 @@
     <div id="grid-container"></div>
 
     <script>
-        // --- 字母數據庫 ---
         const wordsData = [
             { l: 'A', w: 'ant', sp: 'A. A, N, T. Ant.', emoji: '🐜', startX: 150, startY: 60 }, 
             { l: 'B', w: 'bug', sp: 'B. B, U, G. Bug.', emoji: '🐛', startX: 105, startY: 60 }, 
@@ -64,37 +62,31 @@
         let currentCoverage = 0;
         let isMagicMode = false;
         
-        // 音效引擎
         const magicAudio = new Audio();
 
-        // --- p5.js 核心初始化 ---
         function setup() {
             let canvas = createCanvas(300, 300);
-            canvas.parent('canvas-wrapper'); // 將畫布綁定去 HTML 容器
+            canvas.parent('canvas-wrapper'); 
             
-            // 建立兩個獨立圖層，互不干擾
-            pgGuide = createGraphics(300, 300); // 虛線底層
-            pgDraw = createGraphics(300, 300);  // 畫筆面層
+            pgGuide = createGraphics(300, 300); 
+            pgDraw = createGraphics(300, 300);  
             
             initKeyboard();
-            actionClear(); // 載入第一個字
+            actionClear(); 
         }
 
-        // --- p5.js 畫面刷新 (每秒 60 次) ---
         function draw() {
             background('#f8f9fa');
             
             if (!isMagicMode) {
-                drawAnimatedGuide(); // 畫底層 (會流動嘅虛線)
-                image(pgGuide, 0, 0); // 顯示底層
-                image(pgDraw, 0, 0);  // 顯示畫筆
+                drawAnimatedGuide(); 
+                image(pgGuide, 0, 0); 
+                image(pgDraw, 0, 0);  
                 
-                // 降頻計分：每 30 個 frame (半秒) 並且有手指掂緊先計，極度慳 CPU
                 if (mouseIsPressed && frameCount % 30 === 0) {
                     calcCoverage();
                 }
             } else {
-                // 魔術模式：顯示 Emoji 同英文
                 textAlign(CENTER, CENTER);
                 textSize(120);
                 text(wordsData[currentIndex].emoji, 150, 130);
@@ -105,26 +97,23 @@
             }
         }
 
-        // --- 動畫虛線與起點 ---
         function drawAnimatedGuide() {
             pgGuide.clear();
             const currentItem = wordsData[currentIndex];
             
-            // 1. 流動虛線設定
             pgGuide.drawingContext.setLineDash([15, 20]);
-            pgGuide.drawingContext.lineDashOffset = -frameCount * 0.5; // 控制流動速度
+            pgGuide.drawingContext.lineDashOffset = -frameCount * 0.5; 
             
-            pgGuide.fill('#f8f9fa'); // 配合背景色
+            pgGuide.fill('#f8f9fa'); 
             pgGuide.stroke('#cccccc');
             pgGuide.strokeWeight(8);
             pgGuide.textSize(220);
             pgGuide.textAlign(CENTER, CENTER);
             pgGuide.textStyle(BOLD);
-            pgGuide.text(currentItem.l, 150, 165); // 畫字母
+            pgGuide.text(currentItem.l, 150, 165); 
             
-            // 2. 呼吸燈起點
-            pgGuide.drawingContext.setLineDash([]); // 熄滅虛線設定
-            let pulse = sin(frameCount * 0.1) * 3; // 製造大小變化
+            pgGuide.drawingContext.setLineDash([]); 
+            let pulse = sin(frameCount * 0.1) * 3; 
             
             pgGuide.noStroke();
             pgGuide.fill('#06d6a0');
@@ -132,192 +121,4 @@
             
             pgGuide.fill(255);
             pgGuide.textSize(18);
-            pgGuide.text('1', currentItem.startX, currentItem.startY + 2);
-        }
-
-        // --- p5.js 觸控事件 (完美支援 iOS) ---
-        function touchStarted() {
-            if (isMagicMode) return false;
-            pgDraw.stroke('#ff9f1c');
-            pgDraw.strokeWeight(30);
-            pgDraw.strokeCap(ROUND);
-            pgDraw.strokeJoin(ROUND);
-            pgDraw.line(mouseX, mouseY, mouseX, mouseY); // 點一下都畫到
-            
-            // 靜音解鎖 iOS Audio 權限
-            magicAudio.play().catch(()=>{});
-            magicAudio.pause();
-            
-            return false; // 防止螢幕捲動
-        }
-
-        function touchMoved() {
-            if (isMagicMode) return false;
-            pgDraw.line(pmouseX, pmouseY, mouseX, mouseY); // 連接上一格位置
-            return false;
-        }
-
-        function touchEnded() {
-            if (!isMagicMode) calcCoverage(); // 離手作最後結算
-            return false;
-        }
-
-        // --- 百分比計算邏輯 ---
-        function calcCoverage() {
-            pgGuide.loadPixels();
-            pgDraw.loadPixels();
-            
-            let totalGuide = 0;
-            let covered = 0;
-            
-            // 由於 300x300 好多 pixel，我哋每隔 16 粒 pixel 先抽樣檢查，極大提升效能
-            for (let i = 3; i < pgGuide.pixels.length; i += 16) {
-                if (pgGuide.pixels[i] > 50) { // 如果虛線層有顏色
-                    totalGuide++;
-                    if (pgDraw.pixels[i] > 50) { // 如果畫筆層都有顏色
-                        covered++;
-                    }
-                }
-            }
-            
-            if (totalGuide === 0) return;
-            currentCoverage = Math.round((covered / totalGuide) * 100);
-            
-            const scoreEl = document.getElementById('realtime-score');
-            scoreEl.innerText = `完成度: ${currentCoverage}%`;
-            
-            if (currentCoverage >= 50) {
-                scoreEl.style.color = "#06d6a0";
-            } else {
-                scoreEl.style.color = "#ff595e";
-            }
-        }
-
-        // --- HTML 按鈕互動邏輯 ---
-        function initKeyboard() {
-            const grid = document.getElementById('grid-container');
-            grid.innerHTML = '';
-            wordsData.forEach((item, index) => {
-                const key = document.createElement('div');
-                key.className = 'key';
-                key.innerText = item.l;
-                key.onclick = () => {
-                    currentIndex = index;
-                    actionClear();
-                };
-                grid.appendChild(key);
-            });
-        }
-
-        window.actionClear = function() {
-            isMagicMode = false;
-            pgDraw.clear();
-            currentCoverage = 0;
-            document.getElementById('realtime-score').innerText = "完成度: 0%";
-            document.getElementById('realtime-score').style.color = "#ff595e";
-            document.getElementById('status-text').innerText = "由綠色呼吸點出發！";
-            
-            const wrapper = document.getElementById('canvas-wrapper');
-            wrapper.style.transform = "scale(1) rotate(0deg)";
-        };
-
-        // --- 發音與魔術 ---
-        function playFallbackSpeech(text) {
-            try {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.85; 
-                window.speechSynthesis.speak(utterance);
-            } catch(e) {}
-        }
-
-        window.actionMagic = async function() {
-            magicAudio.play().catch(()=>{});
-            magicAudio.pause();
-
-            if(currentCoverage < 50) {
-                document.getElementById('status-text').innerText = "畫滿 50% 先可以變魔術㗎！";
-                return;
-            }
-
-            document.getElementById('status-text').innerText = "變魔術中...✨";
-            const wrapper = document.getElementById('canvas-wrapper');
-            wrapper.style.transform = "scale(0.1) rotate(360deg)"; // CSS 旋轉特效
-            
-            let audioPromise = null;
-            let apiKey = localStorage.getItem('google_tts_key');
-            if (!apiKey) {
-                apiKey = prompt("如需 Google 發音請輸入 API Key (取消則用 iPhone 內置發音):");
-                if(apiKey) localStorage.setItem('google_tts_key', apiKey);
-            }
-
-            const spText = wordsData[currentIndex].sp;
-
-            if (apiKey) {
-                audioPromise = fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        input: { text: spText }, 
-                        voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' }, 
-                        audioConfig: { audioEncoding: 'MP3' }
-                    })
-                }).then(res => res.json());
-            }
-
-            // 等待半秒旋轉完畢後
-            setTimeout(async () => {
-                isMagicMode = true; // 切換 p5.js 顯示內容
-                wrapper.style.transform = "scale(1) rotate(0deg)";
-                if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-
-                if (audioPromise) {
-                    try {
-                        const data = await audioPromise;
-                        if(data.error) {
-                            document.getElementById('status-text').innerText = "API 錯誤，切換內置發音";
-                            playFallbackSpeech(spText);
-                        } else if(data.audioContent) {
-                            magicAudio.src = `data:audio/mp3;base64,${data.audioContent}`;
-                            magicAudio.play().catch(() => playFallbackSpeech(spText));
-                            document.getElementById('status-text').innerText = "魔術成功！發音中...";
-                        }
-                    } catch(e) { 
-                        playFallbackSpeech(spText); 
-                    }
-                } else {
-                    playFallbackSpeech(spText);
-                    document.getElementById('status-text').innerText = "使用機內發音。";
-                }
-            }, 600);
-        };
-
-        window.actionListen = function() {
-            try {
-                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRec) {
-                    document.getElementById('status-text').innerText = "呢部機未支援語音辨識。";
-                    return;
-                }
-                const recognition = new SpeechRec();
-                recognition.lang = 'en-US';
-                document.getElementById('status-text').innerText = "🎤 聽緊...請讀出單字";
-                
-                recognition.onresult = function(e) {
-                    const spoken = e.results[0][0].transcript.toLowerCase();
-                    const targetWord = wordsData[currentIndex].w;
-                    
-                    if(spoken.includes(targetWord)) {
-                        document.getElementById('status-text').innerText = `叻仔！讀中咗 "${targetWord}"！`;
-                        if(typeof confetti === 'function') confetti();
-                    } else {
-                        document.getElementById('status-text').innerText = `差少少，你讀咗 "${spoken}"`;
-                    }
-                };
-                recognition.start();
-            } catch(e) {
-                document.getElementById('status-text').innerText = "無法開啟咪高風。";
-            }
-        };
-    </script>
-</body>
-</html>
+            pgGuide.text('1', currentItem.startX, current
