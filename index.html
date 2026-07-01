@@ -6,72 +6,77 @@
     <title>孜孜學英文</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #ffecd2; display: flex; flex-direction: column; align-items: center; touch-action: none; }
-        #canvas-container { position: relative; width: 300px; height: 300px; border: 4px dashed #1982c4; background: #fff; margin: 20px 0; }
+        body { font-family: 'Comic Sans MS', sans-serif; background: #ffecd2; display: flex; flex-direction: column; align-items: center; touch-action: none; margin: 0; padding: 10px; }
+        #status-bar { font-size: 14px; color: #555; margin-bottom: 5px; }
+        #canvas-wrapper { position: relative; width: 300px; height: 300px; border: 4px dashed #1982c4; background: #fff; border-radius: 20px; }
         #letter-canvas { position: absolute; top: 0; left: 0; z-index: 2; touch-action: none; }
-        .btn { padding: 20px 40px; font-size: 20px; border-radius: 20px; background: #8ac926; color: white; border: none; cursor: pointer; }
+        #guide-layer { position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; font-size: 200px; color: #ddd; font-weight: bold; }
+        .controls { margin-top: 15px; display: flex; gap: 10px; }
+        .btn { padding: 15px 25px; font-size: 18px; border-radius: 15px; border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #999; }
     </style>
 </head>
 <body>
-    <div id="canvas-container">
+    <div id="status-bar">系統載入中...</div>
+    <div id="current-letter" style="font-size: 30px; font-weight: bold; color: #ff595e;">Letter: A</div>
+    
+    <div id="canvas-wrapper">
+        <div id="guide-layer">A</div>
         <canvas id="letter-canvas" width="300" height="300"></canvas>
     </div>
-    <button class="btn" onclick="magicTrigger()">✨ 變魔術</button>
+
+    <div class="controls">
+        <button class="btn" style="background:#ff595e;" onclick="clearCanvas()">抹走</button>
+        <button class="btn" style="background:#8ac926;" onclick="window.magicTrigger()">✨ 變魔術</button>
+    </div>
 
     <script>
-        // 確保函數掛載到 window，iPhone 一定搵到
-        window.magicTrigger = function() {
-            alert("變魔術功能已啟動！");
-            
-            // 檢查畫布內容
-            const canvas = document.getElementById('letter-canvas');
-            const ctx = canvas.getContext('2d');
-            const imgData = ctx.getImageData(0, 0, 300, 300);
-            
-            // 簡單檢查有冇像素
-            let hasDrawn = false;
-            for(let i=3; i<imgData.data.length; i+=4) { 
-                if(imgData.data[i] > 50) { hasDrawn = true; break; } 
-            }
-            
-            if(!hasDrawn) {
-                alert("請先寫字！");
-                return;
-            }
-            
-            // 觸發效果
-            confetti();
-            alert("魔術成功！");
-            ctx.clearRect(0, 0, 300, 300);
-        };
-
-        // 觸控邏輯 (防止 iPhone 錯誤崩潰)
         const canvas = document.getElementById('letter-canvas');
         const ctx = canvas.getContext('2d');
-        ctx.lineWidth = 20;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#ff9f1c';
+        const guide = document.getElementById('guide-layer');
+        const status = document.getElementById('status-bar');
 
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
+        ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.strokeStyle = '#ff9f1c';
 
+        // 觸控邏輯
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            const pos = getPos(e);
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            ctx.beginPath(); ctx.moveTo(x, y);
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            const pos = getPos(e);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            ctx.lineTo(x, y); ctx.stroke();
         }, { passive: false });
+
+        function clearCanvas() { ctx.clearRect(0, 0, 300, 300); }
+
+        window.magicTrigger = function() {
+            // 檢查畫布
+            const imgData = ctx.getImageData(0, 0, 300, 300);
+            let hasDrawn = false;
+            for(let i=3; i<imgData.data.length; i+=4) { if(imgData.data[i] > 50) { hasDrawn = true; break; } }
+            
+            if(!hasDrawn) {
+                status.innerText = "請先畫線先啦！";
+                return;
+            }
+            
+            status.innerText = "變魔術成功！";
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            
+            setTimeout(() => {
+                clearCanvas();
+                status.innerText = "系統就緒，請繼續畫下一個字。";
+            }, 1000);
+        };
+        
+        status.innerText = "✅ 系統運作正常，請試下畫線！";
     </script>
 </body>
 </html>
