@@ -1,9 +1,75 @@
-body { font-family: 'Comic Sans MS', sans-serif; background-color: #e0fbfc; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-#display-panel { background-color: white; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; padding: 20px; text-align: center; border: 6px solid #ee6c4d; }
-#canvas-container { position: relative; width: 300px; height: 300px; margin: 0 auto; touch-action: none; }
-#tracing-layer, #letter-canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 20px; }
-#tracing-layer { background: #fdfdfd; border: 4px dashed #a8dadc; pointer-events: none; }
+/* 基礎設定：防誤觸、色彩繽紛 */
+body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    background-color: #ffecd2; /* 溫和的暖色底 */
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: none; /* 防止成個網頁被拉動 */
+    overscroll-behavior: none;
+}
+
+.header { text-align: center; margin-bottom: 10px; }
+h1 { color: #ff595e; margin: 5px 0; font-size: 28px; text-shadow: 2px 2px 0px #fff; }
+.subtitle { color: #1982c4; font-size: 22px; font-weight: bold; margin: 0; }
+.highlight { color: #ffca3a; font-size: 32px; -webkit-text-stroke: 1px #d00000; }
+
+/* 畫板區域 */
+#display-panel {
+    background-color: #ffffff;
+    border-radius: 30px;
+    box-shadow: 0 8px 0 #e0e0e0;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    text-align: center;
+    border: 6px solid #8ac926;
+    box-sizing: border-box;
+}
+
+#canvas-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto;
+    background: #f8f9fa;
+    border: 4px dashed #1982c4;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+#tracing-layer, #letter-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 300px; height: 300px;
+}
+#tracing-layer { pointer-events: none; }
+#letter-canvas { z-index: 2; touch-action: none; } /* 確保 iPhone 觸控被 Canvas 吸收 */
+
+/* 兒童大按鈕設計 */
 .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-.btn { border: none; padding: 12px 20px; font-size: 16px; border-radius: 12px; cursor: pointer; font-weight: bold; }
-#grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 500px; margin-top: 20px; }
-.key { background: white; border: 3px solid #98c1d9; border-radius: 10px; padding: 15px 0; text-align: center; font-size: 20px; cursor: pointer; }
+.kid-btn {
+    border: none; padding: 12px 15px; font-size: 20px; border-radius: 20px;
+    cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2); transition: transform 0.1s;
+}
+.kid-btn:active { transform: translateY(6px); box-shadow: none; }
+.icon { font-size: 24px; }
+
+.btn-clear { background-color: #ff595e; box-shadow: 0 6px 0 #c1121f; }
+.btn-magic { background-color: #8ac926; box-shadow: 0 6px 0 #52796f; }
+.btn-mic { background-color: #1982c4; box-shadow: 0 6px 0 #023e8a; }
+
+/* 字母鍵盤 */
+#grid-container {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+    width: 100%; max-width: 400px; margin-top: 20px;
+}
+.key {
+    background: white; border: 4px solid #ffca3a; border-radius: 15px;
+    padding: 15px 0; text-align: center; font-size: 28px; font-weight: bold;
+    color: #ff595e; cursor: pointer; box-shadow: 0 5px 0 #e0a900;
+}
+.key:active { transform: translateY(5px); box-shadow: none; background: #fff3cd; }

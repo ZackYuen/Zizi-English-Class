@@ -1,29 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zizi Phonics Class</title>
+    <title>孜孜學英文 🚀</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <h2>Zizi's Phonics Fun 🚀</h2>
+
+    <div class="header">
+        <h1>🌟 孜孜學英文 🌟</h1>
+        <p class="subtitle">寫出 <span id="current-letter" class="highlight">A</span>，變魔術！</p>
+    </div>
+    
     <div id="display-panel">
         <div id="canvas-container">
             <canvas id="tracing-layer" width="300" height="300"></canvas>
             <canvas id="letter-canvas" width="300" height="300"></canvas>
         </div>
-        <div id="word-display" style="font-size: 24px; font-weight: bold; margin-top: 15px;">
-            請寫出: <span id="current-letter">A</span>
-        </div>
+        
         <div class="controls">
-            <button class="btn" style="background-color:#e63946; color:white;" onclick="clearCanvas()">🗑️ 重寫</button>
-            <button class="btn" style="background-color:#06d6a0;" onclick="checkAndTransform()">✨ 變身！</button>
-            <button class="btn" style="background-color:#f72585; color:white;" onclick="startListening()">🎤 讀俾我聽</button>
+            <button class="kid-btn btn-clear" onclick="clearCanvas()">
+                <span class="icon">🧽</span> 抹乾淨
+            </button>
+            <button class="kid-btn btn-magic" onclick="checkAndTransform()">
+                <span class="icon">✨</span> 變魔術
+            </button>
+            <button class="kid-btn btn-mic" onclick="startListening()">
+                <span class="icon">🎤</span> 我識讀
+            </button>
         </div>
     </div>
+
     <div id="grid-container"></div>
+
     <script src="script.js"></script>
 </body>
 </html>
