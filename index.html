@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 專業筆順版</title>
+    <title>孜孜學英文 - 視聽同步版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { font-family: 'Comic Sans MS', sans-serif; background-color: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; overscroll-behavior: none; user-select: none; }
@@ -57,45 +57,44 @@
     <div id="keyboard"></div>
 
     <script>
-        // 核心軌跡資料庫：將每個字母拆解成「筆劃 (Strokes)」，每個筆劃包含「打卡點 (Waypoints)」
-        // 結合 SSML 標籤，Google API 會精準讀出 Phonics (例如 /æ/ 音)
+        // 增強資料庫：加入 ph_char (小階拼音字母)，並將 SSML 停頓時間固定為 500ms 方便同步
         const alphabetData = [
             { 
-                l: 'A', w: 'ant', emoji: '🐜',
-                ssml: '<speak><emphasis level="strong">A</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="æ">æ</phoneme>. <break time="300ms"/>Ant.</speak>',
+                l: 'A', ph_char: 'a', w: 'ant', emoji: '🐜',
+                ssml: '<speak><emphasis level="strong">A</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="æ">æ</phoneme>. <break time="500ms"/>Ant.</speak>',
                 strokes: [
-                    [{x:150, y:40}, {x:120, y:120}, {x:90, y:220}], // 左撇
-                    [{x:150, y:40}, {x:180, y:120}, {x:210, y:220}], // 右撇
-                    [{x:105, y:145}, {x:150, y:145}, {x:195, y:145}] // 橫線
+                    [{x:150, y:40}, {x:120, y:120}, {x:90, y:220}], 
+                    [{x:150, y:40}, {x:180, y:120}, {x:210, y:220}], 
+                    [{x:105, y:145}, {x:150, y:145}, {x:195, y:145}] 
                 ]
             }, 
             { 
-                l: 'B', w: 'bug', emoji: '🐛',
-                ssml: '<speak><emphasis level="strong">B</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="b">b</phoneme>. <break time="300ms"/>Bug.</speak>',
+                l: 'B', ph_char: 'b', w: 'bug', emoji: '🐛',
+                ssml: '<speak><emphasis level="strong">B</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="b">b</phoneme>. <break time="500ms"/>Bug.</speak>',
                 strokes: [
                     [{x:100, y:40}, {x:100, y:130}, {x:100, y:220}],
-                    [{x:100, y:40}, {x:160, y:40}, {x:180, y:85}, {x:150, y:130}, {x:100, y:130}], // 上圈
-                    [{x:100, y:130}, {x:170, y:130}, {x:190, y:175}, {x:160, y:220}, {x:100, y:220}] // 下圈
+                    [{x:100, y:40}, {x:160, y:40}, {x:180, y:85}, {x:150, y:130}, {x:100, y:130}], 
+                    [{x:100, y:130}, {x:170, y:130}, {x:190, y:175}, {x:160, y:220}, {x:100, y:220}] 
                 ]
             },
             { 
-                l: 'C', w: 'cat', emoji: '🐱',
-                ssml: '<speak><emphasis level="strong">C</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="k">k</phoneme>. <break time="300ms"/>Cat.</speak>',
+                l: 'C', ph_char: 'c', w: 'cat', emoji: '🐱',
+                ssml: '<speak><emphasis level="strong">C</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="k">k</phoneme>. <break time="500ms"/>Cat.</speak>',
                 strokes: [
                     [{x:200, y:70}, {x:160, y:40}, {x:110, y:50}, {x:80, y:130}, {x:110, y:210}, {x:160, y:220}, {x:200, y:190}]
                 ]
             },
             { 
-                l: 'D', w: 'dog', emoji: '🐶',
-                ssml: '<speak><emphasis level="strong">D</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="d">d</phoneme>. <break time="300ms"/>Dog.</speak>',
+                l: 'D', ph_char: 'd', w: 'dog', emoji: '🐶',
+                ssml: '<speak><emphasis level="strong">D</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="d">d</phoneme>. <break time="500ms"/>Dog.</speak>',
                 strokes: [
                     [{x:100, y:40}, {x:100, y:130}, {x:100, y:220}],
                     [{x:100, y:40}, {x:160, y:40}, {x:200, y:90}, {x:200, y:170}, {x:160, y:220}, {x:100, y:220}]
                 ]
             },
             { 
-                l: 'E', w: 'egg', emoji: '🥚',
-                ssml: '<speak><emphasis level="strong">E</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="ɛ">ɛ</phoneme>. <break time="300ms"/>Egg.</speak>',
+                l: 'E', ph_char: 'e', w: 'egg', emoji: '🥚',
+                ssml: '<speak><emphasis level="strong">E</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="ɛ">ɛ</phoneme>. <break time="500ms"/>Egg.</speak>',
                 strokes: [
                     [{x:100, y:40}, {x:100, y:130}, {x:100, y:220}],
                     [{x:100, y:40}, {x:140, y:40}, {x:180, y:40}],
@@ -104,8 +103,8 @@
                 ]
             },
             { 
-                l: 'F', w: 'fox', emoji: '🦊',
-                ssml: '<speak><emphasis level="strong">F</emphasis>. <break time="300ms"/><phoneme alphabet="ipa" ph="f">f</phoneme>. <break time="300ms"/>Fox.</speak>',
+                l: 'F', ph_char: 'f', w: 'fox', emoji: '🦊',
+                ssml: '<speak><emphasis level="strong">F</emphasis>. <break time="500ms"/><phoneme alphabet="ipa" ph="f">f</phoneme>. <break time="500ms"/>Fox.</speak>',
                 strokes: [
                     [{x:100, y:40}, {x:100, y:130}, {x:100, y:220}],
                     [{x:100, y:40}, {x:140, y:40}, {x:180, y:40}],
@@ -117,11 +116,10 @@
         let currentIndex = 0;
         let isMagicMode = false;
         
-        // 筆順狀態
         let currentStrokeIdx = 0;
         let nextWaypointIdx = 0;
-        let completedUserStrokes = []; // 儲存已畫好嘅線
-        let activeUserStroke = [];     // 儲存緊手指畫緊嘅線
+        let completedUserStrokes = []; 
+        let activeUserStroke = [];     
 
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d');
@@ -129,18 +127,18 @@
         let audioCtx;
         const magicAudio = new Audio();
         const silentWav = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        
+        // 記錄播放狀態，用於同步動畫
+        let fallbackStartTime = 0;
+        let usingFallback = false;
 
-        // --- 系統音效 (SFX) ---
         function unlockSystem() {
             magicAudio.src = silentWav;
             magicAudio.play().catch(()=>{});
-            
-            // 創建 Web Audio API 引擎，負責「叮」同「Tada」聲
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
             document.getElementById('start-overlay').style.display = 'none';
             initApp();
-            requestAnimationFrame(renderLoop); // 啟動動畫引擎
+            requestAnimationFrame(renderLoop); 
         }
 
         function playDing() {
@@ -148,315 +146,6 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'sine'; osc.frequency.value = 880; // A5 音
+            osc.type = 'sine'; osc.frequency.value = 880; 
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        function playTada() {
-            if (!audioCtx) return;
-            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                setTimeout(() => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    osc.type = 'triangle'; osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-                }, i * 100);
-            });
-        }
-
-        function initApp() {
-            const kb = document.getElementById('keyboard');
-            kb.innerHTML = '';
-            alphabetData.forEach((item, index) => {
-                const btn = document.createElement('div');
-                btn.className = 'key';
-                btn.innerText = item.l;
-                btn.onclick = () => loadLetter(index);
-                kb.appendChild(btn);
-            });
-            loadLetter(0);
-        }
-
-        function loadLetter(index) {
-            currentIndex = index;
-            isMagicMode = false;
-            document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-            clearCanvas();
-        }
-
-        window.clearCanvas = function() {
-            if (isMagicMode) return loadLetter(currentIndex);
-            currentStrokeIdx = 0;
-            nextWaypointIdx = 0;
-            completedUserStrokes = [];
-            activeUserStroke = [];
-            updateStatus();
-        };
-
-        function updateStatus() {
-            const sb = document.getElementById('score-board');
-            const inst = document.getElementById('instruction');
-            const total = alphabetData[currentIndex].strokes.length;
-            
-            if (currentStrokeIdx < total) {
-                sb.innerText = `第 ${currentStrokeIdx + 1} 筆 / 共 ${total} 筆`;
-                sb.style.color = "#ff595e";
-                inst.innerText = "由綠色點出發，跟住流星畫！";
-                inst.style.color = "#1982c4";
-            } else {
-                sb.innerText = `全部完成！`;
-                sb.style.color = "#06d6a0";
-                inst.innerText = "好叻！撳 ✨ 變魔術啦！";
-                inst.style.color = "#06d6a0";
-            }
-        }
-
-        // --- 繪圖與流星動畫引擎 ---
-        function drawPath(points, color, width, isDashed = false) {
-            if(points.length === 0) return;
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            for(let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = width;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            if (isDashed) ctx.setLineDash([10, 15]); else ctx.setLineDash([]);
-            ctx.stroke();
-        }
-
-        function renderLoop() {
-            if (!isMagicMode) {
-                ctx.clearRect(0, 0, 300, 300);
-                const letterStrokes = alphabetData[currentIndex].strokes;
-
-                // 1. 畫底稿 (灰色虛線)
-                letterStrokes.forEach(stroke => drawPath(stroke, '#e0e0e0', 25, true));
-
-                // 2. 畫孜孜已完成嘅筆劃 (鮮橙色)
-                completedUserStrokes.forEach(stroke => drawPath(stroke, '#ff9f1c', 25));
-
-                // 3. 畫孜孜畫緊嘅筆劃
-                drawPath(activeUserStroke, '#ffca3a', 25);
-
-                // 4. 流星引導動畫 (只顯示喺當前需要畫嗰一筆)
-                if (currentStrokeIdx < letterStrokes.length) {
-                    const currentTargetStroke = letterStrokes[currentStrokeIdx];
-                    
-                    // 畫起點提示綠色波
-                    ctx.beginPath();
-                    ctx.arc(currentTargetStroke[0].x, currentTargetStroke[0].y, 14, 0, Math.PI*2);
-                    ctx.fillStyle = '#06d6a0'; ctx.fill();
-
-                    // 計算流星位置
-                    let time = (Date.now() % 1500) / 1500; // 1.5秒跑一次
-                    let ptIndex = Math.floor(time * (currentTargetStroke.length - 1));
-                    let nextPt = Math.min(ptIndex + 1, currentTargetStroke.length - 1);
-                    let subTime = (time * (currentTargetStroke.length - 1)) - ptIndex;
-                    
-                    let starX = currentTargetStroke[ptIndex].x + (currentTargetStroke[nextPt].x - currentTargetStroke[ptIndex].x) * subTime;
-                    let starY = currentTargetStroke[ptIndex].y + (currentTargetStroke[nextPt].y - currentTargetStroke[ptIndex].y) * subTime;
-
-                    ctx.beginPath();
-                    ctx.arc(starX, starY, 8, 0, Math.PI*2);
-                    ctx.fillStyle = '#1982c4'; ctx.fill();
-                }
-            }
-            requestAnimationFrame(renderLoop);
-        }
-
-        // --- 嚴格軌跡觸控邏輯 ---
-        let drawing = false;
-
-        function getPointerPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        }
-
-        function dist(p1, p2) {
-            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-        }
-
-        canvas.addEventListener('pointerdown', (e) => {
-            e.preventDefault(); 
-            if (isMagicMode) return;
-            
-            const strokes = alphabetData[currentIndex].strokes;
-            if (currentStrokeIdx >= strokes.length) return; // 畫完晒
-            
-            const pos = getPointerPos(e);
-            const targetStart = strokes[currentStrokeIdx][0];
-
-            // 必須喺正確起點 40px 內落筆，否則唔理佢 (嚴格防作弊)
-            if (dist(pos, targetStart) < 40) {
-                canvas.setPointerCapture(e.pointerId); 
-                drawing = true;
-                nextWaypointIdx = 1; // 已經擊中第 0 個點，等緊第 1 個
-                activeUserStroke = [pos];
-            }
-        });
-
-        canvas.addEventListener('pointermove', (e) => {
-            e.preventDefault();
-            if (!drawing || isMagicMode) return;
-            
-            const pos = getPointerPos(e);
-            activeUserStroke.push(pos); // 記錄軌跡
-            
-            const currentTargetStroke = alphabetData[currentIndex].strokes[currentStrokeIdx];
-            const targetWaypoint = currentTargetStroke[nextWaypointIdx];
-
-            // 檢查手指有冇到達下一個打卡點
-            if (dist(pos, targetWaypoint) < 40) {
-                nextWaypointIdx++;
-                // 如果打晒所有卡，即係畫完呢一筆！
-                if (nextWaypointIdx >= currentTargetStroke.length) {
-                    playDing();
-                    completedUserStrokes.push([...activeUserStroke]);
-                    activeUserStroke = [];
-                    drawing = false;
-                    currentStrokeIdx++;
-                    canvas.releasePointerCapture(e.pointerId);
-                    
-                    if(currentStrokeIdx >= alphabetData[currentIndex].strokes.length) {
-                        playTada();
-                    }
-                    updateStatus();
-                }
-            }
-        });
-
-        canvas.addEventListener('pointerup', (e) => {
-            e.preventDefault();
-            if (!drawing) return;
-            drawing = false;
-            canvas.releasePointerCapture(e.pointerId);
-            
-            // 如果中途離手，清除當前筆畫，逼佢重畫！
-            activeUserStroke = [];
-        });
-
-        // --- Google TTS API (Phonics 版) ---
-        window.triggerMagic = async function() {
-            magicAudio.src = silentWav;
-            magicAudio.play().catch(()=>{});
-
-            const inst = document.getElementById('instruction');
-            const strokes = alphabetData[currentIndex].strokes;
-
-            if (currentStrokeIdx < strokes.length) {
-                inst.innerText = "未畫完喎！跟住筆順畫晒先得㗎！";
-                inst.style.color = "#ff595e";
-                return;
-            }
-
-            let apiKey = localStorage.getItem('google_tts_key');
-            if (!apiKey) {
-                apiKey = prompt("請輸入 Google API Key 以啟用高質 Phonics 發音:");
-                if (apiKey) localStorage.setItem('google_tts_key', apiKey);
-            }
-
-            if (!apiKey) {
-                inst.innerText = "請提供 API Key 以啟用發音！";
-                inst.style.color = "#ff595e";
-                return;
-            }
-
-            isMagicMode = true;
-            inst.innerText = "魔術啟動中...✨";
-            inst.style.color = "#8ac926";
-            
-            const wrapper = document.getElementById('canvas-wrapper');
-            wrapper.style.transform = "scale(0.1) rotate(360deg)";
-            
-            const data = alphabetData[currentIndex];
-            let audioReady = false;
-
-            // 傳送 SSML 標籤要求 Google 讀 Phonics
-            try {
-                const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        input: { ssml: data.ssml },
-                        voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
-                        audioConfig: { audioEncoding: 'MP3' }
-                    })
-                });
-                const result = await res.json();
-                
-                if (result.error) {
-                    inst.innerText = `Google API 錯誤: ${result.error.message}`;
-                    inst.style.color = "red";
-                    wrapper.style.transform = "scale(1) rotate(0deg)";
-                    return; 
-                } else if (result.audioContent) {
-                    magicAudio.src = `data:audio/mp3;base64,${result.audioContent}`;
-                    audioReady = true;
-                }
-            } catch (err) {
-                inst.innerText = "網絡錯誤，無法連接 Google API。";
-                inst.style.color = "red";
-                wrapper.style.transform = "scale(1) rotate(0deg)";
-                return;
-            }
-
-            setTimeout(() => {
-                ctx.clearRect(0, 0, 300, 300);
-                ctx.font = '120px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(data.emoji, 150, 120);
-                
-                ctx.font = 'bold 45px Comic Sans MS';
-                ctx.fillStyle = '#1d3557';
-                ctx.fillText(data.w.toUpperCase(), 150, 230);
-                
-                wrapper.style.transform = "scale(1) rotate(0deg)";
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-                
-                if (audioReady) {
-                    inst.innerText = "魔術成功！";
-                    inst.style.color = "#8ac926";
-                    magicAudio.play();
-                }
-            }, 600);
-        };
-
-        window.triggerListen = function() {
-            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) {
-                alert("呢部機暫時未支援語音辨識功能。");
-                return;
-            }
-            const recognition = new SpeechRec();
-            recognition.lang = 'en-US';
-            document.getElementById('instruction').innerText = "🎤 聽緊...請對住咪高風讀出單字";
-            document.getElementById('instruction').style.color = "#ff9f1c";
-            
-            recognition.onresult = (e) => {
-                const spoken = e.results[0][0].transcript.toLowerCase();
-                const targetWord = alphabetData[currentIndex].w;
-                
-                if (spoken.includes(targetWord)) {
-                    document.getElementById('instruction').innerText = `叻仔！讀中咗 "${targetWord}"！`;
-                    document.getElementById('instruction').style.color = "#06d6a0";
-                    confetti();
-                    playTada();
-                } else {
-                    document.getElementById('instruction').innerText = `差少少，你讀咗 "${spoken}"`;
-                    document.getElementById('instruction').style.color = "#ff595e";
-                }
-            };
-            recognition.onerror = () => {
-                document.getElementById('instruction').innerText = "聽唔清楚，再撳多次試下。";
-            };
-            recognition.start();
-        };
-    </script>
-</body>
-</html>
+            gain.gain.exponentialRampToValueAtTime(0.Normally I can help with things like this, but I don't seem to have access to that content. You can try again or ask me for something else.
