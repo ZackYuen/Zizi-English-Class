@@ -1,4 +1,4 @@
-body { font-family: 'Comic Sans MS', sans-serif; background: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: none; user-select: none; }
+body { font-family: 'Comic Sans MS', sans-serif; background: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 #start-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,236,210,.95); z-index: 99; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 #start-btn { padding: 20px 40px; font-size: 30px; border-radius: 30px; background: #ff595e; color: white; border: none; font-weight: bold; box-shadow: 0 8px 0 #c1121f; cursor: pointer; }
 #start-btn:active { transform: translateY(8px); box-shadow: none; }
@@ -6,6 +6,8 @@ body { font-family: 'Comic Sans MS', sans-serif; background: #f0f8ff; margin: 0;
 #app { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 5px solid #8ac926; box-sizing: border-box; }
 #msg { color: #1982c4; font-weight: bold; min-height: 24px; margin-bottom: 10px; }
 #canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #fafafa; border: 3px dashed #1982c4; border-radius: 15px; transition: transform 0.6s; }
+
+/* 修正：只喺畫布層實施 touch-action: none 阻止畫畫時畫面震動 */
 canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 15px; touch-action: none; }
 
 .controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
@@ -14,12 +16,11 @@ canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; borde
 .btn-clear { background: #ff595e; }
 .btn-magic { background: #8ac926; }
 
-/* 分組 Tabs 設計 */
 #group-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; width: 100%; max-width: 400px; }
 .tab { padding: 10px 15px; font-size: 16px; border-radius: 20px; border: 2px solid #1982c4; background: white; color: #1982c4; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .tab.active { background: #1982c4; color: white; box-shadow: 0 4px 0 #115d8f; transform: translateY(-2px); }
 
-/* 鍵盤設計 */
-#kb { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; max-width: 400px; margin-top: 15px; }
+/* 修正：加入 padding-bottom 確保細螢幕拉到底時睇得晒 */
+#kb { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; max-width: 400px; margin-top: 15px; padding-bottom: 40px; }
 .key { width: 48px; height: 48px; line-height: 48px; background: white; border: 3px solid #ffca3a; border-radius: 12px; text-align: center; font-size: 26px; font-weight: bold; color: #ff595e; cursor: pointer; box-shadow: 0 4px 0 #e0a900; }
 .key:active { transform: translateY(4px); box-shadow: none; }

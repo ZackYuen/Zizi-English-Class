@@ -36,7 +36,7 @@ const rawD = [
 ['Z','zip','🤐',[['z','z'],['ɪ','i'],['p','p']],[[80,40,220,40],[220,40,80,220],[80,220,220,220]]]
 ];
 
-// 動態構建 SSML 與視覺時間軸
+// 修正：補返 w 同 emoji
 const D = rawD.map(r => {
     let ssml = `<speak><emphasis level="strong">${r[0]}</emphasis>.<break time="1s"/>`;
     let phases = [{t:0, type:'letter', text: r[0]}];
@@ -49,5 +49,5 @@ const D = rawD.map(r => {
     });
     ssml += `${r[1]}.</speak>`;
     phases.push({t: curT, type:'word', text: r[1].toUpperCase(), emoji: r[2]});
-    return { l: r[0], ssml: ssml, p: phases, st: r[4] };
+    return { l: r[0], w: r[1], emoji: r[2], ssml: ssml, p: phases, st: r[4] };
 });
