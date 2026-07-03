@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>孜孜學英文 - 幼兒防斷線版</title>
+<title>孜孜學英文 - A至Z完整版</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
 body{font-family:'Comic Sans MS',sans-serif;background:#f0f8ff;margin:0;padding:10px;display:flex;flex-direction:column;align-items:center;touch-action:none;user-select:none}
@@ -12,7 +12,8 @@ body{font-family:'Comic Sans MS',sans-serif;background:#f0f8ff;margin:0;padding:
 #canvas-wrapper{position:relative;width:300px;height:300px;margin:10px auto;background:#fafafa;border:3px dashed #1982c4;border-radius:15px;transition:transform .6s}
 canvas{position:absolute;top:0;left:0;width:300px;height:300px;border-radius:15px;touch-action:none}
 .btn{border:none;padding:12px 16px;font-size:18px;border-radius:15px;color:#fff;font-weight:bold;margin:5px;cursor:pointer}
-.key{background:#fff;border:3px solid #ffca3a;border-radius:10px;padding:10px 0;text-align:center;font-size:24px;font-weight:bold;color:#ff595e;cursor:pointer}
+#kb{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;max-width:400px;margin-top:20px}
+.key{width:42px;height:42px;line-height:42px;background:#fff;border:3px solid #ffca3a;border-radius:10px;text-align:center;font-size:22px;font-weight:bold;color:#ff595e;cursor:pointer}
 </style>
 </head>
 <body>
@@ -26,17 +27,46 @@ canvas{position:absolute;top:0;left:0;width:300px;height:300px;border-radius:15p
     <button class="btn" style="background:#ff595e" onclick="reset()">🧽 抹走</button>
     <button class="btn" style="background:#8ac926" onclick="magic()">✨ 變魔術</button>
 </div>
-<div id="kb" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:400px;margin-top:20px;width:100%"></div>
+<div id="kb"></div>
 
 <script>
-const D = [
-{l:'A',w:'ant',e:'🐜',s:'<speak>A.<break time="1s"/><phoneme alphabet="ipa" ph="æ">a</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="n">n</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="t">t</phoneme><break time="1s"/>Ant.</speak>',p:[{t:0,x:'A'},{t:1500,x:'a'},{t:2800,x:'a  n'},{t:4100,x:'a  n  t'},{t:5400,x:'ANT'}],st:[[{x:150,y:40},{x:120,y:120},{x:90,y:220}],[{x:150,y:40},{x:180,y:120},{x:210,y:220}],[{x:105,y:145},{x:150,y:145},{x:195,y:145}]]},
-{l:'B',w:'bug',e:'🐛',s:'<speak>B.<break time="1s"/><phoneme alphabet="ipa" ph="b">b</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="ʌ">u</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="g">g</phoneme><break time="1s"/>Bug.</speak>',p:[{t:0,x:'B'},{t:1500,x:'b'},{t:2800,x:'b  u'},{t:4100,x:'b  u  g'},{t:5400,x:'BUG'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:160,y:40},{x:180,y:85},{x:150,y:130},{x:100,y:130}],[{x:100,y:130},{x:170,y:130},{x:190,y:175},{x:160,y:220},{x:100,y:220}]]},
-{l:'C',w:'cat',e:'🐱',s:'<speak>C.<break time="1s"/><phoneme alphabet="ipa" ph="k">c</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="æ">a</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="t">t</phoneme><break time="1s"/>Cat.</speak>',p:[{t:0,x:'C'},{t:1500,x:'c'},{t:2800,x:'c  a'},{t:4100,x:'c  a  t'},{t:5400,x:'CAT'}],st:[[{x:200,y:70},{x:160,y:40},{x:110,y:50},{x:80,y:130},{x:110,y:210},{x:160,y:220},{x:200,y:190}]]},
-{l:'D',w:'dog',e:'🐶',s:'<speak>D.<break time="1s"/><phoneme alphabet="ipa" ph="d">d</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="ɔ">o</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="g">g</phoneme><break time="1s"/>Dog.</speak>',p:[{t:0,x:'D'},{t:1500,x:'d'},{t:2800,x:'d  o'},{t:4100,x:'d  o  g'},{t:5400,x:'DOG'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:160,y:40},{x:200,y:90},{x:200,y:170},{x:160,y:220},{x:100,y:220}]]},
-{l:'E',w:'egg',e:'🥚',s:'<speak>E.<break time="1s"/><phoneme alphabet="ipa" ph="ɛ">e</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="g">g</phoneme><break time="1s"/>Egg.</speak>',p:[{t:0,x:'E'},{t:1500,x:'e'},{t:2800,x:'e  g  g'},{t:4100,x:'EGG'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:180,y:40}],[{x:100,y:130},{x:170,y:130}],[{x:100,y:220},{x:180,y:220}]]},
-{l:'F',w:'fox',e:'🦊',s:'<speak>F.<break time="1s"/><phoneme alphabet="ipa" ph="f">f</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="ɔ">o</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="k s">x</phoneme><break time="1s"/>Fox.</speak>',p:[{t:0,x:'F'},{t:1500,x:'f'},{t:2800,x:'f  o'},{t:4100,x:'f  o  x'},{t:5400,x:'FOX'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:180,y:40}],[{x:100,y:130},{x:170,y:130}]]}
+// A-Z 高壓數據庫 (包含字母, 單字, Emoji, Phonics音標, 視覺進度, 筆順坐標)
+const rawD = [
+['A','ant','🐜',[['æ','a'],['n','n'],['t','t']],['A','a','a n','a n t','ANT'],[[[150,40],[120,120],[90,220]],[[150,40],[180,120],[210,220]],[[105,145],[150,145],[195,145]]]],
+['B','bug','🐛',[['b','b'],['ʌ','u'],['g','g']],['B','b','b u','b u g','BUG'],[[[100,40],[100,220]],[[100,40],[160,40],[180,85],[150,130],[100,130]],[[100,130],[170,130],[190,175],[160,220],[100,220]]]],
+['C','cat','🐱',[['k','c'],['æ','a'],['t','t']],['C','c','c a','c a t','CAT'],[[[200,70],[160,40],[110,50],[80,130],[110,210],[160,220],[200,190]]]],
+['D','dog','🐶',[['d','d'],['ɔ','o'],['g','g']],['D','d','d o','d o g','DOG'],[[[100,40],[100,220]],[[100,40],[160,40],[200,90],[200,170],[160,220],[100,220]]]],
+['E','elf','🧝',[['ɛ','e'],['l','l'],['f','f']],['E','e','e l','e l f','ELF'],[[[100,40],[100,220]],[[100,40],[180,40]],[[100,130],[170,130]],[[100,220],[180,220]]]],
+['F','fox','🦊',[['f','f'],['ɔ','o'],['k s','x']],['F','f','f o','f o x','FOX'],[[[100,40],[100,220]],[[100,40],[180,40]],[[100,130],[170,130]]]],
+['G','gum','🍬',[['g','g'],['ʌ','u'],['m','m']],['G','g','g u','g u m','GUM'],[[[200,70],[160,40],[110,50],[80,130],[110,210],[160,220],[200,190],[200,150],[150,150]]]],
+['H','hat','🎩',[['h','h'],['æ','a'],['t','t']],['H','h','h a','h a t','HAT'],[[[100,40],[100,220]],[[200,40],[200,220]],[[100,130],[200,130]]]],
+['I','ink','✒️',[['ɪ','i'],['ŋ','n'],['k','k']],['I','i','i n','i n k','INK'],[[[150,40],[150,220]],[[100,40],[200,40]],[[100,220],[200,220]]]],
+['J','jam','🍓',[['dʒ','j'],['æ','a'],['m','m']],['J','j','j a','j a m','JAM'],[[[180,40],[180,180],[160,220],[120,220],[100,190]],[[120,40],[220,40]]]],
+['K','kid','👦',[['k','k'],['ɪ','i'],['d','d']],['K','k','k i','k i d','KID'],[[[100,40],[100,220]],[[180,40],[100,130]],[[100,130],[180,220]]]],
+['L','log','🪵',[['l','l'],['ɔ','o'],['g','g']],['L','l','l o','l o g','LOG'],[[[120,40],[120,220]],[[120,220],[200,220]]]],
+['M','map','🗺️',[['m','m'],['æ','a'],['p','p']],['M','m','m a','m a p','MAP'],[[[80,220],[80,40]],[[80,40],[150,130]],[[150,130],[220,40]],[[220,40],[220,220]]]],
+['N','net','🥅',[['n','n'],['ɛ','e'],['t','t']],['N','n','n e','n e t','NET'],[[[80,220],[80,40]],[[80,40],[220,220]],[[220,220],[220,40]]]],
+['O','owl','🦉',[['aʊ','o'],['w','w'],['l','l']],['O','o','o w','o w l','OWL'],[[[150,40],[90,80],[80,150],[100,210],[150,230],[200,210],[220,150],[210,80],[150,40]]]],
+['P','pig','🐷',[['p','p'],['ɪ','i'],['g','g']],['P','p','p i','p i g','PIG'],[[[100,40],[100,220]],[[100,40],[160,40],[190,85],[160,130],[100,130]]]],
+['Q','queen','👑',[['kw','qu'],['i','ee'],['n','n']],['Q','qu','qu ee','qu ee n','QUEEN'],[[[150,40],[90,80],[80,150],[100,210],[150,230],[200,210],[220,150],[210,80],[150,40]],[[170,170],[230,230]]]],
+['R','rat','🐀',[['r','r'],['æ','a'],['t','t']],['R','r','r a','r a t','RAT'],[[[100,40],[100,220]],[[100,40],[160,40],[190,85],[160,130],[100,130]],[[140,130],[200,220]]]],
+['S','sun','☀️',[['s','s'],['ʌ','u'],['n','n']],['S','s','s u','s u n','SUN'],[[[200,70],[150,40],[100,70],[100,110],[150,130],[200,150],[200,190],[150,220],[100,190]]]],
+['T','top','🔝',[['t','t'],['ɔ','o'],['p','p']],['T','t','t o','t o p','TOP'],[[[150,40],[150,220]],[[80,40],[220,40]]]],
+['U','ufo','🛸',[['ju','u'],['ɛf','f'],['oʊ','o']],['U','u','u f','u f o','UFO'],[[[100,40],[100,170],[120,210],[150,220],[180,210],[200,170],[200,40]]]],
+['V','van','🚐',[['v','v'],['æ','a'],['n','n']],['V','v','v a','v a n','VAN'],[[[80,40],[150,220]],[[150,220],[220,40]]]],
+['W','web','🕸️',[['w','w'],['ɛ','e'],['b','b']],['W','w','w e','w e b','WEB'],[[[80,40],[110,220]],[[110,220],[150,100]],[[150,100],[190,220]],[[190,220],[220,40]]]],
+['X','box','📦',[['b','b'],['ɔ','o'],['k s','x']],['X','b','b o','b o x','BOX'],[[[80,40],[220,220]],[[220,40],[80,220]]]],
+['Y','yak','🐂',[['j','y'],['æ','a'],['k','k']],['Y','y','y a','y a k','YAK'],[[[80,40],[150,130]],[[220,40],[150,130]],[[150,130],[150,220]]]],
+['Z','zoo','🦓',[['z','z'],['u','o'],['u','o']],['Z','z','z o','z o o','ZOO'],[[[80,40],[220,40]],[[220,40],[80,220]],[[80,220],[220,220]]]]
 ];
+
+// 動態生成格式，節省字數
+const D = rawD.map(r => ({
+    l: r[0], w: r[1], e: r[2],
+    s: `<speak><emphasis level="strong">${r[0]}</emphasis>.<break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][0][0]}">${r[3][0][1]}</phoneme><break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][1][0]}">${r[3][1][1]}</phoneme><break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][2][0]}">${r[3][2][1]}</phoneme><break time="1000ms"/>${r[1]}.</speak>`,
+    p: [{t:0,x:r[4][0]}, {t:1500,x:r[4][1]}, {t:2800,x:r[4][2]}, {t:4100,x:r[4][3]}, {t:5400,x:r[4][4]}],
+    st: r[5]
+}));
 
 let idx=0, isMagic=false, magicStart=0, fired=false;
 let strokeIdx=0, wpIdx=0, doneStrokes=[], curStroke=[];
@@ -50,6 +80,7 @@ function start() {
     mAudio.play().catch(()=>{});
     aCtx = new (window.AudioContext || window.webkitAudioContext)();
     document.getElementById('start-overlay').style.display='none';
+    
     const kb = document.getElementById('kb');
     D.forEach((d,i)=>{
         const btn=document.createElement('div'); btn.className='key'; btn.innerText=d.l;
@@ -76,8 +107,8 @@ function playSnd(f, t) {
 
 function drawLine(pts, col, dash) {
     if(!pts.length) return;
-    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0], pts[i][1]);
     ctx.strokeStyle=col; ctx.lineWidth=25; ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.setLineDash(dash ? [10,15] : []); ctx.stroke();
 }
@@ -92,15 +123,14 @@ function loop() {
         
         if(strokeIdx < s.length) {
             let t = s[strokeIdx];
-            // 綠色點會永遠處於孜孜手指離開嘅最後位置，等佢接力
-            let startPt = curStroke.length > 0 ? curStroke[curStroke.length-1] : t[wpIdx];
-            let endPt = t[wpIdx+1];
+            let startPt = curStroke.length > 0 ? curStroke[curStroke.length-1] : [t[wpIdx][0], t[wpIdx][1]];
+            let endPt = t[wpIdx+1] ? [t[wpIdx+1][0], t[wpIdx+1][1]] : null;
             
-            ctx.beginPath(); ctx.arc(startPt.x, startPt.y, 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
+            ctx.beginPath(); ctx.arc(startPt[0], startPt[1], 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
             
             if(endPt) {
                 let p = (Date.now()%1500)/1500;
-                let sx = startPt.x + (endPt.x - startPt.x) * p, sy = startPt.y + (endPt.y - startPt.y) * p;
+                let sx = startPt[0] + (endPt[0] - startPt[0]) * p, sy = startPt[1] + (endPt[1] - startPt[1]) * p;
                 ctx.beginPath(); ctx.arc(sx, sy, 8, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
             }
         }
@@ -123,37 +153,29 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-// 防斷線觸控系統
+// 觸控系統：防斷線設計
 cvs.addEventListener('pointerdown', e => {
     if(isMagic || strokeIdx >= D[idx].st.length) return;
-    const r=cvs.getBoundingClientRect(), pos={x:e.clientX-r.left, y:e.clientY-r.top};
+    const r=cvs.getBoundingClientRect(), pos=[e.clientX-r.left, e.clientY-r.top];
+    let tWP = curStroke.length > 0 ? curStroke[curStroke.length-1] : D[idx].st[strokeIdx][wpIdx];
     
-    // 目標點：如果畫咗一半，目標就係斷線點；如果未畫，目標就係起點
-    let targetWP = curStroke.length > 0 ? curStroke[curStroke.length-1] : D[idx].st[strokeIdx][wpIdx];
-    
-    // 感應圈由 40 擴大到 60，更易對準
-    if(Math.hypot(pos.x-targetWP.x, pos.y-targetWP.y) < 60) {
-        cvs.setPointerCapture(e.pointerId); 
-        isDrawing = true;
-        curStroke.push(pos);
+    if(Math.hypot(pos[0]-tWP[0], pos[1]-tWP[1]) < 60) {
+        cvs.setPointerCapture(e.pointerId); isDrawing=true; curStroke.push(pos);
     }
 });
 
 cvs.addEventListener('pointermove', e => {
     if(!isDrawing || isMagic) return;
-    const r=cvs.getBoundingClientRect(), pos={x:e.clientX-r.left, y:e.clientY-r.top};
+    const r=cvs.getBoundingClientRect(), pos=[e.clientX-r.left, e.clientY-r.top];
     curStroke.push(pos);
     
     const curLine = D[idx].st[strokeIdx], nextWP = curLine[wpIdx + 1];
-    
-    if(Math.hypot(pos.x-nextWP.x, pos.y-nextWP.y) < 60) {
+    if(Math.hypot(pos[0]-nextWP[0], pos[1]-nextWP[1]) < 60) {
         wpIdx++;
-        if(wpIdx >= curLine.length - 1) { // 成功畫到尾
-            playSnd(880, 'sine'); 
-            doneStrokes.push(curStroke); 
-            curStroke=[]; strokeIdx++; wpIdx=0; isDrawing = false;
+        if(wpIdx >= curLine.length - 1) { 
+            playSnd(880, 'sine'); doneStrokes.push(curStroke); 
+            curStroke=[]; strokeIdx++; wpIdx=0; isDrawing=false;
             cvs.releasePointerCapture(e.pointerId);
-            
             if(strokeIdx >= D[idx].st.length) { 
                 [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle'),i*100)); 
                 document.getElementById('msg').innerText = "好叻！撳 ✨ 變魔術啦！";
@@ -162,11 +184,7 @@ cvs.addEventListener('pointermove', e => {
     }
 });
 
-// 就算離手，都唔會清除畫面，等小朋友慢慢接住畫
-cvs.addEventListener('pointerup', e => { 
-    isDrawing = false; 
-    cvs.releasePointerCapture(e.pointerId);
-});
+cvs.addEventListener('pointerup', e => { isDrawing=false; cvs.releasePointerCapture(e.pointerId); });
 
 async function magic() {
     if(strokeIdx < D[idx].st.length) { document.getElementById('msg').innerText = "未畫完喎！"; return; }
