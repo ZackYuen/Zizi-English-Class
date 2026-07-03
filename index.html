@@ -1,20 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>孜孜學英文 - A至Z完整版</title>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<style>
-body{font-family:'Comic Sans MS',sans-serif;background:#f0f8ff;margin:0;padding:10px;display:flex;flex-direction:column;align-items:center;touch-action:none;user-select:none}
-#start-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,236,210,.95);z-index:99;display:flex;flex-direction:column;justify-content:center;align-items:center}
-#start-btn{padding:20px 40px;font-size:30px;border-radius:30px;background:#ff595e;color:#fff;border:none;font-weight:bold;box-shadow:0 8px 0 #c1121f;cursor:pointer}
-#app{background:#fff;border-radius:20px;width:100%;max-width:400px;padding:15px;text-align:center;border:5px solid #8ac926;box-sizing:border-box}
-#canvas-wrapper{position:relative;width:300px;height:300px;margin:10px auto;background:#fafafa;border:3px dashed #1982c4;border-radius:15px;transition:transform .6s}
-canvas{position:absolute;top:0;left:0;width:300px;height:300px;border-radius:15px;touch-action:none}
-.btn{border:none;padding:12px 16px;font-size:18px;border-radius:15px;color:#fff;font-weight:bold;margin:5px;cursor:pointer}
-#kb{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;max-width:400px;margin-top:20px}
-.key{width:42px;height:42px;line-height:42px;background:#fff;border:3px solid #ffca3a;border-radius:10px;text-align:center;font-size:22px;font-weight:bold;color:#ff595e;cursor:pointer}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孜孜學英文 - Jolly Phonics 分組版</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
@@ -22,193 +13,21 @@ canvas{position:absolute;top:0;left:0;width:300px;height:300px;border-radius:15p
 
 <h1 style="color:#ff595e;margin:5px">🌟 孜孜學英文 🌟</h1>
 <div id="app">
-    <div id="msg" style="color:#1982c4;font-weight:bold;min-height:24px">由綠色點出發，順住流星畫！</div>
+    <div id="msg">由綠色點出發，畫到尾為止！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
-    <button class="btn" style="background:#ff595e" onclick="reset()">🧽 抹走</button>
-    <button class="btn" style="background:#8ac926" onclick="magic()">✨ 變魔術</button>
+    <div class="controls">
+        <button class="btn btn-clear" onclick="reset()">🧽 抹走</button>
+        <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
+    </div>
 </div>
+
+<!-- 分組標籤 (Tabs) -->
+<div id="group-tabs"></div>
+
+<!-- 字母鍵盤 (會根據分組動態更新) -->
 <div id="kb"></div>
 
-<script>
-// A-Z 高壓數據庫 (包含字母, 單字, Emoji, Phonics音標, 視覺進度, 筆順坐標)
-const rawD = [
-['A','ant','🐜',[['æ','a'],['n','n'],['t','t']],['A','a','a n','a n t','ANT'],[[[150,40],[120,120],[90,220]],[[150,40],[180,120],[210,220]],[[105,145],[150,145],[195,145]]]],
-['B','bug','🐛',[['b','b'],['ʌ','u'],['g','g']],['B','b','b u','b u g','BUG'],[[[100,40],[100,220]],[[100,40],[160,40],[180,85],[150,130],[100,130]],[[100,130],[170,130],[190,175],[160,220],[100,220]]]],
-['C','cat','🐱',[['k','c'],['æ','a'],['t','t']],['C','c','c a','c a t','CAT'],[[[200,70],[160,40],[110,50],[80,130],[110,210],[160,220],[200,190]]]],
-['D','dog','🐶',[['d','d'],['ɔ','o'],['g','g']],['D','d','d o','d o g','DOG'],[[[100,40],[100,220]],[[100,40],[160,40],[200,90],[200,170],[160,220],[100,220]]]],
-['E','elf','🧝',[['ɛ','e'],['l','l'],['f','f']],['E','e','e l','e l f','ELF'],[[[100,40],[100,220]],[[100,40],[180,40]],[[100,130],[170,130]],[[100,220],[180,220]]]],
-['F','fox','🦊',[['f','f'],['ɔ','o'],['k s','x']],['F','f','f o','f o x','FOX'],[[[100,40],[100,220]],[[100,40],[180,40]],[[100,130],[170,130]]]],
-['G','gum','🍬',[['g','g'],['ʌ','u'],['m','m']],['G','g','g u','g u m','GUM'],[[[200,70],[160,40],[110,50],[80,130],[110,210],[160,220],[200,190],[200,150],[150,150]]]],
-['H','hat','🎩',[['h','h'],['æ','a'],['t','t']],['H','h','h a','h a t','HAT'],[[[100,40],[100,220]],[[200,40],[200,220]],[[100,130],[200,130]]]],
-['I','ink','✒️',[['ɪ','i'],['ŋ','n'],['k','k']],['I','i','i n','i n k','INK'],[[[150,40],[150,220]],[[100,40],[200,40]],[[100,220],[200,220]]]],
-['J','jam','🍓',[['dʒ','j'],['æ','a'],['m','m']],['J','j','j a','j a m','JAM'],[[[180,40],[180,180],[160,220],[120,220],[100,190]],[[120,40],[220,40]]]],
-['K','kid','👦',[['k','k'],['ɪ','i'],['d','d']],['K','k','k i','k i d','KID'],[[[100,40],[100,220]],[[180,40],[100,130]],[[100,130],[180,220]]]],
-['L','log','🪵',[['l','l'],['ɔ','o'],['g','g']],['L','l','l o','l o g','LOG'],[[[120,40],[120,220]],[[120,220],[200,220]]]],
-['M','map','🗺️',[['m','m'],['æ','a'],['p','p']],['M','m','m a','m a p','MAP'],[[[80,220],[80,40]],[[80,40],[150,130]],[[150,130],[220,40]],[[220,40],[220,220]]]],
-['N','net','🥅',[['n','n'],['ɛ','e'],['t','t']],['N','n','n e','n e t','NET'],[[[80,220],[80,40]],[[80,40],[220,220]],[[220,220],[220,40]]]],
-['O','owl','🦉',[['aʊ','o'],['w','w'],['l','l']],['O','o','o w','o w l','OWL'],[[[150,40],[90,80],[80,150],[100,210],[150,230],[200,210],[220,150],[210,80],[150,40]]]],
-['P','pig','🐷',[['p','p'],['ɪ','i'],['g','g']],['P','p','p i','p i g','PIG'],[[[100,40],[100,220]],[[100,40],[160,40],[190,85],[160,130],[100,130]]]],
-['Q','queen','👑',[['kw','qu'],['i','ee'],['n','n']],['Q','qu','qu ee','qu ee n','QUEEN'],[[[150,40],[90,80],[80,150],[100,210],[150,230],[200,210],[220,150],[210,80],[150,40]],[[170,170],[230,230]]]],
-['R','rat','🐀',[['r','r'],['æ','a'],['t','t']],['R','r','r a','r a t','RAT'],[[[100,40],[100,220]],[[100,40],[160,40],[190,85],[160,130],[100,130]],[[140,130],[200,220]]]],
-['S','sun','☀️',[['s','s'],['ʌ','u'],['n','n']],['S','s','s u','s u n','SUN'],[[[200,70],[150,40],[100,70],[100,110],[150,130],[200,150],[200,190],[150,220],[100,190]]]],
-['T','top','🔝',[['t','t'],['ɔ','o'],['p','p']],['T','t','t o','t o p','TOP'],[[[150,40],[150,220]],[[80,40],[220,40]]]],
-['U','ufo','🛸',[['ju','u'],['ɛf','f'],['oʊ','o']],['U','u','u f','u f o','UFO'],[[[100,40],[100,170],[120,210],[150,220],[180,210],[200,170],[200,40]]]],
-['V','van','🚐',[['v','v'],['æ','a'],['n','n']],['V','v','v a','v a n','VAN'],[[[80,40],[150,220]],[[150,220],[220,40]]]],
-['W','web','🕸️',[['w','w'],['ɛ','e'],['b','b']],['W','w','w e','w e b','WEB'],[[[80,40],[110,220]],[[110,220],[150,100]],[[150,100],[190,220]],[[190,220],[220,40]]]],
-['X','box','📦',[['b','b'],['ɔ','o'],['k s','x']],['X','b','b o','b o x','BOX'],[[[80,40],[220,220]],[[220,40],[80,220]]]],
-['Y','yak','🐂',[['j','y'],['æ','a'],['k','k']],['Y','y','y a','y a k','YAK'],[[[80,40],[150,130]],[[220,40],[150,130]],[[150,130],[150,220]]]],
-['Z','zoo','🦓',[['z','z'],['u','o'],['u','o']],['Z','z','z o','z o o','ZOO'],[[[80,40],[220,40]],[[220,40],[80,220]],[[80,220],[220,220]]]]
-];
-
-// 動態生成格式，節省字數
-const D = rawD.map(r => ({
-    l: r[0], w: r[1], e: r[2],
-    s: `<speak><emphasis level="strong">${r[0]}</emphasis>.<break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][0][0]}">${r[3][0][1]}</phoneme><break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][1][0]}">${r[3][1][1]}</phoneme><break time="1000ms"/><phoneme alphabet="ipa" ph="${r[3][2][0]}">${r[3][2][1]}</phoneme><break time="1000ms"/>${r[1]}.</speak>`,
-    p: [{t:0,x:r[4][0]}, {t:1500,x:r[4][1]}, {t:2800,x:r[4][2]}, {t:4100,x:r[4][3]}, {t:5400,x:r[4][4]}],
-    st: r[5]
-}));
-
-let idx=0, isMagic=false, magicStart=0, fired=false;
-let strokeIdx=0, wpIdx=0, doneStrokes=[], curStroke=[];
-let isDrawing = false;
-
-const cvs=document.getElementById('cvs'), ctx=cvs.getContext('2d', {willReadFrequently:true});
-let aCtx, mAudio = new Audio();
-
-function start() {
-    mAudio.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-    mAudio.play().catch(()=>{});
-    aCtx = new (window.AudioContext || window.webkitAudioContext)();
-    document.getElementById('start-overlay').style.display='none';
-    
-    const kb = document.getElementById('kb');
-    D.forEach((d,i)=>{
-        const btn=document.createElement('div'); btn.className='key'; btn.innerText=d.l;
-        btn.onclick=()=>{ idx=i; reset(); }; kb.appendChild(btn);
-    });
-    reset(); requestAnimationFrame(loop);
-}
-
-function reset() {
-    isMagic=false; strokeIdx=0; wpIdx=0; doneStrokes=[]; curStroke=[]; isDrawing=false;
-    document.getElementById('canvas-wrapper').style.transform="scale(1) rotate(0deg)";
-    document.getElementById('msg').innerText = "由綠色點出發，順住流星畫！";
-    document.getElementById('msg').style.color = "#1982c4";
-}
-
-function playSnd(f, t) {
-    if(!aCtx) return;
-    let o=aCtx.createOscillator(), g=aCtx.createGain();
-    o.connect(g); g.connect(aCtx.destination); o.type=t; o.frequency.value=f;
-    g.gain.setValueAtTime(0.3, aCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, aCtx.currentTime+0.3);
-    o.start(); o.stop(aCtx.currentTime+0.3);
-}
-
-function drawLine(pts, col, dash) {
-    if(!pts.length) return;
-    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0], pts[i][1]);
-    ctx.strokeStyle=col; ctx.lineWidth=25; ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.setLineDash(dash ? [10,15] : []); ctx.stroke();
-}
-
-function loop() {
-    ctx.clearRect(0,0,300,300);
-    if(!isMagic) {
-        const s = D[idx].st;
-        s.forEach(st => drawLine(st, '#e0e0e0', true)); 
-        doneStrokes.forEach(st => drawLine(st, '#ff9f1c', false)); 
-        drawLine(curStroke, '#ffca3a', false); 
-        
-        if(strokeIdx < s.length) {
-            let t = s[strokeIdx];
-            let startPt = curStroke.length > 0 ? curStroke[curStroke.length-1] : [t[wpIdx][0], t[wpIdx][1]];
-            let endPt = t[wpIdx+1] ? [t[wpIdx+1][0], t[wpIdx+1][1]] : null;
-            
-            ctx.beginPath(); ctx.arc(startPt[0], startPt[1], 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
-            
-            if(endPt) {
-                let p = (Date.now()%1500)/1500;
-                let sx = startPt[0] + (endPt[0] - startPt[0]) * p, sy = startPt[1] + (endPt[1] - startPt[1]) * p;
-                ctx.beginPath(); ctx.arc(sx, sy, 8, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
-            }
-        }
-    } else {
-        let dt = Date.now() - magicStart;
-        let phase = D[idx].p.slice().reverse().find(p => dt >= p.t);
-        if(phase) {
-            ctx.textAlign='center'; ctx.textBaseline='middle';
-            if(phase.x === D[idx].l) {
-                ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.x, 150, 150);
-            } else if(phase.x === D[idx].w.toUpperCase()) {
-                ctx.font='100px Arial'; ctx.fillText(D[idx].e, 150, 100);
-                ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.x, 150, 220);
-                if(!fired) { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }}); fired=true; }
-            } else {
-                ctx.font='bold 70px Comic Sans MS'; ctx.fillStyle='#1982c4'; ctx.fillText(phase.x, 150, 150);
-            }
-        }
-    }
-    requestAnimationFrame(loop);
-}
-
-// 觸控系統：防斷線設計
-cvs.addEventListener('pointerdown', e => {
-    if(isMagic || strokeIdx >= D[idx].st.length) return;
-    const r=cvs.getBoundingClientRect(), pos=[e.clientX-r.left, e.clientY-r.top];
-    let tWP = curStroke.length > 0 ? curStroke[curStroke.length-1] : D[idx].st[strokeIdx][wpIdx];
-    
-    if(Math.hypot(pos[0]-tWP[0], pos[1]-tWP[1]) < 60) {
-        cvs.setPointerCapture(e.pointerId); isDrawing=true; curStroke.push(pos);
-    }
-});
-
-cvs.addEventListener('pointermove', e => {
-    if(!isDrawing || isMagic) return;
-    const r=cvs.getBoundingClientRect(), pos=[e.clientX-r.left, e.clientY-r.top];
-    curStroke.push(pos);
-    
-    const curLine = D[idx].st[strokeIdx], nextWP = curLine[wpIdx + 1];
-    if(Math.hypot(pos[0]-nextWP[0], pos[1]-nextWP[1]) < 60) {
-        wpIdx++;
-        if(wpIdx >= curLine.length - 1) { 
-            playSnd(880, 'sine'); doneStrokes.push(curStroke); 
-            curStroke=[]; strokeIdx++; wpIdx=0; isDrawing=false;
-            cvs.releasePointerCapture(e.pointerId);
-            if(strokeIdx >= D[idx].st.length) { 
-                [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle'),i*100)); 
-                document.getElementById('msg').innerText = "好叻！撳 ✨ 變魔術啦！";
-            }
-        }
-    }
-});
-
-cvs.addEventListener('pointerup', e => { isDrawing=false; cvs.releasePointerCapture(e.pointerId); });
-
-async function magic() {
-    if(strokeIdx < D[idx].st.length) { document.getElementById('msg').innerText = "未畫完喎！"; return; }
-    let key = localStorage.getItem('google_tts_key');
-    if(!key) { key = prompt("請輸入 Google API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
-    
-    document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
-    document.getElementById('msg').innerText = "聯絡緊 Google...✨";
-    
-    try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method:'POST', body:JSON.stringify({input:{ssml:D[idx].s},voice:{languageCode:'en-US',name:'en-US-Wavenet-F'},audioConfig:{audioEncoding:'MP3'}})
-        });
-        let data = await res.json();
-        if(data.error) throw data.error;
-        mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-    } catch(e) { document.getElementById('msg').innerText = "API 錯誤，請檢查 Key 或網絡"; return; }
-    
-    setTimeout(() => {
-        isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
-        document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('msg').innerText = "魔術成功！";
-    }, 600);
-}
-</script>
+<script src="data.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
