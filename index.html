@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>孜孜學英文 - 慢速同步版</title>
+<title>孜孜學英文 - 幼兒防斷線版</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
 body{font-family:'Comic Sans MS',sans-serif;background:#f0f8ff;margin:0;padding:10px;display:flex;flex-direction:column;align-items:center;touch-action:none;user-select:none}
@@ -29,7 +29,6 @@ canvas{position:absolute;top:0;left:0;width:300px;height:300px;border-radius:15p
 <div id="kb" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:400px;margin-top:20px;width:100%"></div>
 
 <script>
-// D 陣列包含: l=字母, w=單字, e=Emoji, s=慢速語音標籤(SSML), p=視聽同步時間軸, st=筆順坐標
 const D = [
 {l:'A',w:'ant',e:'🐜',s:'<speak>A.<break time="1s"/><phoneme alphabet="ipa" ph="æ">a</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="n">n</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="t">t</phoneme><break time="1s"/>Ant.</speak>',p:[{t:0,x:'A'},{t:1500,x:'a'},{t:2800,x:'a  n'},{t:4100,x:'a  n  t'},{t:5400,x:'ANT'}],st:[[{x:150,y:40},{x:120,y:120},{x:90,y:220}],[{x:150,y:40},{x:180,y:120},{x:210,y:220}],[{x:105,y:145},{x:150,y:145},{x:195,y:145}]]},
 {l:'B',w:'bug',e:'🐛',s:'<speak>B.<break time="1s"/><phoneme alphabet="ipa" ph="b">b</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="ʌ">u</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="g">g</phoneme><break time="1s"/>Bug.</speak>',p:[{t:0,x:'B'},{t:1500,x:'b'},{t:2800,x:'b  u'},{t:4100,x:'b  u  g'},{t:5400,x:'BUG'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:160,y:40},{x:180,y:85},{x:150,y:130},{x:100,y:130}],[{x:100,y:130},{x:170,y:130},{x:190,y:175},{x:160,y:220},{x:100,y:220}]]},
@@ -39,11 +38,13 @@ const D = [
 {l:'F',w:'fox',e:'🦊',s:'<speak>F.<break time="1s"/><phoneme alphabet="ipa" ph="f">f</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="ɔ">o</phoneme><break time="1s"/><phoneme alphabet="ipa" ph="k s">x</phoneme><break time="1s"/>Fox.</speak>',p:[{t:0,x:'F'},{t:1500,x:'f'},{t:2800,x:'f  o'},{t:4100,x:'f  o  x'},{t:5400,x:'FOX'}],st:[[{x:100,y:40},{x:100,y:220}],[{x:100,y:40},{x:180,y:40}],[{x:100,y:130},{x:170,y:130}]]}
 ];
 
-let idx=0, isMagic=false, magicStart=0, fired=false, strokeIdx=0, doneStrokes=[], curStroke=[];
+let idx=0, isMagic=false, magicStart=0, fired=false;
+let strokeIdx=0, wpIdx=0, doneStrokes=[], curStroke=[];
+let isDrawing = false;
+
 const cvs=document.getElementById('cvs'), ctx=cvs.getContext('2d', {willReadFrequently:true});
 let aCtx, mAudio = new Audio();
 
-// 系統初始化，解鎖音效
 function start() {
     mAudio.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
     mAudio.play().catch(()=>{});
@@ -57,15 +58,13 @@ function start() {
     reset(); requestAnimationFrame(loop);
 }
 
-// 重設畫板
 function reset() {
-    isMagic=false; strokeIdx=0; doneStrokes=[]; curStroke=[];
+    isMagic=false; strokeIdx=0; wpIdx=0; doneStrokes=[]; curStroke=[]; isDrawing=false;
     document.getElementById('canvas-wrapper').style.transform="scale(1) rotate(0deg)";
     document.getElementById('msg').innerText = "由綠色點出發，順住流星畫！";
     document.getElementById('msg').style.color = "#1982c4";
 }
 
-// 短音效發生器
 function playSnd(f, t) {
     if(!aCtx) return;
     let o=aCtx.createOscillator(), g=aCtx.createGain();
@@ -83,40 +82,40 @@ function drawLine(pts, col, dash) {
     ctx.setLineDash(dash ? [10,15] : []); ctx.stroke();
 }
 
-// 動畫引擎 (結合畫板與時間軸)
 function loop() {
     ctx.clearRect(0,0,300,300);
     if(!isMagic) {
         const s = D[idx].st;
-        s.forEach(st => drawLine(st, '#e0e0e0', true)); // 畫虛線
-        doneStrokes.forEach(st => drawLine(st, '#ff9f1c', false)); // 畫已完成
-        drawLine(curStroke, '#ffca3a', false); // 畫緊
+        s.forEach(st => drawLine(st, '#e0e0e0', true)); 
+        doneStrokes.forEach(st => drawLine(st, '#ff9f1c', false)); 
+        drawLine(curStroke, '#ffca3a', false); 
         
-        // 畫流星指引
         if(strokeIdx < s.length) {
             let t = s[strokeIdx];
-            ctx.beginPath(); ctx.arc(t[0].x, t[0].y, 14, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
-            let p = (Date.now()%1500)/1500, pI = Math.floor(p*(t.length-1)), nI = Math.min(pI+1, t.length-1), sub = (p*(t.length-1))-pI;
-            let sx = t[pI].x + (t[nI].x-t[pI].x)*sub, sy = t[pI].y + (t[nI].y-t[pI].y)*sub;
-            ctx.beginPath(); ctx.arc(sx, sy, 8, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
+            // 綠色點會永遠處於孜孜手指離開嘅最後位置，等佢接力
+            let startPt = curStroke.length > 0 ? curStroke[curStroke.length-1] : t[wpIdx];
+            let endPt = t[wpIdx+1];
+            
+            ctx.beginPath(); ctx.arc(startPt.x, startPt.y, 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
+            
+            if(endPt) {
+                let p = (Date.now()%1500)/1500;
+                let sx = startPt.x + (endPt.x - startPt.x) * p, sy = startPt.y + (endPt.y - startPt.y) * p;
+                ctx.beginPath(); ctx.arc(sx, sy, 8, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
+            }
         }
     } else {
-        // 慢速時間軸同步邏輯
         let dt = Date.now() - magicStart;
-        // 搵出目前時間對應嘅 Phase
         let phase = D[idx].p.slice().reverse().find(p => dt >= p.t);
         if(phase) {
             ctx.textAlign='center'; ctx.textBaseline='middle';
             if(phase.x === D[idx].l) {
-                // Phase 1: 字母
                 ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.x, 150, 150);
             } else if(phase.x === D[idx].w.toUpperCase()) {
-                // Phase 3: 成個字 + Emoji
                 ctx.font='100px Arial'; ctx.fillText(D[idx].e, 150, 100);
                 ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.x, 150, 220);
                 if(!fired) { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }}); fired=true; }
             } else {
-                // Phase 2: Phonics 逐粒字出
                 ctx.font='bold 70px Comic Sans MS'; ctx.fillStyle='#1982c4'; ctx.fillText(phase.x, 150, 150);
             }
         }
@@ -124,32 +123,51 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-// 觸控邏輯
+// 防斷線觸控系統
 cvs.addEventListener('pointerdown', e => {
     if(isMagic || strokeIdx >= D[idx].st.length) return;
     const r=cvs.getBoundingClientRect(), pos={x:e.clientX-r.left, y:e.clientY-r.top};
-    if(Math.hypot(pos.x-D[idx].st[strokeIdx][0].x, pos.y-D[idx].st[strokeIdx][0].y) < 40) {
-        cvs.setPointerCapture(e.pointerId); curStroke=[pos];
+    
+    // 目標點：如果畫咗一半，目標就係斷線點；如果未畫，目標就係起點
+    let targetWP = curStroke.length > 0 ? curStroke[curStroke.length-1] : D[idx].st[strokeIdx][wpIdx];
+    
+    // 感應圈由 40 擴大到 60，更易對準
+    if(Math.hypot(pos.x-targetWP.x, pos.y-targetWP.y) < 60) {
+        cvs.setPointerCapture(e.pointerId); 
+        isDrawing = true;
+        curStroke.push(pos);
     }
 });
+
 cvs.addEventListener('pointermove', e => {
-    if(!curStroke.length || isMagic) return;
+    if(!isDrawing || isMagic) return;
     const r=cvs.getBoundingClientRect(), pos={x:e.clientX-r.left, y:e.clientY-r.top};
     curStroke.push(pos);
-    const tg = D[idx].st[strokeIdx];
-    // 到達終點
-    if(Math.hypot(pos.x-tg[tg.length-1].x, pos.y-tg[tg.length-1].y) < 40) {
-        playSnd(880, 'sine'); doneStrokes.push(curStroke); curStroke=[]; strokeIdx++;
-        cvs.releasePointerCapture(e.pointerId);
-        if(strokeIdx >= D[idx].st.length) { 
-            [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle'),i*100)); 
-            document.getElementById('msg').innerText = "好叻！撳 ✨ 變魔術啦！";
+    
+    const curLine = D[idx].st[strokeIdx], nextWP = curLine[wpIdx + 1];
+    
+    if(Math.hypot(pos.x-nextWP.x, pos.y-nextWP.y) < 60) {
+        wpIdx++;
+        if(wpIdx >= curLine.length - 1) { // 成功畫到尾
+            playSnd(880, 'sine'); 
+            doneStrokes.push(curStroke); 
+            curStroke=[]; strokeIdx++; wpIdx=0; isDrawing = false;
+            cvs.releasePointerCapture(e.pointerId);
+            
+            if(strokeIdx >= D[idx].st.length) { 
+                [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle'),i*100)); 
+                document.getElementById('msg').innerText = "好叻！撳 ✨ 變魔術啦！";
+            }
         }
     }
 });
-cvs.addEventListener('pointerup', e => { curStroke=[]; });
 
-// 變魔術 + Call API
+// 就算離手，都唔會清除畫面，等小朋友慢慢接住畫
+cvs.addEventListener('pointerup', e => { 
+    isDrawing = false; 
+    cvs.releasePointerCapture(e.pointerId);
+});
+
 async function magic() {
     if(strokeIdx < D[idx].st.length) { document.getElementById('msg').innerText = "未畫完喎！"; return; }
     let key = localStorage.getItem('google_tts_key');
@@ -167,7 +185,6 @@ async function magic() {
         mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
     } catch(e) { document.getElementById('msg').innerText = "API 錯誤，請檢查 Key 或網絡"; return; }
     
-    // 0.6秒旋轉動畫完結後，開始播放與視覺同步
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
