@@ -36,7 +36,7 @@ window.takePhoto = async function() {
 async function identifyWithGemini(base64Image) {
     let apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) {
-        apiKey = prompt("請輸入 Gemini API Key (來自 Google AI Studio):");
+        apiKey = prompt("請輸入 Gemini API Key:");
         if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
         else { window.closeCamera(); return; }
     }
@@ -45,8 +45,9 @@ async function identifyWithGemini(base64Image) {
     msg.innerText = "分析緊...";
 
     const proxyUrl = 'https://corsproxy.io/?'; 
-    // 🌟 核心修正：將原本出 404 嘅 v1beta 換成穩定正式版 v1，確保 API 能夠正常辨識
-    const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`);
+    
+    // 🌟 核心修正：使用 v1beta 以及 gemini-1.5-flash-latest 確保一定搵到模型
+    const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`);
 
     try {
         const response = await fetch(proxyUrl + targetUrl, {
@@ -76,7 +77,7 @@ async function identifyWithGemini(base64Image) {
         
     } catch (err) {
         console.error("Gemini Error:", err);
-        alert("❌ 發生錯誤，請截圖呢句畀我睇:\n" + err.message);
+        alert("❌ 發生錯誤:\n" + err.message);
         
         document.getElementById('loading-msg').style.display = 'none';
         document.getElementById('camera-controls').style.display = 'flex';
