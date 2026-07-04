@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (Camera & OpenRouter AI 模組 - Qwen 2 VL 免費版)
+// 📷 探索魔鏡功能 (Camera & OpenRouter AI 模組 - Nvidia Nemotron 12B 免費版)
 // ==========================================
 
 window.openCamera = async function() {
@@ -46,7 +46,7 @@ async function identifyWithAI(base64Image) {
     }
 
     const msg = document.getElementById('msg');
-    msg.innerText = "用緊 Qwen 2 VL 免費大腦分析緊...";
+    msg.innerText = "用緊 Nvidia 12B 免費大腦分析緊...";
 
     try {
         // 直接呼叫 OpenRouter，無需 Proxy
@@ -57,8 +57,8 @@ async function identifyWithAI(base64Image) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // 使用 Qwen 2 VL 72B 免費版
-                model: "model: "nvidia/nemotron-nano-12b-v2-vl:free", 
+                // 使用 Nvidia Nemotron 12B 免費視覺模型
+                model: "nvidia/nemotron-nano-12b-v2-vl:free", 
                 messages: [{
                     role: "user",
                     content: [
@@ -110,7 +110,7 @@ window.processWord = function(word) {
     }
     window.closeCamera();
     
-    // 🌟 影完相兼認到字，先至將畫板顯示返出嚟
+    // 影完相兼認到字，先至將畫板顯示返出嚟
     const canvasWrapper = document.getElementById('canvas-wrapper');
     if (canvasWrapper) canvasWrapper.style.display = 'block';
     
