@@ -1,6 +1,7 @@
 // ==========================================
 // 📷 探索魔鏡功能 (Camera & OpenRouter AI 模組 - Qwen 2 VL 免費版)
 // ==========================================
+
 window.openCamera = async function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
@@ -56,7 +57,7 @@ async function identifyWithAI(base64Image) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // 🌟 已經換咗做 Qwen 2 VL 72B 免費版，避開 404 Error
+                // 使用 Qwen 2 VL 72B 免費版
                 model: "qwen/qwen-2-vl-72b-instruct:free", 
                 messages: [{
                     role: "user",
@@ -108,5 +109,10 @@ window.processWord = function(word) {
         } else { speakAlert(`認到係 ${word}，但我哋未學到呢個字母呀。`); }
     }
     window.closeCamera();
+    
+    // 🌟 影完相兼認到字，先至將畫板顯示返出嚟
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    if (canvasWrapper) canvasWrapper.style.display = 'block';
+    
     resetCanvas();
 };
