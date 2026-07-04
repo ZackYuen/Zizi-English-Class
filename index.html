@@ -3,36 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 探索魔鏡版</title>
+    <title>孜孜學英文 - 雙模式版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<div id="start-overlay"><button id="start-btn" onclick="start()">🚀 開始啦！</button></div>
+<!-- 首頁模式選擇 -->
+<div id="start-overlay">
+    <h1 style="color:#ff595e; margin-bottom: 40px; font-size: 40px;">🌟 孜孜學英文</h1>
+    <button class="btn mode-btn" style="background:#8ac926;" onclick="startApp('standard')">📚 標準學習模式</button>
+    <button class="btn mode-btn" style="background:#457b9d;" onclick="startApp('camera')">📷 探索魔鏡模式</button>
+</div>
 
-<h1 style="color:#ff595e;margin:5px">🌟 孜孜學英文 🌟</h1>
+<!-- 頂部標題與切換按鈕 -->
+<div class="top-bar">
+    <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
+    <button class="btn btn-switch" onclick="toggleMode()">🔄 轉模式</button>
+</div>
+
 <div id="app">
     <div id="msg">由綠色點出發，畫到尾為止！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button class="btn btn-clear" onclick="reset()">🧽 抹走</button>
         <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
-        <!-- 新增：探索魔鏡按鈕 -->
-        <button class="btn btn-camera" onclick="openCamera()">📷 影相</button>
     </div>
 </div>
 
-<!-- 分組標籤 (Tabs) -->
-<div id="group-tabs"></div>
+<!-- 標準模式 UI (群組 Tabs 與鍵盤) -->
+<div id="standard-ui">
+    <div id="group-tabs"></div>
+    <div id="kb"></div>
+</div>
 
-<!-- 字母鍵盤 -->
-<div id="kb"></div>
+<!-- 相機模式 UI (大型相機按鈕) -->
+<div id="camera-ui-container" style="display:none;">
+    <button class="btn btn-big-camera" onclick="openCamera()">📷 打開相機搵字！</button>
+</div>
 
-<!-- 新增：相機預覽層 (預設隱藏) -->
+<!-- 相機預覽層 (拍攝時顯示) -->
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline autoplay></video>
-    <div id="camera-ui">
+    <div id="camera-controls">
         <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
         <button id="close-camera-btn" onclick="closeCamera()">❌ 取消</button>
     </div>
