@@ -10,7 +10,7 @@ const userCvs=document.createElement('canvas'); userCvs.width=300; userCvs.heigh
 const userCtx=userCvs.getContext('2d', {willReadFrequently:true});
 
 let aCtx, mAudio = new Audio();
-const imgCache = {}; // 圖片緩衝
+const imgCache = {}; 
 
 function preloadImage(url) {
     if(!url || imgCache[url]) return;
@@ -38,7 +38,6 @@ function renderTabs() {
     });
 }
 
-// 修改：撳字母時，會喺 4 個對應字彙入面「隨機」抽一隻出嚟
 function selectGroup(gIndex) {
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === gIndex));
     const kb = document.getElementById('kb'); kb.innerHTML = '';
@@ -51,7 +50,6 @@ function selectGroup(gIndex) {
         };
         kb.appendChild(btn);
     });
-    // 初始化抽第一個字母
     let initMatches = D.map((d, i) => d.l === phonicsGroups[gIndex].letters[0] ? i : -1).filter(i => i !== -1);
     idx = initMatches[Math.floor(Math.random() * initMatches.length)];
     reset();
@@ -60,7 +58,6 @@ function selectGroup(gIndex) {
 function reset() {
     isMagic=false; strokeIdx=0; doneStrokes=[]; curStroke=[]; isDrawing=false; currentPercent=0;
     
-    // 預先準備好對應嘅相片
     let currentImgUrl = D[idx].p[D[idx].p.length-1].img;
     if(currentImgUrl) preloadImage(currentImgUrl);
     
@@ -174,18 +171,31 @@ function loop() {
             if(phase.type === 'letter') {
                 ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150);
             } else if(phase.type === 'phonic') {
-                // 修改：Jolly Phonics 單字拆解，讀嗰個音變紅色
-                ctx.font='bold 70px Comic Sans MS';
+                // 修改：雙層顯示系統 (上面英文字，下面 IPA 音標)
                 let totalW = 0;
-                let widths = phase.letters.map(l => { let w=ctx.measureText(l).width; totalW+=w; return w; });
+                let widths = phase.pData.map(pd => { 
+                    ctx.font='bold 65px Comic Sans MS'; 
+                    let w = ctx.measureText(pd.letter).width + 15; // 每個字母加少少空間
+                    totalW += w; return w; 
+                });
+                
                 let startX = 150 - (totalW / 2); 
-                phase.letters.forEach((l, i) => {
-                    ctx.fillStyle = (i === phase.hlIdx) ? '#ff595e' : '#1d3557';
-                    ctx.fillText(l, startX + widths[i]/2, 150);
+                phase.pData.forEach((pd, i) => {
+                    let isHl = (i === phase.hlIdx);
+                    
+                    // 上層：畫英文字母
+                    ctx.font='bold 65px Comic Sans MS';
+                    ctx.fillStyle = isHl ? '#ff595e' : '#1d3557';
+                    ctx.fillText(pd.letter, startX + widths[i]/2, 120);
+                    
+                    // 下層：畫國際音標 (IPA)
+                    ctx.font='bold 26px Arial';
+                    ctx.fillStyle = isHl ? '#ffca3a' : '#8ac926';
+                    ctx.fillText(pd.ipa, startX + widths[i]/2, 190);
+                    
                     startX += widths[i];
                 });
             } else if(phase.type === 'word') {
-                // 修改：自動判定用相定用 Emoji
                 if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) {
                     ctx.drawImage(imgCache[phase.img], 50, 20, 200, 200);
                 } else {
