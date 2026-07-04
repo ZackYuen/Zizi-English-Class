@@ -18,6 +18,9 @@ window.startApp = function(mode) {
     }
     document.getElementById('start-overlay').style.display = 'none';
     if (typeof D !== 'undefined' && D.length > 0) {
+        // 🌟 基礎 Mode 一開始隨機揀一個字，唔好次次都一樣
+        window.idx = Math.floor(Math.random() * D.length);
+        
         renderTabs();
         setMode(mode);
         requestAnimationFrame(loop);
@@ -28,14 +31,25 @@ window.toggleMode = function() {
     setMode(currentMode === 'standard' ? 'camera' : 'standard');
 };
 
-function setMode(mode) {
+window.setMode = function(mode) {
     currentMode = mode;
     document.getElementById('standard-ui').style.display = (mode === 'standard') ? 'block' : 'none';
     document.getElementById('camera-ui-container').style.display = (mode === 'camera') ? 'block' : 'none';
-    resetCanvas();
-    document.getElementById('msg').innerText = (mode === 'camera') ? "撳下面個掣，影低身邊嘅嘢啦！" : "由綠色點出發，畫到尾為止！";
+    
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    
+    if (mode === 'camera') {
+        // 🌟 未影相之前隱藏畫板，乾淨 UI
+        if (canvasWrapper) canvasWrapper.style.display = 'none';
+        document.getElementById('msg').innerText = "撳下面個掣，影低身邊嘅嘢啦！";
+    } else {
+        // 🌟 基礎模式顯示畫板
+        if (canvasWrapper) canvasWrapper.style.display = 'block';
+        document.getElementById('msg').innerText = "由綠色點出發，畫到尾為止！";
+        resetCanvas();
+    }
     document.getElementById('msg').style.color = "#1982c4";
-}
+};
 
 function renderTabs() {
     const tabsDiv = document.getElementById('group-tabs');
