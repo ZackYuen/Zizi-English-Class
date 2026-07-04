@@ -1,4 +1,7 @@
-// 畫布渲染與描寫演算法模組
+// ==========================================
+// 🎨 畫布渲染與描寫演算法模組 (canvas.js)
+// ==========================================
+
 window.resetCanvas = function() {
     if (typeof D === 'undefined' || !D[idx]) return;
     isMagic=false; strokeIdx=0; doneStrokes=[]; curStroke=[]; isDrawing=false; currentPercent=0;
@@ -175,6 +178,10 @@ window.magic = async function() {
         let data = await res.json();
         if(data.error) throw data.error;
         mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
+        
+        // 🌟 將播放速度減慢至 0.75 倍，以達到「音拉長啲」嘅效果
+        mAudio.playbackRate = 0.75; 
+
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
