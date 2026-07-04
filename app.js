@@ -171,32 +171,26 @@ function loop() {
             if(phase.type === 'letter') {
                 ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150);
             } else if(phase.type === 'phonic') {
-                // 修改：雙層顯示系統 (上面英文字，下面 IPA 音標)
                 let totalW = 0;
                 let widths = phase.pData.map(pd => { 
                     ctx.font='bold 65px Comic Sans MS'; 
-                    let w = ctx.measureText(pd.letter).width + 15; // 每個字母加少少空間
+                    let w = ctx.measureText(pd.letter).width + 15; 
                     totalW += w; return w; 
                 });
                 
                 let startX = 150 - (totalW / 2); 
                 phase.pData.forEach((pd, i) => {
                     let isHl = (i === phase.hlIdx);
-                    
-                    // 上層：畫英文字母
                     ctx.font='bold 65px Comic Sans MS';
                     ctx.fillStyle = isHl ? '#ff595e' : '#1d3557';
                     ctx.fillText(pd.letter, startX + widths[i]/2, 120);
-                    
-                    // 下層：畫國際音標 (IPA)
                     ctx.font='bold 26px Arial';
                     ctx.fillStyle = isHl ? '#ffca3a' : '#8ac926';
                     ctx.fillText(pd.ipa, startX + widths[i]/2, 190);
-                    
                     startX += widths[i];
                 });
             } else if(phase.type === 'word') {
-                if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) {
+                if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete && imgCache[phase.img].naturalWidth > 0) {
                     ctx.drawImage(imgCache[phase.img], 50, 20, 200, 200);
                 } else {
                     ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100);
@@ -268,4 +262,112 @@ async function magic() {
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
         document.getElementById('msg').innerText = "魔術成功！";
     }, 600);
+}
+
+// ==========================================
+// 📷 探索魔鏡功能 (Camera & Gemini API)
+// ==========================================
+let stream = null;
+
+async function openCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const video = document.getElementById('camera-video');
+        video.srcObject = stream;
+        document.getElementById('camera-overlay').style.display = 'flex';
+        document.getElementById('camera-ui').style.display = 'flex';
+        document.getElementById('loading-msg').style.display = 'none';
+    } catch (err) {
+        alert("開唔到相機呀，請檢查權限！");
+    }
+}
+
+function closeCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    document.getElementById('camera-overlay').style.display = 'none';
+}
+
+async function takePhoto() {
+    document.getElementById('camera-ui').style.display = 'none';
+    document.getElementById('loading-msg').style.display = 'block';
+    
+    const video = document.getElementById('camera-video');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    
+    await identifyWithGemini(base64Data);
+}
+
+async function identifyWithGemini(base64Image) {
+    let apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+        apiKey = prompt("請輸入 Gemini API Key (用於影像識別):");
+        if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
+        else { closeCamera(); return; }
+    }
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "What is the main physical object in this image? Reply with ONLY ONE English word in lowercase. No punctuation, no articles." },
+                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+                    ]
+                }]
+            })
+        });
+        
+        const data = await response.json();
+        if (data.error) throw data.error;
+        
+        const recognizedWord = data.candidates[0].content.parts[0].text.trim().toLowerCase();
+        closeCamera();
+        processWord(recognizedWord);
+        
+    } catch (err) {
+        alert("API 錯誤，請檢查 Key 或網絡連線。");
+        closeCamera();
+    }
+}
+
+function processWord(word) {
+    let exactMatchIdx = D.findIndex(d => d.w === word);
+    
+    if (exactMatchIdx !== -1) {
+        idx = exactMatchIdx;
+        speakAlert(`嘩！係 ${word} 呀！我哋一齊學寫！`);
+        // 切換到對應嘅分組 Tab
+        let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
+        if (groupIdx !== -1) selectGroup(groupIdx);
+        reset();
+    } else {
+        let firstLetter = word.charAt(0).toUpperCase();
+        let fallbackMatches = D.map((d, i) => d.l === firstLetter ? i : -1).filter(i => i !== -1);
+        
+        if (fallbackMatches.length > 0) {
+            idx = fallbackMatches[Math.floor(Math.random() * fallbackMatches.length)];
+            let fallbackWord = D[idx].w;
+            speakAlert(`呢個係 ${word}，我哋一齊學 ${firstLetter} for ${fallbackWord} 先啦！`);
+            let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
+            if (groupIdx !== -1) selectGroup(groupIdx);
+            reset();
+        } else {
+            speakAlert(`我認到係 ${word}，但我哋未學到呢個字母呀，試下影第二樣？`);
+        }
+    }
+}
+
+function speakAlert(text) {
+    document.getElementById('msg').innerText = text;
+    document.getElementById('msg').style.color = "#ff595e";
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-HK';
+    window.speechSynthesis.speak(utterance);
 }
