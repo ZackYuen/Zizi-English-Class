@@ -1,4 +1,4 @@
-// 相機擷取與 Gemini AI 圖像識別模組
+// 相機擷取與 Gemini AI 圖像識別模組 (Gemini 2.0 Flash 升級版)
 window.openCamera = async function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
@@ -42,12 +42,12 @@ async function identifyWithGemini(base64Image) {
     }
 
     const msg = document.getElementById('msg');
-    msg.innerText = "分析緊...";
+    msg.innerText = "用緊最新 Gemini 2.0 分析緊...";
 
     const proxyUrl = 'https://corsproxy.io/?'; 
     
-    // 🌟 核心修正：使用 v1beta 以及 gemini-1.5-flash-latest 確保一定搵到模型
-    const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`);
+    // 🌟 核心升級：轉用最新一代 gemini-2.0-flash 模型
+    const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`);
 
     try {
         const response = await fetch(proxyUrl + targetUrl, {
