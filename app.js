@@ -1,5 +1,5 @@
 // ==========================================
-// 孜孜學英文 - 完整控制檔案 (v2026.07.04 - 代理突破版)
+// 孜孜學英文 - 完整控制檔案 (v2026.07.04 - 壓縮除錯版)
 // ==========================================
 let currentMode = 'standard'; 
 let idx=0, isMagic=false, magicStart=0, fired=false;
@@ -263,6 +263,11 @@ window.magic = async function() {
     }, 600);
 };
 
+// ==========================================
+// 📷 探索魔鏡功能 (Camera & Gemini API)
+// ==========================================
+let stream = null;
+
 window.openCamera = async function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
@@ -286,11 +291,16 @@ window.closeCamera = function() {
 window.takePhoto = async function() {
     document.getElementById('camera-controls').style.display = 'none';
     document.getElementById('loading-msg').style.display = 'block';
+    
     const video = document.getElementById('camera-video');
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    // 壓縮解像度，減少資料傳送量
+    canvas.width = video.videoWidth / 2; 
+    canvas.height = video.videoHeight / 2;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // 將品質降到 0.2
+    const base64Data = canvas.toDataURL('image/jpeg', 0.2).split(',')[1];
     await identifyWithGemini(base64Data);
 };
 
@@ -305,16 +315,13 @@ async function identifyWithGemini(base64Image) {
     const msg = document.getElementById('msg');
     msg.innerText = "分析緊...";
 
-    // 🌟 透過 corsproxy.io 將請求發送到美國 Server 繞過地區限制
     const proxyUrl = 'https://corsproxy.io/?'; 
     const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`);
 
     try {
         const response = await fetch(proxyUrl + targetUrl, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json' 
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [
@@ -331,10 +338,7 @@ async function identifyWithGemini(base64Image) {
         }
         
         const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(`API Error: ${data.error.message}`);
-        }
+        if (data.error) throw new Error(`API Error: ${data.error.message}`);
         
         const recognizedWord = data.candidates[0].content.parts[0].text.trim().toLowerCase();
         window.closeCamera();
@@ -342,8 +346,8 @@ async function identifyWithGemini(base64Image) {
         
     } catch (err) {
         console.error("Gemini Error:", err);
-        msg.innerText = "❌ Debug: " + err.message;
-        msg.style.color = "#ff595e";
+        // 如果失敗，強制彈出 Alert
+        alert("❌ 發生錯誤，請截圖呢句畀我睇:\n" + err.message);
         
         document.getElementById('loading-msg').style.display = 'none';
         document.getElementById('camera-controls').style.display = 'flex';
