@@ -1,3 +1,4 @@
+let currentMode = 'standard'; // 'standard' or 'camera'
 let idx=0, isMagic=false, magicStart=0, fired=false;
 let strokeIdx=0, doneStrokes=[], curStroke=[], isDrawing=false;
 let currentWPs=[], nextWpIdx=0, currentPercent=0, lastCalc=0;
@@ -14,17 +15,40 @@ const imgCache = {};
 
 function preloadImage(url) {
     if(!url || imgCache[url]) return;
-    let img = new Image();
-    img.src = url;
-    imgCache[url] = img;
+    let img = new Image(); img.src = url; imgCache[url] = img;
 }
 
-function start() {
+// 啟動 App 並選擇模式
+function startApp(mode) {
     mAudio.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
     mAudio.play().catch(()=>{});
     aCtx = new (window.AudioContext || window.webkitAudioContext)();
     document.getElementById('start-overlay').style.display='none';
-    renderTabs(); selectGroup(0); requestAnimationFrame(loop);
+    
+    renderTabs();
+    setMode(mode);
+    requestAnimationFrame(loop);
+}
+
+// 切換模式 (Toggle)
+function toggleMode() {
+    let newMode = currentMode === 'standard' ? 'camera' : 'standard';
+    setMode(newMode);
+}
+
+// 設置模式 UI 狀態
+function setMode(mode) {
+    currentMode = mode;
+    if (mode === 'standard') {
+        document.getElementById('standard-ui').style.display = 'block';
+        document.getElementById('camera-ui-container').style.display = 'none';
+        selectGroup(0); // 預設跳去第 1 組
+    } else {
+        document.getElementById('standard-ui').style.display = 'none';
+        document.getElementById('camera-ui-container').style.display = 'block';
+        reset();
+        document.getElementById('msg').innerText = "撳下面個掣，影低身邊嘅嘢啦！";
+    }
 }
 
 function renderTabs() {
@@ -39,6 +63,7 @@ function renderTabs() {
 }
 
 function selectGroup(gIndex) {
+    if(currentMode !== 'standard') return;
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === gIndex));
     const kb = document.getElementById('kb'); kb.innerHTML = '';
     phonicsGroups[gIndex].letters.forEach(letter => {
@@ -243,10 +268,10 @@ async function magic() {
         document.getElementById('msg').style.color = "#ff595e"; return; 
     }
     let key = localStorage.getItem('google_tts_key');
-    if(!key) { key = prompt("請輸入 Google API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
+    if(!key) { key = prompt("請輸入 Google TTS API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
     
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
-    document.getElementById('msg').innerText = "聯絡緊 Google...✨";
+    document.getElementById('msg').innerText = "聯絡緊 Google TTS...✨";
     
     try {
         let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
@@ -260,7 +285,7 @@ async function magic() {
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('msg').innerText = "魔術成功！";
+        document.getElementById('msg').innerText = currentMode === 'camera' ? "魔術成功！再撳下面掣影過啦！" : "魔術成功！";
     }, 600);
 }
 
@@ -270,15 +295,21 @@ async function magic() {
 let stream = null;
 
 async function openCamera() {
+    // 檢查瀏覽器是否支援
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("你嘅瀏覽器唔支援相機！請確保你用緊 Safari / Chrome，並且網址係 https:// 或者 localhost。");
+        return;
+    }
+
     try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         const video = document.getElementById('camera-video');
         video.srcObject = stream;
         document.getElementById('camera-overlay').style.display = 'flex';
-        document.getElementById('camera-ui').style.display = 'flex';
+        document.getElementById('camera-controls').style.display = 'flex';
         document.getElementById('loading-msg').style.display = 'none';
     } catch (err) {
-        alert("開唔到相機呀，請檢查權限！");
+        alert("開唔到相機呀！原因：" + err.message);
     }
 }
 
@@ -290,7 +321,7 @@ function closeCamera() {
 }
 
 async function takePhoto() {
-    document.getElementById('camera-ui').style.display = 'none';
+    document.getElementById('camera-controls').style.display = 'none';
     document.getElementById('loading-msg').style.display = 'block';
     
     const video = document.getElementById('camera-video');
@@ -343,9 +374,10 @@ function processWord(word) {
     if (exactMatchIdx !== -1) {
         idx = exactMatchIdx;
         speakAlert(`嘩！係 ${word} 呀！我哋一齊學寫！`);
-        // 切換到對應嘅分組 Tab
-        let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
-        if (groupIdx !== -1) selectGroup(groupIdx);
+        if (currentMode === 'standard') {
+            let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
+            if (groupIdx !== -1) selectGroup(groupIdx);
+        }
         reset();
     } else {
         let firstLetter = word.charAt(0).toUpperCase();
@@ -355,8 +387,10 @@ function processWord(word) {
             idx = fallbackMatches[Math.floor(Math.random() * fallbackMatches.length)];
             let fallbackWord = D[idx].w;
             speakAlert(`呢個係 ${word}，我哋一齊學 ${firstLetter} for ${fallbackWord} 先啦！`);
-            let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
-            if (groupIdx !== -1) selectGroup(groupIdx);
+            if (currentMode === 'standard') {
+                let groupIdx = phonicsGroups.findIndex(g => g.letters.includes(D[idx].l));
+                if (groupIdx !== -1) selectGroup(groupIdx);
+            }
             reset();
         } else {
             speakAlert(`我認到係 ${word}，但我哋未學到呢個字母呀，試下影第二樣？`);
