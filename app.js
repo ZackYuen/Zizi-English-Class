@@ -1,29 +1,30 @@
 let idx=0, isMagic=false, magicStart=0, fired=false;
 let strokeIdx=0, doneStrokes=[], curStroke=[], isDrawing=false;
-
-// 防作弊與計分變數
 let currentWPs=[], nextWpIdx=0, currentPercent=0, lastCalc=0;
 let guideData=null, totalGuide=0;
 
 const cvs=document.getElementById('cvs'), ctx=cvs.getContext('2d', {willReadFrequently:true});
-
-// 背景隱藏畫布 (用來精準計算百分比)
 const offCvs=document.createElement('canvas'); offCvs.width=300; offCvs.height=300;
 const offCtx=offCvs.getContext('2d', {willReadFrequently:true});
 const userCvs=document.createElement('canvas'); userCvs.width=300; userCvs.height=300;
 const userCtx=userCvs.getContext('2d', {willReadFrequently:true});
 
 let aCtx, mAudio = new Audio();
+const imgCache = {}; // 圖片緩衝
+
+function preloadImage(url) {
+    if(!url || imgCache[url]) return;
+    let img = new Image();
+    img.src = url;
+    imgCache[url] = img;
+}
 
 function start() {
     mAudio.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
     mAudio.play().catch(()=>{});
     aCtx = new (window.AudioContext || window.webkitAudioContext)();
     document.getElementById('start-overlay').style.display='none';
-    
-    renderTabs();
-    selectGroup(0); 
-    requestAnimationFrame(loop);
+    renderTabs(); selectGroup(0); requestAnimationFrame(loop);
 }
 
 function renderTabs() {
@@ -37,22 +38,32 @@ function renderTabs() {
     });
 }
 
+// 修改：撳字母時，會喺 4 個對應字彙入面「隨機」抽一隻出嚟
 function selectGroup(gIndex) {
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === gIndex));
     const kb = document.getElementById('kb'); kb.innerHTML = '';
     phonicsGroups[gIndex].letters.forEach(letter => {
         const btn = document.createElement('div'); btn.className = 'key'; btn.innerText = letter;
-        btn.onclick = () => { idx = D.findIndex(d => d.l === letter); reset(); };
+        btn.onclick = () => {
+            let matches = D.map((d, i) => d.l === letter ? i : -1).filter(i => i !== -1);
+            idx = matches[Math.floor(Math.random() * matches.length)]; 
+            reset();
+        };
         kb.appendChild(btn);
     });
-    idx = D.findIndex(d => d.l === phonicsGroups[gIndex].letters[0]);
+    // 初始化抽第一個字母
+    let initMatches = D.map((d, i) => d.l === phonicsGroups[gIndex].letters[0] ? i : -1).filter(i => i !== -1);
+    idx = initMatches[Math.floor(Math.random() * initMatches.length)];
     reset();
 }
 
 function reset() {
     isMagic=false; strokeIdx=0; doneStrokes=[]; curStroke=[]; isDrawing=false; currentPercent=0;
     
-    // 預先畫好完美字體，用來計 100% 總像素
+    // 預先準備好對應嘅相片
+    let currentImgUrl = D[idx].p[D[idx].p.length-1].img;
+    if(currentImgUrl) preloadImage(currentImgUrl);
+    
     offCtx.clearRect(0,0,300,300);
     D[idx].st.forEach(st => drawLineToCtx(offCtx, st, '#000', false, 25));
     guideData = offCtx.getImageData(0,0,300,300).data;
@@ -64,7 +75,6 @@ function reset() {
     updateMsg();
 }
 
-// 建立密集打卡點 (防亂畫作弊)
 function initWaypoints() {
     if(strokeIdx >= D[idx].st.length) { currentWPs=[]; return; }
     let st = D[idx].st[strokeIdx];
@@ -72,7 +82,7 @@ function initWaypoints() {
     for(let i=0; i<st.length-2; i+=2) {
         let x1=st[i], y1=st[i+1], x2=st[i+2], y2=st[i+3];
         let dist = Math.hypot(x2-x1, y2-y1);
-        let steps = Math.max(1, Math.ceil(dist / 15)); // 每 15px 一個打卡點
+        let steps = Math.max(1, Math.ceil(dist / 15)); 
         for(let j=0; j<steps; j++) {
             currentWPs.push({x: x1+(x2-x1)*(j/steps), y: y1+(y2-y1)*(j/steps)});
         }
@@ -129,30 +139,24 @@ function getPointOnPath(pts, prog) {
 function loop() {
     ctx.clearRect(0,0,300,300);
     if(!isMagic) {
-        // 畫底稿與玩家線條
         D[idx].st.forEach(st => drawLineToCtx(ctx, st, '#e0e0e0', true, 25)); 
         doneStrokes.forEach(st => drawLineToCtx(ctx, st, '#ff9f1c', false, 25)); 
         drawLineToCtx(ctx, curStroke, '#ffca3a', false, 25); 
         
         if(strokeIdx < D[idx].st.length && currentWPs.length > 0) {
-            // 綠色點永遠停喺下一個要過嘅打卡點
             let targetWP = currentWPs[nextWpIdx];
             if(targetWP) {
                 ctx.beginPath(); ctx.arc(targetWP.x, targetWP.y, 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill();
             }
-            
-            // 流星完美滑行
             let pt = getPointOnPath(D[idx].st[strokeIdx], (Date.now()%2000)/2000);
             ctx.beginPath(); ctx.arc(pt.x, pt.y, 10, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
         }
 
-        // 實時計算百分比 (每 150ms 算一次，減輕手機負擔)
         if(Date.now() - lastCalc > 150 && totalGuide > 0 && strokeIdx < D[idx].st.length) {
             lastCalc = Date.now();
             userCtx.clearRect(0,0,300,300);
             doneStrokes.forEach(st => drawLineToCtx(userCtx, st, '#000', false, 25));
             drawLineToCtx(userCtx, curStroke, '#000', false, 25);
-            
             let drawData = userCtx.getImageData(0,0,300,300).data;
             let covered = 0;
             for(let i=3; i<guideData.length; i+=4) {
@@ -163,35 +167,45 @@ function loop() {
         }
 
     } else {
-        // 變魔術階段
         let dt = Date.now() - magicStart;
         let phase = D[idx].p.slice().reverse().find(p => dt >= p.t);
         if(phase) {
             ctx.textAlign='center'; ctx.textBaseline='middle';
             if(phase.type === 'letter') {
                 ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150);
+            } else if(phase.type === 'phonic') {
+                // 修改：Jolly Phonics 單字拆解，讀嗰個音變紅色
+                ctx.font='bold 70px Comic Sans MS';
+                let totalW = 0;
+                let widths = phase.letters.map(l => { let w=ctx.measureText(l).width; totalW+=w; return w; });
+                let startX = 150 - (totalW / 2); 
+                phase.letters.forEach((l, i) => {
+                    ctx.fillStyle = (i === phase.hlIdx) ? '#ff595e' : '#1d3557';
+                    ctx.fillText(l, startX + widths[i]/2, 150);
+                    startX += widths[i];
+                });
             } else if(phase.type === 'word') {
-                ctx.font='100px Arial'; ctx.fillText(D[idx].emoji, 150, 100);
-                ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.text, 150, 220);
+                // 修改：自動判定用相定用 Emoji
+                if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) {
+                    ctx.drawImage(imgCache[phase.img], 50, 20, 200, 200);
+                } else {
+                    ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100);
+                }
+                ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.text, 150, 260);
                 if(!fired) { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }}); fired=true; }
-            } else {
-                ctx.font='bold 70px Comic Sans MS'; ctx.fillStyle='#1982c4'; ctx.fillText(phase.text, 150, 150);
             }
         }
     }
     requestAnimationFrame(loop);
 }
 
-// 嚴格觸控系統
 cvs.addEventListener('pointerdown', e => {
     if(isMagic || strokeIdx >= D[idx].st.length) return;
     const r=cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
-    
     let target = currentWPs[nextWpIdx];
-    // 必須喺目標打卡點 60px 範圍內落筆
     if(target && Math.hypot(x-target.x, y-target.y) < 60) {
         cvs.setPointerCapture(e.pointerId); isDrawing=true;
-        if(curStroke.length === 0) curStroke.push(target.x, target.y); // 自動吸附起點
+        if(curStroke.length === 0) curStroke.push(target.x, target.y); 
         curStroke.push(x, y);
     }
 });
@@ -200,28 +214,19 @@ cvs.addEventListener('pointermove', e => {
     if(!isDrawing || isMagic) return;
     const r=cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
     curStroke.push(x, y);
-    
-    // 必須順序經過打卡點 (防亂畫跳關)
     while(nextWpIdx < currentWPs.length && Math.hypot(x - currentWPs[nextWpIdx].x, y - currentWPs[nextWpIdx].y) < 60) {
         nextWpIdx++;
     }
-    
-    // 當成功經過晒所有打卡點
     if(nextWpIdx >= currentWPs.length) {
         let endWp = currentWPs[currentWPs.length-1];
-        curStroke.push(endWp.x, endWp.y); // 自動吸附終點
-        
+        curStroke.push(endWp.x, endWp.y); 
         playSnd(880, 'sine', 0.2); 
         doneStrokes.push(curStroke); curStroke=[]; strokeIdx++; isDrawing=false;
         cvs.releasePointerCapture(e.pointerId);
-        
-        initWaypoints(); // 準備下一筆
-        
+        initWaypoints(); 
         if(strokeIdx >= D[idx].st.length) { 
-            currentPercent = 100; updateMsg(); // 強制滿分
-            setTimeout(()=>{
-                [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); 
-            }, 200);
+            currentPercent = 100; updateMsg();
+            setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200);
         }
     }
 });
