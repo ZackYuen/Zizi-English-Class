@@ -58,7 +58,7 @@ async function identifyWithAI(base64Image) {
             },
             body: JSON.stringify({
                 // 使用 Qwen 2 VL 72B 免費版
-                model: "qwen/qwen-2-vl-72b-instruct:free", 
+                model: "model: "nvidia/nemotron-nano-12b-v2-vl:free", 
                 messages: [{
                     role: "user",
                     content: [
