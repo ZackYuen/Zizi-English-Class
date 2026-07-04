@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<!-- 首頁模式選擇 -->
+<!-- 首頁模式選擇 (確保 z-index 最高，阻擋後面點擊) -->
 <div id="start-overlay">
     <h1 style="color:#ff595e; margin-bottom: 40px; font-size: 40px;">🌟 孜孜學英文</h1>
     <button class="btn mode-btn" style="background:#8ac926;" onclick="startApp('standard')">📚 標準學習模式</button>
@@ -26,7 +26,7 @@
     <div id="msg">由綠色點出發，畫到尾為止！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
-        <button class="btn btn-clear" onclick="reset()">🧽 抹走</button>
+        <button class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
         <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
     </div>
 </div>
@@ -52,6 +52,7 @@
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
+<!-- 確保 data.js 喺 app.js 前面載入 -->
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>
