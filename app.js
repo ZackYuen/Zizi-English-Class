@@ -1,5 +1,5 @@
 // ==========================================
-// 孜孜學英文 - 完整控制檔案 (v2026.07.04)
+// 孜孜學英文 - 完整控制檔案 (v2026.07.04 - 代理突破版)
 // ==========================================
 let currentMode = 'standard'; 
 let idx=0, isMagic=false, magicStart=0, fired=false;
@@ -247,7 +247,7 @@ window.magic = async function() {
     let key = localStorage.getItem('google_tts_key');
     if(!key) { key = prompt("請輸入 Google TTS API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
-    document.getElementById('msg').innerText = "聯絡緊 Google...";
+    document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
     try {
         let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
             method:'POST', body:JSON.stringify({input:{ssml:D[idx].ssml},voice:{languageCode:'en-US',name:'en-US-Wavenet-F'},audioConfig:{audioEncoding:'MP3'}})
@@ -259,7 +259,7 @@ window.magic = async function() {
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('msg').innerText = "成功！";
+        document.getElementById('msg').innerText = currentMode === 'camera' ? "魔術成功！再撳下面掣影過啦！" : "成功！";
     }, 600);
 };
 
@@ -297,22 +297,56 @@ window.takePhoto = async function() {
 async function identifyWithGemini(base64Image) {
     let apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) {
-        apiKey = prompt("請輸入 Gemini API Key:");
+        apiKey = prompt("請輸入 Gemini API Key (來自 Google AI Studio):");
         if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
         else { window.closeCamera(); return; }
     }
+
+    const msg = document.getElementById('msg');
+    msg.innerText = "分析緊...";
+
+    // 🌟 透過 corsproxy.io 將請求發送到美國 Server 繞過地區限制
+    const proxyUrl = 'https://corsproxy.io/?'; 
+    const targetUrl = encodeURIComponent(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`);
+
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(proxyUrl + targetUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: "What is the main physical object? One word only." }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
+            headers: { 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "What is the main physical object in this image? Reply with ONLY ONE English word in lowercase. No punctuation, no articles." },
+                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+                    ]
+                }]
+            })
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`HTTP ${response.status}: ${errorData.error?.message || '未知錯誤'}`);
+        }
+        
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-        processWord(data.candidates[0].content.parts[0].text.trim().toLowerCase());
-    } catch (err) {
-        document.getElementById('msg').innerText = "❌ AI Error: " + err.message;
+        
+        if (data.error) {
+            throw new Error(`API Error: ${data.error.message}`);
+        }
+        
+        const recognizedWord = data.candidates[0].content.parts[0].text.trim().toLowerCase();
         window.closeCamera();
+        processWord(recognizedWord);
+        
+    } catch (err) {
+        console.error("Gemini Error:", err);
+        msg.innerText = "❌ Debug: " + err.message;
+        msg.style.color = "#ff595e";
+        
+        document.getElementById('loading-msg').style.display = 'none';
+        document.getElementById('camera-controls').style.display = 'flex';
     }
 }
 
