@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (Camera & OpenRouter AI 模組)
+// 📷 探索魔鏡功能 (Camera & OpenRouter AI 模組 - Qwen 2 VL 免費版)
 // ==========================================
 window.openCamera = async function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -45,7 +45,7 @@ async function identifyWithAI(base64Image) {
     }
 
     const msg = document.getElementById('msg');
-    msg.innerText = "用緊最新免費 AI 分析緊...";
+    msg.innerText = "用緊 Qwen 2 VL 免費大腦分析緊...";
 
     try {
         // 直接呼叫 OpenRouter，無需 Proxy
@@ -56,8 +56,8 @@ async function identifyWithAI(base64Image) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // 使用 Meta Llama 3.2 90B 視覺模型 (完全免費)
-                model: "meta-llama/llama-3.2-90b-vision-instruct:free", 
+                // 🌟 已經換咗做 Qwen 2 VL 72B 免費版，避開 404 Error
+                model: "qwen/qwen-2-vl-72b-instruct:free", 
                 messages: [{
                     role: "user",
                     content: [
