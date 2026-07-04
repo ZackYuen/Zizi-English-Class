@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - Jolly Phonics 分組版</title>
+    <title>孜孜學英文 - 探索魔鏡版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
@@ -18,14 +18,26 @@
     <div class="controls">
         <button class="btn btn-clear" onclick="reset()">🧽 抹走</button>
         <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
+        <!-- 新增：探索魔鏡按鈕 -->
+        <button class="btn btn-camera" onclick="openCamera()">📷 影相</button>
     </div>
 </div>
 
 <!-- 分組標籤 (Tabs) -->
 <div id="group-tabs"></div>
 
-<!-- 字母鍵盤 (會根據分組動態更新) -->
+<!-- 字母鍵盤 -->
 <div id="kb"></div>
+
+<!-- 新增：相機預覽層 (預設隱藏) -->
+<div id="camera-overlay" style="display:none;">
+    <video id="camera-video" playsinline autoplay></video>
+    <div id="camera-ui">
+        <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
+        <button id="close-camera-btn" onclick="closeCamera()">❌ 取消</button>
+    </div>
+    <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
