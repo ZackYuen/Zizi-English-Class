@@ -1,4 +1,3 @@
-// Jolly Phonics 國際原音拼讀分組
 const phonicsGroups = [
     { name: '第 1 組 (SATIPN)', letters: ['S','A','T','I','P','N'] },
     { name: '第 2 組 (CKEHRMD)', letters: ['C','K','E','H','R','M','D'] },
@@ -6,7 +5,6 @@ const phonicsGroups = [
     { name: '第 4 組 (JVWXYZQ)', letters: ['J','V','W','X','Y','Z','Q'] }
 ];
 
-// 26 個英文字母嘅標準筆順坐標 (已修正 I, J, T 等筆順)
 const letterStrokes = {
     'A': [[150,40,90,220],[150,40,210,220],[115,145,185,145]],
     'B': [[100,40,100,220],[100,40,160,40,180,85,150,130,100,130],[100,130,170,130,190,175,160,220,100,220]],
@@ -36,10 +34,10 @@ const letterStrokes = {
     'Z': [[80,40,220,40,80,220,220,220]]
 };
 
-// 104 個字彙詞庫 (每個字母 4 個字)，動態配搭筆順與網絡圖片
+// 104 個精選具象字彙
 const rawD = [
     ['A','ant','🐜',[['æ','a'],['n','n'],['t','t']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcRTqZsTppo-y06ojxPqRMtZYTLTxYptA0k0o_RxZxEhuc-JYo0uOqHo5AQsKGl06czjVwr3m-l55-MrtQ8'],
-    ['A','axe','🪓',[['æ','a'],['k s','x']]],
+    ['A','axe','🪓',[['æ','a'],['k s','xe']]],
     ['A','arm','💪',[['ɑː','ar'],['m','m']]],
     ['A','art','🎨',[['ɑː','ar'],['t','t']]],
     ['B','bug','🐛',[['b','b'],['ʌ','u'],['g','g']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQhUl7djA2u2Toee8Y9oZNTf2rog3BP0zIJMeV8t1q_TI8HQDWp0ha_UKpKS9DvkZWkUEWM_0JwfAZF6SA'],
@@ -47,7 +45,7 @@ const rawD = [
     ['B','bed','🛏️',[['b','b'],['ɛ','e'],['d','d']]],
     ['B','bus','🚌',[['b','b'],['ʌ','u'],['s','s']]],
     ['C','cat','🐱',[['k','c'],['æ','a'],['t','t']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTY5Ow415BCLiENvY-XltdMQwjw-ZEHqV12EXDOIk22qkrOwpaaClbWXnGSWrQKfeizSqc7xJkpCLSXdB8'],
-    ['C','cup','☕',[['k','c'],['ʌ','u'],['p','p']]],
+    ['C','cup','🍵',[['k','c'],['ʌ','u'],['p','p']]],
     ['C','car','🚗',[['k','c'],['ɑː','ar']]],
     ['C','cap','🧢',[['k','c'],['æ','a'],['p','p']]],
     ['D','dog','🐶',[['d','d'],['ɒ','o'],['g','g']],'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQxNXQhyLhFHqkHzUr19pCRHNWVY05Fh373O0jxRxMjgWj_dfvVLVmLnUJLISk6AdTj1BmhVbHSHA0J5UQ'],
@@ -56,24 +54,24 @@ const rawD = [
     ['D','duck','🦆',[['d','d'],['ʌ','u'],['k','ck']]],
     ['E','egg','🥚',[['ɛ','e'],['g','gg']],'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQCE-9NVZEDxG3ekJDIPeyfYLCBWuatFqJyB6IO3nYGgIp9Q3DcTuI7vGeq0SNEka7c3pjrIbkHdmcXE0A'],
     ['E','elf','🧝',[['ɛ','e'],['l','l'],['f','f']]],
-    ['E','end','🛑',[['ɛ','e'],['n','n'],['d','d']]],
+    ['E','elk','🦌',[['ɛ','e'],['l','l'],['k','k']]],
     ['E','eat','🍽️',[['iː','ea'],['t','t']]],
     ['F','fox','🦊',[['f','f'],['ɒ','o'],['k s','x']],'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcR5UwT41ltm42FcjXeocyAyPdTt1AmUUd2yXos8fYkCU2FWDOt3GHX0zZA1OkTzeYicm3NW2H7Zme7PzS4'],
-    ['F','fan','🪭',[['f','f'],['æ','a'],['n','n']]],
+    ['F','fan','🎐',[['f','f'],['æ','a'],['n','n']]],
     ['F','fin','🦈',[['f','f'],['ɪ','i'],['n','n']]],
     ['F','fog','🌫️',[['f','f'],['ɒ','o'],['g','g']]],
     ['G','gum','🍬',[['g','g'],['ʌ','u'],['m','m']],'https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSttm5fKjDTpwXf6ZPUelc9pt2UzOjgySXzuYRvqYi13HT8M5zpBK_AtpHHGV_AnshxUO5v3TkYvwDTtYc'],
-    ['G','gap','↔️',[['g','g'],['æ','a'],['p','p']]],
-    ['G','get','🤲',[['g','g'],['ɛ','e'],['t','t']]],
+    ['G','gas','⛽',[['g','g'],['æ','a'],['s','s']]],
+    ['G','gift','🎁',[['g','g'],['ɪ','i'],['f','f'],['t','t']]],
     ['G','goat','🐐',[['g','g'],['oʊ','oa'],['t','t']]],
     ['H','hat','🎩',[['h','h'],['æ','a'],['t','t']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcRA9ZgNqzvABD4as-ZwcdLsr6d86yWaIQmFbkm1_Rq8vry8rR0yDtxxC5sj0FboMzsJDxm8hFFd-b3BPJw'],
     ['H','hen','🐔',[['h','h'],['ɛ','e'],['n','n']]],
     ['H','hit','🥊',[['h','h'],['ɪ','i'],['t','t']]],
     ['H','hop','🦘',[['h','h'],['ɒ','o'],['p','p']]],
     ['I','ink','✒️',[['ɪ','i'],['ŋ','n'],['k','k']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcTEXL-Ev2FmxrLxkIaoOu0fmjtQLhnbSzQFh1gLLChUBoy8VfoLi7YuYUNeOMqT7qPqT7Hvqd4fICCSMbA'],
-    ['I','in','📥',[['ɪ','i'],['n','n']]],
-    ['I','it','📌',[['ɪ','i'],['t','t']]],
+    ['I','ice','🧊',[['aɪ','i'],['s','ce']]],
     ['I','ill','🤒',[['ɪ','i'],['l','ll']]],
+    ['I','itch','🦟',[['ɪ','i'],['tʃ','tch']]],
     ['J','jam','🍯',[['dʒ','j'],['æ','a'],['m','m']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTDM_lMgpzKbhrj_NAn55jRkq70QgcdVMGth6vRoZDI5iv1H9q5lbkWgQ-55pheVXS_MK0TKDWvRqntR9Y'],
     ['J','jet','✈️',[['dʒ','j'],['ɛ','e'],['t','t']]],
     ['J','jog','🏃',[['dʒ','j'],['ɒ','o'],['g','g']]],
@@ -93,11 +91,11 @@ const rawD = [
     ['N','net','🥅',[['n','n'],['ɛ','e'],['t','t']],'https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcQEwVNmghxotUlk7i1K-tn6PKsPDstqTyfEvNtikmeGuy6OzKcBMHjD3B6Qblf9SgNqFD3inN6mhkiBszM'],
     ['N','nut','🥜',[['n','n'],['ʌ','u'],['t','t']]],
     ['N','nap','😴',[['n','n'],['æ','a'],['p','p']]],
-    ['N','nod','😌',[['n','n'],['ɒ','o'],['d','d']]],
+    ['N','nail','💅',[['n','n'],['eɪ','ai'],['l','l']]],
     ['O','ox','🐂',[['ɒ','o'],['k s','x']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcThnW2IKxgUaso2iv-eUTnXj0AbxAgZczA1dZD6uOHfbHyZ6yg7atG3GERxvwtEcsZcOVpJChohv-AcOcM'],
     ['O','owl','🦉',[['aʊ','ow'],['l','l']]],
-    ['O','on','🔛',[['ɒ','o'],['n','n']]],
-    ['O','off','📴',[['ɒ','o'],['f','ff']]],
+    ['O','oil','🛢️',[['ɔɪ','oi'],['l','l']]],
+    ['O','oak','🌳',[['oʊ','oa'],['k','k']]],
     ['P','pig','🐷',[['p','p'],['ɪ','i'],['g','g']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcQKeXVO6_P7iX_M8qKtcMiE_6tX-jp5F1DMc8OS4t9tagZiAlKCTwpzbzWLNhM5VI-EDr_WYzEnWuvi6jI'],
     ['P','pan','🍳',[['p','p'],['æ','a'],['n','n']]],
     ['P','pot','🍲',[['p','p'],['ɒ','o'],['t','t']]],
@@ -105,23 +103,23 @@ const rawD = [
     ['Q','queen','👑',[['k w','qu'],['iː','ee'],['n','n']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS7OekNWBK0RgpM6fRVHR9i8OJiqpUkKAk1zv_UpAQovoGyeWQBIejBjBxm2Xw-Tf2xno4I04y6BeJH3I0'],
     ['Q','quack','🦆',[['k w','qu'],['æ','a'],['k','ck']]],
     ['Q','quiz','❓',[['k w','qu'],['ɪ','i'],['z','z']]],
-    ['Q','quit','🚪',[['k w','qu'],['ɪ','i'],['t','t']]],
+    ['Q','quilt','🛌',[['k w','qu'],['ɪ','i'],['l','l'],['t','t']]],
     ['R','rat','🐀',[['r','r'],['æ','a'],['t','t']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcQu0L6o30Effc2t3NFJlldZ9o_V2UqrhtX_cWGeg5bAuQj-CWXYMG8Y1lb8XuqxIE-gG2tGiXhLIDdS2Bw'],
     ['R','red','🔴',[['r','r'],['ɛ','e'],['d','d']]],
     ['R','run','🏃',[['r','r'],['ʌ','u'],['n','n']]],
-    ['R','rug','🔲',[['r','r'],['ʌ','u'],['g','g']]],
+    ['R','rug','🧶',[['r','r'],['ʌ','u'],['g','g']]],
     ['S','sun','☀️',[['s','s'],['ʌ','u'],['n','n']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQNyhYS-HfjJZP5MiJql07BHXUYre7kbwUIPvzDu1dRTLjXFgFeIZ6G4fU_ML20vtHByLfgXpjZSXvTa0s'],
     ['S','sad','😢',[['s','s'],['æ','a'],['d','d']]],
     ['S','sit','🪑',[['s','s'],['ɪ','i'],['t','t']]],
     ['S','six','6️⃣',[['s','s'],['ɪ','i'],['k s','x']]],
-    ['T','top','🔝',[['t','t'],['ɒ','o'],['p','p']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTtTqmU0cQ3iSCNtScTIVYDjoHxdHvz8poR5xKjzQQo-L3zoEYlZEUF6yM-HL0Dt047H-BnUFwK2wdRQ4k'],
+    ['T','toy','🧸',[['t','t'],['ɔɪ','oy']]],
     ['T','ten','🔟',[['t','t'],['ɛ','e'],['n','n']]],
     ['T','tap','🚰',[['t','t'],['æ','a'],['p','p']]],
     ['T','tub','🛁',[['t','t'],['ʌ','u'],['b','b']]],
     ['U','up','⬆️',[['ʌ','u'],['p','p']]],
-    ['U','us','🫂',[['ʌ','u'],['s','s']]],
     ['U','urn','🏺',[['ɜː','ur'],['n','n']]],
     ['U','ufo','🛸',[['j uː','u'],['ɛ f','f'],['oʊ','o']]],
+    ['U','uncle','🧔',[['ʌ','u'],['ŋ','n'],['k','c'],['əl','le']]],
     ['V','van','🚐',[['v','v'],['æ','a'],['n','n']],'https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcQ3ABZcWjPe2pk3Tv-MtkKkgswf96awAFM6XmFefBZgLK_iVgyASs3682A1K-0RKsidewn13s0bDxrUusM'],
     ['V','vet','🩺',[['v','v'],['ɛ','e'],['t','t']]],
     ['V','vat','🛢️',[['v','v'],['æ','a'],['t','t']]],
@@ -136,12 +134,12 @@ const rawD = [
     ['X','wax','🕯️',[['w','w'],['æ','a'],['k s','x']]],
     ['Y','yam','🍠',[['j','y'],['æ','a'],['m','m']],'https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcTvn_X48yY-erqiLzYg1zUYU_-6R24CdFaVo6iq6cKECcJ-necfuSuIeFFIeGBsO6BFG5HH8Ot2FjX0fYU'],
     ['Y','yak','🐂',[['j','y'],['æ','a'],['k','k']]],
-    ['Y','yes','✅',[['j','y'],['ɛ','e'],['s','s']]],
     ['Y','yell','🗣️',[['j','y'],['ɛ','e'],['l','ll']]],
+    ['Y','yolk','🍳',[['j','y'],['oʊ','ol'],['k','k']]],
     ['Z','zip','🤐',[['z','z'],['ɪ','i'],['p','p']],'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcQzR1g7zbgxsmYBH_wQxH1Kbg1xop5bjoFvZDA_mLrJ8ND3hi7sq1nxmEjG3c7fKMtDk2tIGemgaZAYSUo'],
     ['Z','zoo','🦓',[['z','z'],['uː','oo']]],
     ['Z','zag','⚡',[['z','z'],['æ','a'],['g','g']]],
-    ['Z','zen','🧘',[['z','z'],['ɛ','e'],['n','n']]]
+    ['Z','zero','0️⃣',[['z','z'],['ɪə','e'],['r','r'],['oʊ','o']]]
 ];
 
 const D = rawD.map(r => {
@@ -149,13 +147,12 @@ const D = rawD.map(r => {
     let phases = [{t:0, type:'letter', text: r[0]}];
     let curT = 1500;
     
-    // 抽離單字入面嘅各個 Consonant / Vowel
-    let graphemes = r[3].map(ph => ph[1]); 
+    // 綁定音標 (IPA) 同 英文字母 (Grapheme)
+    let phonicsData = r[3].map(ph => ({ ipa: `/${ph[0]}/`, letter: ph[1] }));
     
     r[3].forEach((ph, index) => {
         ssml += `<phoneme alphabet="ipa" ph="${ph[0]}">${ph[1]}</phoneme><break time="1s"/>`;
-        // 將拆出嚟嘅字母陣列 (graphemes) 同埋而家讀緊邊個音 (hlIdx) 放落時間軸
-        phases.push({t: curT, type:'phonic', letters: graphemes, hlIdx: index});
+        phases.push({t: curT, type:'phonic', pData: phonicsData, hlIdx: index});
         curT += 1300;
     });
     ssml += `${r[1]}.</speak>`;
