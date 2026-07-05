@@ -1,10 +1,11 @@
 // ==========================================
-// 📷 探索魔鏡功能 (完整版：5歲程度設定 + 防卡死 + 全局語音)
+// 📷 探索魔鏡功能 (終極版：加入手動圈選 + 自動裁剪 + 5歲設定)
 // ==========================================
 
 window.lastCapturedImg = null;
 window.uiAudio = new Audio();
 window.mAudio = window.mAudio || new Audio(); 
+window.fullImgCanvas = null; // 儲存原圖用嚟 Crop
 
 window.stopAllAudio = function() {
     if (window.uiAudio) { window.uiAudio.pause(); window.uiAudio.currentTime = 0; }
@@ -56,6 +57,114 @@ if (!document.getElementById('thinking-style')) {
     document.head.appendChild(style);
 }
 
+// 初始化圈選 UI
+function initCropUI() {
+    let video = document.getElementById('camera-video');
+    let container = document.getElementById('preview-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'preview-container';
+        container.style.position = 'relative';
+        container.style.margin = '0 auto';
+        container.style.display = 'none';
+        container.style.borderRadius = '10px';
+        container.style.overflow = 'hidden';
+        
+        let img = document.createElement('img');
+        img.id = 'photo-preview';
+        img.style.position = 'absolute';
+        img.style.top = '0'; img.style.left = '0';
+        img.style.width = '100%'; img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        
+        let drawCanvas = document.createElement('canvas');
+        drawCanvas.id = 'draw-layer';
+        drawCanvas.style.position = 'absolute';
+        drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
+        drawCanvas.style.zIndex = '10';
+        drawCanvas.style.touchAction = 'none'; 
+        
+        container.appendChild(img);
+        container.appendChild(drawCanvas);
+        video.parentNode.insertBefore(container, video.nextSibling);
+        
+        setupDrawingEvents(drawCanvas);
+    }
+}
+
+function setupDrawingEvents(canvas) {
+    window.cropPoints = [];
+    window.isCropping = false;
+    const ctx = canvas.getContext('2d');
+
+    canvas.addEventListener('pointerdown', e => {
+        window.isCropping = true;
+        window.cropPoints = [{x: e.offsetX, y: e.offsetY}];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    });
+
+    canvas.addEventListener('pointermove', e => {
+        if (!window.isCropping) return;
+        window.cropPoints.push({x: e.offsetX, y: e.offsetY});
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.strokeStyle = '#ffca3a'; // 鮮黃色畫筆
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    });
+
+    canvas.addEventListener('pointerup', async e => {
+        if (!window.isCropping) return;
+        window.isCropping = false;
+        
+        let xs = window.cropPoints.map(p => p.x);
+        let ys = window.cropPoints.map(p => p.y);
+        let minX = Math.min(...xs), maxX = Math.max(...xs);
+        let minY = Math.min(...ys), maxY = Math.max(...ys);
+
+        // 如果圈得太細（當作唔小心掂到）
+        if (maxX - minX < 30 || maxY - minY < 30) {
+            window.playCantoneseTTS("圈大少少啦，再畫過！");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        canvas.style.pointerEvents = 'none'; // 鎖住畫布
+        
+        // 🌟 進行智能裁切 (Auto-Crop)
+        const scaleX = window.fullImgCanvas.width / canvas.width;
+        const scaleY = window.fullImgCanvas.height / canvas.height;
+        
+        let srcX = minX * scaleX;
+        let srcY = minY * scaleY;
+        let srcW = (maxX - minX) * scaleX;
+        let srcH = (maxY - minY) * scaleY;
+
+        // 預留 20% 邊界，等 AI 睇到少少環境脈絡
+        let padX = srcW * 0.2, padY = srcH * 0.2;
+        srcX = Math.max(0, srcX - padX);
+        srcY = Math.max(0, srcY - padY);
+        srcW = Math.min(window.fullImgCanvas.width - srcX, srcW + padX * 2);
+        srcH = Math.min(window.fullImgCanvas.height - srcY, srcH + padY * 2);
+
+        const cropCvs = document.createElement('canvas');
+        cropCvs.width = srcW; cropCvs.height = srcH;
+        cropCvs.getContext('2d').drawImage(window.fullImgCanvas, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+        
+        let croppedBase64 = cropCvs.toDataURL('image/jpeg', 0.6).split(',')[1];
+        
+        // 進入 AI 分析階段
+        document.getElementById('loading-msg').style.display = 'block';
+        window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
+        document.getElementById('loading-msg').innerHTML = `<span class="thinking-anim">📸</span> 傳送緊去大腦...`;
+        
+        await identifyWithAI(croppedBase64);
+    });
+}
+
 window.openCamera = async function() {
     window.stopAllAudio(); 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -67,6 +176,7 @@ window.openCamera = async function() {
             window.stream.getTracks().forEach(track => track.stop());
             window.stream = null;
         }
+        initCropUI();
 
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         window.stream = stream;
@@ -76,20 +186,7 @@ window.openCamera = async function() {
         video.play().catch(e => console.error("Video play error:", e));
         
         video.style.display = 'block';
-
-        let preview = document.getElementById('photo-preview');
-        if (!preview) {
-            preview = document.createElement('img');
-            preview.id = 'photo-preview';
-            preview.style.display = 'none';
-            preview.style.width = '100%';
-            preview.style.maxHeight = '55vh'; 
-            preview.style.objectFit = 'contain'; 
-            preview.style.borderRadius = '10px';
-            video.parentNode.insertBefore(preview, video.nextSibling);
-        }
-        preview.style.display = 'none';
-
+        document.getElementById('preview-container').style.display = 'none';
         document.getElementById('camera-overlay').style.display = 'flex';
         document.getElementById('camera-controls').style.display = 'flex';
         document.getElementById('loading-msg').style.display = 'none';
@@ -104,9 +201,7 @@ window.closeCamera = function() {
         window.stream.getTracks().forEach(track => track.stop());
         window.stream = null;
     }
-    const video = document.getElementById('camera-video');
-    if (video) video.srcObject = null;
-
+    if (document.getElementById('camera-video')) document.getElementById('camera-video').srcObject = null;
     document.getElementById('camera-overlay').style.display = 'none';
 };
 
@@ -120,28 +215,42 @@ window.takePhoto = async function() {
     }
 
     document.getElementById('camera-controls').style.display = 'none';
+    
+    // 計算顯示比例 (防止變形)
+    let vW = video.videoWidth, vH = video.videoHeight;
+    let maxH = window.innerHeight * 0.55, maxW = window.innerWidth * 0.9;
+    let ratio = Math.min(maxW / vW, maxH / vH);
+    let finalW = vW * ratio, finalH = vH * ratio;
+
+    let container = document.getElementById('preview-container');
+    container.style.width = finalW + 'px';
+    container.style.height = finalH + 'px';
+    container.style.display = 'block';
+    
+    // 儲存高清原圖
+    window.fullImgCanvas = document.createElement('canvas');
+    window.fullImgCanvas.width = vW; window.fullImgCanvas.height = vH;
+    window.fullImgCanvas.getContext('2d').drawImage(video, 0, 0, vW, vH);
+    
+    window.lastCapturedImg = window.fullImgCanvas.toDataURL('image/jpeg', 0.8);
+    document.getElementById('photo-preview').src = window.lastCapturedImg;
+    
+    // 預備畫板
+    let drawCanvas = document.getElementById('draw-layer');
+    drawCanvas.width = finalW; drawCanvas.height = finalH;
+    drawCanvas.style.pointerEvents = 'auto'; // 解鎖畫布
+    drawCanvas.getContext('2d').clearRect(0, 0, finalW, finalH);
+    
+    video.style.display = 'none';
+    
+    // 🌟 指示孜孜畫圈
+    window.playCantoneseTTS("影好喇！孜孜，用手指圈出你想知嘅嘢啦！");
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
-    
-    window.playCantoneseTTS("收到！俾少少時間我諗下呢個係咩先。");
-    loadingMsg.innerHTML = `<span class="thinking-anim">📸</span> Freeze 緊畫面...`;
-
-    const preview = document.getElementById('photo-preview');
-    const canvas = document.createElement('canvas');
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    window.lastCapturedImg = canvas.toDataURL('image/jpeg', 0.8);
-    preview.src = window.lastCapturedImg;
-    preview.style.display = 'block';
-    video.style.display = 'none';
-
-    await identifyWithAI(canvas.toDataURL('image/jpeg', 0.4).split(',')[1]);
+    loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
 };
 
-async function identifyWithAI(base64Image) {
+async function identifyWithAI(croppedBase64) {
     const models = [
         "google/gemini-1.5-flash:free",
         "qwen/qwen-2-vl-7b-instruct:free",
@@ -151,7 +260,7 @@ async function identifyWithAI(base64Image) {
 
     let apiKey = localStorage.getItem('openrouter_api_key');
     if (!apiKey) {
-        apiKey = prompt("請輸入 OpenRouter API Key (sk-or-v1-...):");
+        apiKey = prompt("請輸入 OpenRouter API Key:");
         if(apiKey) localStorage.setItem('openrouter_api_key', apiKey);
         else { window.closeCamera(); return; }
     }
@@ -171,8 +280,9 @@ async function identifyWithAI(base64Image) {
                     messages: [{
                         role: "user",
                         content: [
-                            { type: "text", text: "You are a kindergarten teacher. Look at the main object in the center of this image. What is it? Name it using the everyday English vocabulary suitable for a 5-year-old child to learn (e.g., 'leaf', 'flower', 'tree', 'remote control', 'plant'). MAXIMUM 2 WORDS. Reply with the noun ONLY. No sentences, no articles (a/an/the), no punctuation. Lowercase only." },
-                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+                            // 因為已經 Crop 咗，直接問呢個係咩就得
+                            { type: "text", text: "You are a kindergarten teacher. Look at this cropped image. What is the main object shown? Name it using the everyday English vocabulary suitable for a 5-year-old child to learn (e.g., 'leaf', 'flower', 'tree', 'shoe'). MAXIMUM 2 WORDS. Reply with the noun ONLY. No sentences, no articles. Lowercase only." },
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${croppedBase64}` } }
                         ]
                     }]
                 }),
@@ -185,15 +295,11 @@ async function identifyWithAI(base64Image) {
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 let rawWord = data.choices[0].message.content.trim().toLowerCase();
-                
                 rawWord = rawWord.replace(/^(this is a|it is a|i see a|the image shows|here is a|a |an |the )/g, '').trim();
-                
                 let word = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
                 
                 let wordsArray = word.split(' ');
-                if (wordsArray.length > 2) {
-                    word = wordsArray.slice(-2).join(' '); 
-                }
+                if (wordsArray.length > 2) { word = wordsArray.slice(-2).join(' '); }
 
                 if (word.length > 0) {
                     document.getElementById('loading-msg').innerText = `✨ 搵到喇！係 ${word}！`;
@@ -210,11 +316,11 @@ async function identifyWithAI(base64Image) {
     }
 
     window.playCantoneseTTS("哎呀，伺服器太忙喇，不如再影過啦。");
-    document.getElementById('loading-msg').innerText = "❌ 所有免費伺服器都忙緊，請稍後再試。";
+    document.getElementById('loading-msg').innerText = "❌ 伺服器忙緊，請重試。";
     setTimeout(() => {
         document.getElementById('loading-msg').style.display = 'none';
         document.getElementById('camera-controls').style.display = 'flex';
-        document.getElementById('photo-preview').style.display = 'none';
+        document.getElementById('preview-container').style.display = 'none';
         document.getElementById('camera-video').style.display = 'block';
     }, 3000);
 }
@@ -245,6 +351,7 @@ window.processWord = function(word) {
             }
         });
         
+        // 🌟 保留原圖顯示喺結果度，唔係 Crop 完嗰忽，等畫面靚啲
         dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
         
         D.push({
