@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染與描寫演算法模組 (加入動態長字縮放功能)
+// 🎨 畫布渲染與描寫演算法模組 (加入觸控語音中斷機制)
 // ==========================================
 
 window.resetCanvas = function() {
@@ -40,6 +40,8 @@ window.updateMsg = function() {
     } else {
         msg.innerText = `完成度: 100% - 好叻！撳 ✨ 變魔術啦！`;
         msg.style.color = "#06d6a0";
+        // 如果想畫完即刻讚佢，可以解開下行註解：
+        // if(window.playCantoneseTTS) window.playCantoneseTTS("畫得好靚！快啲㩒魔術掣啦！");
     }
 }
 
@@ -113,13 +115,12 @@ window.loop = function() {
                     ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150); 
                 }
                 else if(phase.type === 'phonic') {
-                    // 🌟 修正：動態計算 Phonics 排版闊度，太長自動縮細
                     let baseFSize = 65;
                     let ipaFSize = 26;
                     ctx.font = `bold ${baseFSize}px Comic Sans MS`;
                     
                     let widths = phase.pData.map(pd => {
-                        if (pd.letter === ' ') return 15; // 空格闊度
+                        if (pd.letter === ' ') return 15; 
                         ctx.font = `bold ${baseFSize}px Comic Sans MS`;
                         return ctx.measureText(pd.letter).width + 10;
                     });
@@ -154,7 +155,6 @@ window.loop = function() {
                     }
                     else { ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100); }
                     
-                    // 🌟 修正：字太長自動縮細 Font Size (最多縮到 20px)
                     let fSize = 50;
                     ctx.font = `bold ${fSize}px Comic Sans MS`;
                     while(ctx.measureText(phase.text).width > 280 && fSize > 20) {
@@ -174,6 +174,7 @@ window.loop = function() {
 
 if(cvs) {
     cvs.addEventListener('pointerdown', e => {
+        if(window.stopAllAudio) window.stopAllAudio(); // 🌟 孜孜一落筆，即刻收聲
         if(isMagic || strokeIdx >= D[idx].st.length) return;
         const r=cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
         let target = currentWPs[nextWpIdx];
@@ -205,6 +206,9 @@ if(cvs) {
 
 window.magic = async function() {
     if(strokeIdx < D[idx].st.length) { document.getElementById('msg').innerText = "未畫完喎！"; document.getElementById('msg').style.color = "#ff595e"; return; }
+    
+    if(window.stopAllAudio) window.stopAllAudio(); // 🌟 變魔術前中斷所有其他指示音
+    
     let key = localStorage.getItem('google_tts_key');
     if(!key) { key = prompt("請輸入 Google TTS API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
@@ -215,12 +219,13 @@ window.magic = async function() {
         });
         let data = await res.json();
         if(data.error) throw data.error;
-        mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-        mAudio.playbackRate = 0.75; 
+        window.mAudio = window.mAudio || new Audio();
+        window.mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
+        window.mAudio.playbackRate = 0.75; 
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
     setTimeout(() => {
-        isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
+        isMagic=true; fired=false; magicStart=Date.now(); window.mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('msg').innerText = currentMode === 'camera' ? "魔術成功！再撳下面掣影過啦！" : "成功！";
+        document.getElementById('msg').innerText = typeof currentMode !== 'undefined' && currentMode === 'camera' ? "魔術成功！再撳下面掣影過啦！" : "成功！";
     }, 600);
 };
