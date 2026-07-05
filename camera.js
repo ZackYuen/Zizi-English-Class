@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (完整版：複雜場景修復 + 防卡死 + 全局語音)
+// 📷 探索魔鏡功能 (完整版：5歲程度設定 + 防卡死 + 全局語音)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -63,7 +63,6 @@ window.openCamera = async function() {
         return;
     }
     try {
-        // 確保舊 Stream 徹底關閉
         if (window.stream) {
             window.stream.getTracks().forEach(track => track.stop());
             window.stream = null;
@@ -139,7 +138,6 @@ window.takePhoto = async function() {
     preview.style.display = 'block';
     video.style.display = 'none';
 
-    // 提高畫質到 0.4，等 AI 睇清楚複雜背景
     await identifyWithAI(canvas.toDataURL('image/jpeg', 0.4).split(',')[1]);
 };
 
@@ -163,7 +161,7 @@ async function identifyWithAI(base64Image) {
         let timeoutId; 
         try {
             const controller = new AbortController();
-            timeoutId = setTimeout(() => controller.abort(), 20000);
+            timeoutId = setTimeout(() => controller.abort(), 15000);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -173,8 +171,7 @@ async function identifyWithAI(base64Image) {
                     messages: [{
                         role: "user",
                         content: [
-                            // 死命令：睇正中間，最多兩個字，唔准作句
-                            { type: "text", text: "Look at the EXACT CENTER of this image. What is the main object there? Reply with ONLY ONE simple English noun or short phrase (MAXIMUM 2 WORDS). Do not write sentences. No punctuation. Lowercase only." },
+                            { type: "text", text: "You are a kindergarten teacher. Look at the main object in the center of this image. What is it? Name it using the everyday English vocabulary suitable for a 5-year-old child to learn (e.g., 'leaf', 'flower', 'tree', 'remote control', 'plant'). MAXIMUM 2 WORDS. Reply with the noun ONLY. No sentences, no articles (a/an/the), no punctuation. Lowercase only." },
                             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                         ]
                     }]
@@ -187,11 +184,14 @@ async function identifyWithAI(base64Image) {
 
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                let word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
+                let rawWord = data.choices[0].message.content.trim().toLowerCase();
                 
-                // 強制攔截：如果 AI 唔聽話講多過三個字，只抽最後兩個字
+                rawWord = rawWord.replace(/^(this is a|it is a|i see a|the image shows|here is a|a |an |the )/g, '').trim();
+                
+                let word = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
+                
                 let wordsArray = word.split(' ');
-                if (wordsArray.length > 3) {
+                if (wordsArray.length > 2) {
                     word = wordsArray.slice(-2).join(' '); 
                 }
 
