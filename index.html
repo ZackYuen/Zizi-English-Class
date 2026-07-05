@@ -13,7 +13,7 @@
             margin: 0;
             padding: 0;
             text-align: center;
-            touch-action: manipulation; /* 防止雙擊放大 */
+            touch-action: manipulation; 
         }
         
         h1 { color: #1d3557; margin-top: 30px; font-size: 28px; }
@@ -84,7 +84,7 @@
         <button class="menu-btn btn-cam" onclick="switchMode('camera')">📸 探索魔鏡</button>
     </div>
 
-    <!-- 2. 畫布區域 (結果頁面) -->
+    <!-- 2. 畫布區域 -->
     <div id="canvas-wrapper">
         <div id="instruction-text">一齊跟住寫啦！</div>
         <canvas id="cvs" width="300" height="300"></canvas>
@@ -110,52 +110,24 @@
         </div>
     </div>
 
-    <!-- 系統核心變數 (預留畀 canvas.js 使用) -->
     <script>
-        // 確保你原有嘅英文字母筆順數據 (D array) 喺度定義或由外部讀取
-        window.D = window.D || []; 
-        window.idx = 0;
+        // ==========================================
+        // 🌟 乾淨版核心切換邏輯 (唔會同 canvas.js 撞車)
+        // ==========================================
         window.currentMode = 'home';
-        
-        // Audio 初始化
-        window.mAudio = window.mAudio || new Audio();
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        window.aCtx = new AudioContext();
 
-        // 設置 Canvas
-        const cvs = document.getElementById('cvs');
-        window.ctx = cvs.getContext('2d');
-        const offCvs = document.createElement('canvas'); offCvs.width = 300; offCvs.height = 300;
-        window.offCtx = offCvs.getContext('2d');
-        const userCvs = document.createElement('canvas'); userCvs.width = 300; userCvs.height = 300;
-        window.userCtx = userCvs.getContext('2d');
-
-        // 狀態變數
-        window.isMagic = false; window.strokeIdx = 0; window.doneStrokes = []; window.curStroke = []; 
-        window.isDrawing = false; window.currentPercent = 0; window.currentWPs = []; window.nextWpIdx = 0;
-        window.totalGuide = 0; window.guideData = null; window.lastCalc = Date.now();
-        window.magicStart = 0; window.fired = false; window.imgCache = {};
-
-        window.preloadImage = function(url) {
-            if(!window.imgCache[url]) {
-                let img = new Image(); img.src = url; window.imgCache[url] = img;
-            }
-        };
-
-        // ==========================================
-        // 🌟 核心切換邏輯 (解決你要「直入相機」嘅需求)
-        // ==========================================
         function switchMode(mode) {
             window.currentMode = mode;
             document.getElementById('main-menu').style.display = 'none';
             
-            // 啟動 AudioContext (iOS 必須喺使用者互動時啟動)
-            if (window.aCtx.state === 'suspended') window.aCtx.resume();
+            // 如果 aCtx (聲音) 已經喺 canvas.js 初始化咗，喺度喚醒佢 (解決 iOS 冇聲問題)
+            if (window.aCtx && window.aCtx.state === 'suspended') {
+                window.aCtx.resume();
+            }
             
             if (mode === 'camera') {
-                // 🌟 揀相機模式：隱藏畫布，直接觸發開相機！
                 document.getElementById('canvas-wrapper').style.display = 'none';
-                document.getElementById('btn-re-cam').style.display = 'block'; // 顯示「再影」按鈕
+                document.getElementById('btn-re-cam').style.display = 'block';
                 document.getElementById('instruction-text').innerText = "睇下 AI 認唔認得！";
                 
                 if(typeof window.openCamera === 'function') {
@@ -164,7 +136,6 @@
                     alert("載入相機模組失敗，請檢查 camera.js");
                 }
             } else if (mode === 'draw') {
-                // 🌟 揀畫畫模式：只顯示畫布，隱藏相機專用按鈕
                 document.getElementById('canvas-wrapper').style.display = 'block';
                 document.getElementById('btn-re-cam').style.display = 'none';
                 document.getElementById('instruction-text').innerText = "一齊畫畫學英文字母啦！";
@@ -172,7 +143,6 @@
             }
         }
 
-        // 專門畀結果頁面「影過另一樣嘢」用
         function startCameraDirectly() {
             document.getElementById('canvas-wrapper').style.display = 'none';
             if(typeof window.openCamera === 'function') window.openCamera();
@@ -188,21 +158,16 @@
 
         function closeCameraAndHome() {
             if(typeof window.closeCamera === 'function') window.closeCamera();
-            // 如果畫布本身係收埋嘅 (即係未影相)，就直接退返主頁
             if (document.getElementById('canvas-wrapper').style.display === 'none') {
                 goHome();
             }
         }
-
-        // 啟動畫布 Loop
-        setTimeout(() => {
-            if(typeof window.loop === 'function') requestAnimationFrame(window.loop);
-        }, 500);
     </script>
     
-    <!-- 載入你嘅核心邏輯 -->
+    <!-- ⚠️ 確保呢度載入齊你所有嘅 js 檔案 -->
     <script src="canvas.js"></script>
     <script src="camera.js"></script>
+    <!-- 如果你有 data.js (裝筆順數據嘅檔案)，請確保加埋喺度，例如：<script src="data.js"></script> -->
 
 </body>
 </html>
