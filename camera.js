@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (畫筆加粗版 + 5歲設定 + 自動裁剪)
+// 📷 探索魔鏡功能 (完整版：手動圈選 + 5歲設定 + 觸控位移修正)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -96,20 +96,33 @@ function setupDrawingEvents(canvas) {
     window.isCropping = false;
     const ctx = canvas.getContext('2d');
 
+    // 🌟 修正觸控位移 (Offset Bug)
+    const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+        return {
+            x: (e.clientX - r.left) * scaleX,
+            y: (e.clientY - r.top) * scaleY
+        };
+    };
+
     canvas.addEventListener('pointerdown', e => {
         window.isCropping = true;
-        window.cropPoints = [{x: e.offsetX, y: e.offsetY}];
+        const pos = getPos(e);
+        window.cropPoints = [pos];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
-        ctx.moveTo(e.offsetX, e.offsetY);
+        ctx.moveTo(pos.x, pos.y);
     });
 
     canvas.addEventListener('pointermove', e => {
         if (!window.isCropping) return;
-        window.cropPoints.push({x: e.offsetX, y: e.offsetY});
-        ctx.lineTo(e.offsetX, e.offsetY);
+        const pos = getPos(e);
+        window.cropPoints.push(pos);
+        ctx.lineTo(pos.x, pos.y);
         ctx.strokeStyle = '#ffca3a'; 
-        ctx.lineWidth = 20; // 🌟 已經將線條大幅加粗 (6 -> 20)
+        ctx.lineWidth = 20; 
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke();
