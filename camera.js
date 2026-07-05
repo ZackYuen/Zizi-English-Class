@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (完整優化版)
+// 📷 探索魔鏡功能 (修正多字片語與空格處理)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -23,7 +23,7 @@ window.openCamera = async function() {
             preview.style.display = 'none';
             preview.style.width = '100%';
             preview.style.maxHeight = '55vh'; 
-            preview.style.objectFit = 'contain'; // 🌟 修正：防止圖片變形
+            preview.style.objectFit = 'contain'; 
             preview.style.borderRadius = '10px';
             video.parentNode.insertBefore(preview, video.nextSibling);
         }
@@ -63,7 +63,6 @@ window.takePhoto = async function() {
 };
 
 async function identifyWithAI(base64Image) {
-    // 🌟 模型順序：穩定視覺模型優先，Nvidia 放最後
     const models = [
         "google/gemini-1.5-flash:free",
         "qwen/qwen-2-vl-7b-instruct:free",
@@ -82,7 +81,7 @@ async function identifyWithAI(base64Image) {
         document.getElementById('loading-msg').innerText = `🧠 嘗試用 ${model.split('/')[1]} 分析...`;
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒強制切換
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -92,7 +91,8 @@ async function identifyWithAI(base64Image) {
                     messages: [{
                         role: "user",
                         content: [
-                            { type: "text", text: "What is the main physical object in this image? Reply with ONLY ONE English noun in lowercase. No punctuation, no articles." },
+                            // 🌟 修正：容許簡短詞組 (short noun phrase)，不限於一個單字
+                            { type: "text", text: "What is the main physical object in this image? Reply with a simple English noun or short noun phrase (e.g. 'cat', 'remote control'). Lowercase only, no articles, no punctuation." },
                             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                         ]
                     }]
@@ -105,7 +105,8 @@ async function identifyWithAI(base64Image) {
 
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                const word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z]/g, '');
+                // 🌟 修正：Regex 保留小階英文字母同埋空格 (\s)
+                const word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
                 if (word.length > 0) {
                     document.getElementById('loading-msg').innerText = `✨ 認到啦！係 ${word}！`;
                     setTimeout(() => { window.closeCamera(); processWord(word); }, 1000);
@@ -136,16 +137,24 @@ window.processWord = function(word) {
     if (letterData) {
         const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
         
-        let pData = word.split('').map(char => ({ letter: char, ipa: simpleIPA[char.toLowerCase()] || '' }));
+        // 🌟 修正：處理空格嘅音標顯示 (留空)
+        let pData = word.split('').map(char => ({ 
+            letter: char, 
+            ipa: char === ' ' ? '' : (simpleIPA[char.toLowerCase()] || '') 
+        }));
+        
         let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
         let currentTime = 1000;
         let ssmlPhonics = "";
         
+        // 🌟 修正：略過空格，唔發音亦唔做 Highlight 動畫
         word.split('').forEach((char, i) => {
-            dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
-            currentTime += 700;
-            let ipa = simpleIPA[char.toLowerCase()] || char;
-            ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.2s"/> `;
+            if (char !== ' ') {
+                dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
+                currentTime += 700;
+                let ipa = simpleIPA[char.toLowerCase()] || char;
+                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.2s"/> `;
+            }
         });
         
         dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
