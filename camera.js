@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (Gemma 免費版 + 防卡死機制)
+// 📷 探索魔鏡功能 (Nvidia 1B 測試版 + 防卡死機制)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -83,8 +83,8 @@ async function identifyWithAI(base64Image) {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // 🌟 轉用你指定嘅 Gemma 模型
-                model: "google/gemma-4-31b-it:free", 
+                // 你指定嘅 Nvidia 1B 視覺模型
+                model: "nvidia/llama-nemotron-embed-vl-1b-v2:free", 
                 messages: [{
                     role: "user",
                     content: [
