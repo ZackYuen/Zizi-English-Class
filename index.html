@@ -3,61 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 雙模式版</title>
-    <link rel="stylesheet" href="style.css">
+    <title>孜孜學英文</title>
+    <!-- 引入 confetti 動畫庫 (變魔術用) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+            background-color: #f4f9f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            touch-action: manipulation; /* 防止雙擊放大 */
+        }
+        
+        h1 { color: #1d3557; margin-top: 30px; font-size: 28px; }
+        
+        /* --- 主選單 --- */
+        #main-menu { margin-top: 15vh; }
+        .menu-btn {
+            font-size: 22px; font-weight: bold; padding: 18px 40px; margin: 15px;
+            border-radius: 20px; border: none; cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1); width: 80%; max-width: 300px;
+            transition: transform 0.1s;
+        }
+        .menu-btn:active { transform: translateY(6px); box-shadow: none; }
+        .btn-draw { background-color: #457b9d; color: white; }
+        .btn-cam { background-color: #e63946; color: white; }
+
+        /* --- 畫布區域 (寫字/結果畫面) --- */
+        #canvas-wrapper {
+            display: none; margin: 20px auto; width: 300px;
+            position: relative; transition: transform 0.6s ease-in-out;
+        }
+        #instruction-text { font-size: 18px; color: #1d3557; font-weight: bold; margin-bottom: 10px; }
+        #cvs {
+            background-color: white; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); touch-action: none;
+            border: 4px solid #8ac926;
+        }
+        #msg { margin-top: 15px; font-size: 18px; font-weight: bold; color: #1982c4; }
+        
+        /* 畫布控制按鈕 */
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+        .ctrl-btn {
+            font-size: 20px; padding: 12px 24px; border-radius: 15px;
+            border: none; cursor: pointer; color: white; font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+        .ctrl-btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-clear { background-color: #ff595e; }
+        .btn-magic { background-color: #8ac926; }
+        .btn-home { background-color: #118ab2; width: 100%; max-width: 280px; margin-top: 10px; }
+        .btn-re-cam { background-color: #ffca3a; color: #1d3557; width: 100%; max-width: 280px; margin-top: 10px; }
+
+        /* --- 相機畫面 --- */
+        #camera-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(0,0,0,0.95); z-index: 100;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        #camera-video { width: 95%; max-height: 60vh; object-fit: cover; border-radius: 15px; background-color: #000; }
+        
+        #camera-controls { margin-top: 30px; display: flex; gap: 20px; }
+        .cam-btn {
+            font-size: 24px; padding: 15px 35px; border-radius: 30px;
+            border: none; color: white; font-weight: bold; cursor: pointer;
+        }
+        .cam-btn-close { background-color: #ff595e; }
+        .cam-btn-capture { background-color: #8ac926; color: white; }
+        
+        #loading-msg { display: none; color: white; font-size: 22px; margin-top: 20px; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-<!-- 首頁模式選擇 (確保 z-index 最高，阻擋後面點擊) -->
-<div id="start-overlay">
-    <h1 style="color:#ff595e; margin-bottom: 40px; font-size: 40px;">🌟 孜孜學英文</h1>
-    <button class="btn mode-btn" style="background:#8ac926;" onclick="startApp('standard')">📚 標準學習模式</button>
-    <button class="btn mode-btn" style="background:#457b9d;" onclick="startApp('camera')">📷 探索魔鏡模式</button>
-</div>
-
-<!-- 頂部標題與切換按鈕 -->
-<div class="top-bar">
-    <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
-    <button class="btn btn-switch" onclick="toggleMode()">🔄 轉模式</button>
-</div>
-
-<div id="app">
-    <div id="msg">由綠色點出發，畫到尾為止！</div>
-    <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
-    <div class="controls">
-        <button class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
-        <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
+    <!-- 1. 主選單 -->
+    <div id="main-menu">
+        <h1>✨ 孜孜學英文 ✨</h1>
+        <button class="menu-btn btn-draw" onclick="switchMode('draw')">✍️ 畫畫學字</button>
+        <button class="menu-btn btn-cam" onclick="switchMode('camera')">📸 探索魔鏡</button>
     </div>
-</div>
 
-<!-- 標準模式 UI (群組 Tabs 與鍵盤) -->
-<div id="standard-ui">
-    <div id="group-tabs"></div>
-    <div id="kb"></div>
-</div>
-
-<!-- 相機模式 UI (大型相機按鈕) -->
-<div id="camera-ui-container" style="display:none;">
-    <button class="btn btn-big-camera" onclick="openCamera()">📷 打開相機搵字！</button>
-</div>
-
-<!-- 相機預覽層 (拍攝時顯示) -->
-<div id="camera-overlay" style="display:none;">
-    <video id="camera-video" playsinline autoplay></video>
-    <div id="camera-controls">
-        <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
-        <button id="close-camera-btn" onclick="closeCamera()">❌ 取消</button>
+    <!-- 2. 畫布區域 (結果頁面) -->
+    <div id="canvas-wrapper">
+        <div id="instruction-text">一齊跟住寫啦！</div>
+        <canvas id="cvs" width="300" height="300"></canvas>
+        <div id="msg">完成度: 0%</div>
+        
+        <div class="controls">
+            <button class="ctrl-btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
+            <button class="ctrl-btn btn-magic" onclick="magic()">✨ 變魔術</button>
+        </div>
+        <div class="controls">
+            <button class="ctrl-btn btn-re-cam" id="btn-re-cam" onclick="startCameraDirectly()" style="display:none;">📸 影過另一樣嘢</button>
+            <button class="ctrl-btn btn-home" onclick="goHome()">🏠 返主頁</button>
+        </div>
     </div>
-    <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
-</div>
-<script src="data.js"></script>
-<script src="state.js"></script>
-<script src="ui.js"></script>
-<script src="canvas.js"></script>
-<script src="camera.js"></script>
-</body>
-</html>
+
+    <!-- 3. 相機全屏介面 -->
+    <div id="camera-overlay">
+        <video id="camera-video" autoplay playsinline></video>
+        <div id="loading-msg"></div>
+        <div id="camera-controls">
+            <button class="cam-btn cam-btn-close" onclick="closeCameraAndHome()">❌ 取消</button>
+            <button class="cam-btn cam-btn-capture" onclick="takePhoto()">📸 影相</button>
+        </div>
+    </div>
+
+    <!-- 系統核心變數 (預留畀 canvas.js 使用) -->
+    <script>
+        // 確保你原有嘅英文字母筆順數據 (D array) 喺度定義或由外部讀取
+        window.D = window.D || []; 
+        window.idx = 0;
+        window.currentMode = 'home';
+        
+        // Audio 初始化
+        window.mAudio = window.mAudio || new Audio();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        window.aCtx = new AudioContext();
+
+        // 設置 Canvas
+        const cvs = document.getElementById('cvs');
+        window.ctx = cvs.getContext('2d');
+        const offCvs = document.createElement('canvas'); offCvs.width = 300; offCvs.height = 300;
+        window.offCtx = offCvs.getContext('2d');
+        const userCvs = document.createElement('canvas'); userCvs.width = 300; userCvs.height = 300;
+        window.userCtx = userCvs.getContext('2d');
+
+        // 狀態變數
+        window.isMagic = false; window.strokeIdx = 0; window.doneStrokes = []; window.curStroke = []; 
+        window.isDrawing = false; window.currentPercent = 0; window.currentWPs = []; window.nextWpIdx = 0;
+        window.totalGuide = 0; window.guideData = null; window.lastCalc = Date.now();
+        window.magicStart = 0; window.fired = false; window.imgCache = {};
+
+        window.preloadImage = function(url) {
+            if(!window.imgCache[url]) {
+                let img = new Image(); img.src = url; window.imgCache[url] = img;
+            }
+        };
+
+        // ==========================================
+        // 🌟 核心切換邏輯 (解決你要「直入相機」嘅需求)
+        // ==========================================
+        function switchMode(mode) {
+            window.currentMode = mode;
+            document.getElementById('main-menu').style.display = 'none';
+            
+            // 啟動 AudioContext (iOS 必須喺使用者互動時啟動)
+            if (window.aCtx.state === 'suspended') window.aCtx.resume();
+            
+            if (mode === 'camera') {
+                // 🌟 揀相機模式：隱藏畫布，直接觸發開相機！
+                document.getElementById('canvas-wrapper').style.display = 'none';
+                document.getElementById('btn-re-cam').style.display = 'block'; // 顯示「再影」按鈕
+                document.getElementById('instruction-text').innerText = "睇下 AI 認唔認得！";
+                
+                if(typeof window.openCamera === 'function') {
+                    window.openCamera();
+                } else {
+                    alert("載入相機模組失敗，請檢查 camera.js");
+                }
+            } else if (mode === 'draw') {
+                // 🌟 揀畫畫模式：只顯示畫布，隱藏相機專用按鈕
+                document.getElementById('canvas-wrapper').style.display = 'block';
+                document.getElementById('btn-re-cam').style.display = 'none';
+                document.getElementById('instruction-text').innerText = "一齊畫畫學英文字母啦！";
+                if(typeof window.resetCanvas === 'function') window.resetCanvas();
+            }
+        }
+
+        // 專門畀結果頁面「影過另一樣嘢」用
+        function startCameraDirectly() {
+            document.getElementById('canvas-wrapper').style.display = 'none';
+            if(typeof window.openCamera === 'function') window.openCamera();
+        }
+
+        function goHome() {
+            window.currentMode = 'home';
+            document.getElementById('canvas-wrapper').style.display = 'none';
+            document.getElementById('camera-overlay').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+            if(window.stopAllAudio) window.stopAllAudio();
+        }
+
+        function closeCameraAndHome() {
+            if(typeof window.closeCamera === 'function') window.closeCamera();
+            // 如果畫布本身係收埋嘅 (即係未影相)，就直接退返主頁
+            if (document.getElementById('canvas-wrapper').style.display === 'none') {
+                goHome();
+            }
+        }
+
+        // 啟動畫布 Loop
+        setTimeout(() => {
+            if(typeof window.loop === 'function') requestAnimationFrame(window.loop);
+        }, 500);
+    </script>
+    
+    <!-- 載入你嘅核心邏輯 -->
+    <script src="canvas.js"></script>
+    <script src="camera.js"></script>
 
 </body>
 </html>
