@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (完整版：手動圈選 + 5歲設定 + 觸控位移修正 + 10秒超時取消掣)
+// 📷 探索魔鏡功能 (終極版：加入強效 a/an/the 過濾器)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -258,7 +258,6 @@ window.takePhoto = async function() {
     loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
 };
 
-// 🌟 新增：手動取消分析邏輯
 window.cancelAnalysis = function() {
     window.isAnalyzing = false;
     if (window.currentAborter) window.currentAborter.abort();
@@ -293,7 +292,6 @@ async function identifyWithAI(croppedBase64) {
 
     const loadingMsg = document.getElementById('loading-msg');
     
-    // 🌟 10秒後自動顯示取消掣
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
             let existingBtn = document.getElementById('cancel-analyze-btn');
@@ -309,7 +307,7 @@ async function identifyWithAI(croppedBase64) {
     }, 10000); 
 
     for (const model of models) {
-        if (!window.isAnalyzing) break; // 若用家已按取消，停止後續嘗試
+        if (!window.isAnalyzing) break;
 
         let cancelBtnDiv = document.getElementById('cancel-analyze-btn');
         let cancelHtml = cancelBtnDiv ? cancelBtnDiv.outerHTML : '';
@@ -319,7 +317,6 @@ async function identifyWithAI(croppedBase64) {
         window.currentAborter = new AbortController();
         let timeoutId; 
         try {
-            // 🌟 每個 Model 最多只等 10 秒
             timeoutId = setTimeout(() => {
                 if(window.currentAborter) window.currentAborter.abort();
             }, 10000);
@@ -346,17 +343,30 @@ async function identifyWithAI(croppedBase64) {
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 let rawWord = data.choices[0].message.content.trim().toLowerCase();
-                rawWord = rawWord.replace(/^(this is a|it is a|i see a|the image shows|here is a|a |an |the )/g, '').trim();
-                let word = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
                 
-                let wordsArray = word.split(' ');
-                if (wordsArray.length > 2) { word = wordsArray.slice(-2).join(' '); }
+                // 🌟 1. 先剷走所有標點符號，只保留英文字母同空格
+                let cleanWord = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+                let wordsArray = cleanWord.split(' ');
+                
+                // 🌟 2. 強效廢話過濾器：如果開頭係 a, an, the, it, is 等等，自動踢走
+                const fillers = ['a', 'an', 'the', 'some', 'one', 'this', 'that', 'it', 'its', 'is', 'i', 'see', 'shows', 'picture', 'image', 'of', 'looks', 'like', 'probably', 'maybe', 'here', 'there', 'are'];
+                while (wordsArray.length > 1 && fillers.includes(wordsArray[0])) {
+                    wordsArray.shift();
+                }
+                
+                // 🌟 3. 確保最後最多得兩個字 (例如 "red chair")
+                let finalWord = "";
+                if (wordsArray.length > 2) { 
+                    finalWord = wordsArray.slice(-2).join(' '); 
+                } else {
+                    finalWord = wordsArray.join(' ');
+                }
 
-                if (word.length > 0) {
+                if (finalWord.length > 0) {
                     clearTimeout(cancelTimer);
                     window.isAnalyzing = false;
-                    loadingMsg.innerText = `✨ 搵到喇！係 ${word}！`;
-                    setTimeout(() => { window.closeCamera(); processWord(word); }, 500);
+                    loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
+                    setTimeout(() => { window.closeCamera(); processWord(finalWord); }, 500);
                     return; 
                 }
             }
@@ -364,7 +374,7 @@ async function identifyWithAI(croppedBase64) {
 
         } catch (err) {
             if (timeoutId) clearTimeout(timeoutId);
-            if (!window.isAnalyzing) break; // 若由 Cancel 掣觸發的中斷，不印錯誤
+            if (!window.isAnalyzing) break; 
             console.error(`${model} 失敗: ${err.message}`);
         }
     }
