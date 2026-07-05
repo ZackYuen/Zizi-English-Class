@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (Gemma/Gemini 首選 + Nvidia 後備版)
+// 📷 探索魔鏡功能 (完整優化版)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -11,7 +11,7 @@ window.openCamera = async function() {
     }
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        window.stream = stream; // 儲存 stream 以便關閉
+        window.stream = stream;
         const video = document.getElementById('camera-video');
         video.srcObject = stream;
         video.style.display = 'block';
@@ -22,8 +22,8 @@ window.openCamera = async function() {
             preview.id = 'photo-preview';
             preview.style.display = 'none';
             preview.style.width = '100%';
-            preview.style.maxHeight = '55vh';
-            preview.style.objectFit = 'contain';
+            preview.style.maxHeight = '55vh'; 
+            preview.style.objectFit = 'contain'; // 🌟 修正：防止圖片變形
             preview.style.borderRadius = '10px';
             video.parentNode.insertBefore(preview, video.nextSibling);
         }
@@ -63,11 +63,11 @@ window.takePhoto = async function() {
 };
 
 async function identifyWithAI(base64Image) {
-    // 🌟 調整順序：Nvidia 放到最後
+    // 🌟 模型順序：穩定視覺模型優先，Nvidia 放最後
     const models = [
-        "google/gemma-4-31b-it:free",
         "google/gemini-1.5-flash:free",
         "qwen/qwen-2-vl-7b-instruct:free",
+        "qwen/qwen2.5-vl-7b-instruct:free",
         "nvidia/nemotron-nano-12b-v2-vl:free"
     ];
 
@@ -82,7 +82,7 @@ async function identifyWithAI(base64Image) {
         document.getElementById('loading-msg').innerText = `🧠 嘗試用 ${model.split('/')[1]} 分析...`;
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒強制切換
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -104,11 +104,15 @@ async function identifyWithAI(base64Image) {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
-            const word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z]/g, '');
-            
-            document.getElementById('loading-msg').innerText = `✨ 認到啦！係 ${word}！`;
-            setTimeout(() => { window.closeCamera(); processWord(word); }, 1000);
-            return; 
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                const word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z]/g, '');
+                if (word.length > 0) {
+                    document.getElementById('loading-msg').innerText = `✨ 認到啦！係 ${word}！`;
+                    setTimeout(() => { window.closeCamera(); processWord(word); }, 1000);
+                    return; 
+                }
+            }
+            throw new Error("無內容回傳");
 
         } catch (err) {
             console.error(`${model} 失敗: ${err.message}`);
