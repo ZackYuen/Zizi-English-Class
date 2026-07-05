@@ -1,25 +1,21 @@
 // ==========================================
-// 📷 探索魔鏡功能 (加入全局語音中斷、廣東話 TTS 及思考動畫)
+// 📷 探索魔鏡功能 (修復相機重用 Bug、加入全局語音及思考動畫)
 // ==========================================
 
 window.lastCapturedImg = null;
-
-// 🌟 新增：全局音頻控制，確保唔會重疊
 window.uiAudio = new Audio();
-window.mAudio = window.mAudio || new Audio(); // 確保 mAudio 存在
+window.mAudio = window.mAudio || new Audio(); 
 
 window.stopAllAudio = function() {
     if (window.uiAudio) { window.uiAudio.pause(); window.uiAudio.currentTime = 0; }
     if (window.mAudio) { window.mAudio.pause(); window.mAudio.currentTime = 0; }
-    window.speechSynthesis.cancel(); // 停埋瀏覽器自帶嘅 TTS (安全網)
+    window.speechSynthesis.cancel(); 
 };
 
-// 🌟 新增：專門負責廣東話 UI 指示嘅 Google TTS 函數
 window.playCantoneseTTS = async function(text) {
-    window.stopAllAudio(); // 播放新指示前，斬斷所有舊聲
+    window.stopAllAudio(); 
     let key = localStorage.getItem('google_tts_key');
     if (!key) {
-        // 冇 Key 嘅後備方案：用瀏覽器原生廣東話發音
         let u = new SpeechSynthesisUtterance(text);
         u.lang = 'zh-HK';
         window.speechSynthesis.speak(u);
@@ -30,7 +26,7 @@ window.playCantoneseTTS = async function(text) {
             method: 'POST',
             body: JSON.stringify({
                 input: { text: text },
-                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, // Google TTS 廣東話女聲
+                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, 
                 audioConfig: { audioEncoding: 'MP3' }
             })
         });
@@ -42,12 +38,10 @@ window.playCantoneseTTS = async function(text) {
     } catch(e) { console.error("TTS Error", e); }
 };
 
-// 覆蓋舊版 speakAlert，全面轉用 Google TTS
 window.speakAlert = function(msg) {
     window.playCantoneseTTS(msg);
 };
 
-// 🌟 新增：注入思考中嘅 CSS 動畫
 if (!document.getElementById('thinking-style')) {
     const style = document.createElement('style');
     style.id = 'thinking-style';
@@ -62,17 +56,28 @@ if (!document.getElementById('thinking-style')) {
     document.head.appendChild(style);
 }
 
+// 🌟 修復 1：打開相機時，強制重置並播放影片
 window.openCamera = async function() {
-    window.stopAllAudio(); // 中斷上一個動作嘅聲
+    window.stopAllAudio(); 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
         return;
     }
     try {
+        // 確保舊嘅 Stream 已經完全死心
+        if (window.stream) {
+            window.stream.getTracks().forEach(track => track.stop());
+            window.stream = null;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         window.stream = stream;
         const video = document.getElementById('camera-video');
+        
         video.srcObject = stream;
+        // 🌟 關鍵：iOS 需要明確呼叫 play() 先會識得郁
+        video.play().catch(e => console.error("Video play error:", e));
+        
         video.style.display = 'block';
 
         let preview = document.getElementById('photo-preview');
@@ -92,28 +97,40 @@ window.openCamera = async function() {
         document.getElementById('camera-controls').style.display = 'flex';
         document.getElementById('loading-msg').style.display = 'none';
         
-        // 🌟 語音提示
         window.playCantoneseTTS("打開相機啦，影低你想學嘅嘢啦！");
     } catch (err) { alert("開唔到相機：" + err.message); }
 };
 
+// 🌟 修復 2：關閉相機時，徹底清空影片來源
 window.closeCamera = function() {
     window.stopAllAudio();
-    if (window.stream) window.stream.getTracks().forEach(track => track.stop());
+    if (window.stream) {
+        window.stream.getTracks().forEach(track => track.stop());
+        window.stream = null;
+    }
+    const video = document.getElementById('camera-video');
+    if (video) video.srcObject = null; // 徹底釋放鏡頭資源
+
     document.getElementById('camera-overlay').style.display = 'none';
 };
 
 window.takePhoto = async function() {
-    window.stopAllAudio(); // 㩒掣即刻停聲
+    window.stopAllAudio(); 
+    const video = document.getElementById('camera-video');
+    
+    // 🌟 修復 3：防呆機制。如果畫面未載入（0x0），唔畀影相，避免 AI 報錯
+    if (!video.videoWidth || video.videoWidth === 0) {
+        window.playCantoneseTTS("鏡頭仲未準備好呀，等多一秒先啦！");
+        return; 
+    }
+
     document.getElementById('camera-controls').style.display = 'none';
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
     
-    // 🌟 語音提示 + 動畫準備
     window.playCantoneseTTS("收到！俾少少時間我諗下呢個係咩先。");
     loadingMsg.innerHTML = `<span class="thinking-anim">📸</span> Freeze 緊畫面...`;
 
-    const video = document.getElementById('camera-video');
     const preview = document.getElementById('photo-preview');
     const canvas = document.createElement('canvas');
     
@@ -145,12 +162,11 @@ async function identifyWithAI(base64Image) {
     }
 
     for (const model of models) {
-        // 🌟 加入 thinking 動畫
         document.getElementById('loading-msg').innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...`;
-        
+        let timeoutId; // 🌟 確保 timeout 會被正確清理
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000);
+            timeoutId = setTimeout(() => controller.abort(), 25000);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -183,6 +199,7 @@ async function identifyWithAI(base64Image) {
             throw new Error("無內容回傳");
 
         } catch (err) {
+            if (timeoutId) clearTimeout(timeoutId);
             console.error(`${model} 失敗: ${err.message}`);
         }
     }
@@ -231,7 +248,6 @@ window.processWord = function(word) {
         });
         idx = D.length - 1;
         
-        // 🌟 搵到字嘅發聲提示
         window.speakAlert(`搵到喇！係 ${word}，孜孜，一齊寫 ${firstLetter} 啦。`);
     } else {
         window.speakAlert(`搵到係 ${word}，但系統未有 ${firstLetter} 嘅筆順，試下影其他嘢啦。`);
