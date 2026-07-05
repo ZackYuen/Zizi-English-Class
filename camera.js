@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (終極版：加入強效 a/an/the 過濾器)
+// 📷 探索魔鏡功能 (終極修正版：修復下三分一死角 + 獨立取消掣)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -82,14 +82,31 @@ function initCropUI() {
         drawCanvas.id = 'draw-layer';
         drawCanvas.style.position = 'absolute';
         drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
+        
+        // 🌟 核心修復 1：強制 100% 貼合容器，防止底部無法觸控
+        drawCanvas.style.width = '100%';
+        drawCanvas.style.height = '100%';
         drawCanvas.style.zIndex = '10';
         drawCanvas.style.touchAction = 'none'; 
+        drawCanvas.style.userSelect = 'none';
+        drawCanvas.style.webkitUserSelect = 'none';
         
         container.appendChild(img);
         container.appendChild(drawCanvas);
         video.parentNode.insertBefore(container, video.nextSibling);
         
         setupDrawingEvents(drawCanvas);
+    }
+
+    // 🌟 核心修復 2：獨立嘅取消按鈕容器，唔會再畀文字覆蓋
+    if (!document.getElementById('cancel-analyze-btn')) {
+        let btnDiv = document.createElement('div');
+        btnDiv.id = 'cancel-analyze-btn';
+        btnDiv.style.display = 'none';
+        btnDiv.style.marginTop = '20px';
+        btnDiv.style.zIndex = '200';
+        btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onclick="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
+        document.getElementById('camera-overlay').appendChild(btnDiv);
     }
 }
 
@@ -201,6 +218,9 @@ window.openCamera = async function() {
         document.getElementById('camera-controls').style.display = 'flex';
         document.getElementById('loading-msg').style.display = 'none';
         
+        let cancelBtn = document.getElementById('cancel-analyze-btn');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        
         window.playCantoneseTTS("打開相機啦，影低你想學嘅嘢啦！");
     } catch (err) { alert("開唔到相機：" + err.message); }
 };
@@ -266,6 +286,7 @@ window.cancelAnalysis = function() {
     window.playCantoneseTTS("無問題，我哋影過第二樣啦！");
     
     document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('cancel-analyze-btn').style.display = 'none';
     document.getElementById('preview-container').style.display = 'none';
     document.getElementById('camera-controls').style.display = 'flex';
     
@@ -292,31 +313,24 @@ async function identifyWithAI(croppedBase64) {
 
     const loadingMsg = document.getElementById('loading-msg');
     
+    // 🌟 提早喺第 8 秒彈出取消掣，避免同 10 秒死線撞車
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
-            let existingBtn = document.getElementById('cancel-analyze-btn');
-            if (!existingBtn) {
-                loadingMsg.insertAdjacentHTML('beforeend', `
-                    <div id="cancel-analyze-btn" style="margin-top: 25px;">
-                        <button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onclick="cancelAnalysis()">❌ 太耐喇，影過張</button>
-                    </div>
-                `);
-                window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
-            }
+            let btn = document.getElementById('cancel-analyze-btn');
+            if (btn) btn.style.display = 'block';
+            window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
         }
-    }, 10000); 
+    }, 8000); 
 
     for (const model of models) {
         if (!window.isAnalyzing) break;
-
-        let cancelBtnDiv = document.getElementById('cancel-analyze-btn');
-        let cancelHtml = cancelBtnDiv ? cancelBtnDiv.outerHTML : '';
         
-        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...${cancelHtml}`;
+        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...`;
         
         window.currentAborter = new AbortController();
         let timeoutId; 
         try {
+            // 每個 Model 最多等 10 秒
             timeoutId = setTimeout(() => {
                 if(window.currentAborter) window.currentAborter.abort();
             }, 10000);
@@ -344,27 +358,20 @@ async function identifyWithAI(croppedBase64) {
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 let rawWord = data.choices[0].message.content.trim().toLowerCase();
                 
-                // 🌟 1. 先剷走所有標點符號，只保留英文字母同空格
+                // 暴力清除 a/an/the
                 let cleanWord = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
                 let wordsArray = cleanWord.split(' ');
-                
-                // 🌟 2. 強效廢話過濾器：如果開頭係 a, an, the, it, is 等等，自動踢走
                 const fillers = ['a', 'an', 'the', 'some', 'one', 'this', 'that', 'it', 'its', 'is', 'i', 'see', 'shows', 'picture', 'image', 'of', 'looks', 'like', 'probably', 'maybe', 'here', 'there', 'are'];
                 while (wordsArray.length > 1 && fillers.includes(wordsArray[0])) {
                     wordsArray.shift();
                 }
                 
-                // 🌟 3. 確保最後最多得兩個字 (例如 "red chair")
-                let finalWord = "";
-                if (wordsArray.length > 2) { 
-                    finalWord = wordsArray.slice(-2).join(' '); 
-                } else {
-                    finalWord = wordsArray.join(' ');
-                }
+                let finalWord = wordsArray.length > 2 ? wordsArray.slice(-2).join(' ') : wordsArray.join(' ');
 
                 if (finalWord.length > 0) {
                     clearTimeout(cancelTimer);
                     window.isAnalyzing = false;
+                    document.getElementById('cancel-analyze-btn').style.display = 'none';
                     loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
                     setTimeout(() => { window.closeCamera(); processWord(finalWord); }, 500);
                     return; 
@@ -382,6 +389,7 @@ async function identifyWithAI(croppedBase64) {
     clearTimeout(cancelTimer);
     if (window.isAnalyzing) {
         window.isAnalyzing = false;
+        document.getElementById('cancel-analyze-btn').style.display = 'none';
         window.playCantoneseTTS("哎呀，伺服器太忙喇，不如再影過啦。");
         loadingMsg.innerText = "❌ 伺服器忙緊，請重試。";
         setTimeout(() => {
