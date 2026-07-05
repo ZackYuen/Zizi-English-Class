@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (修復相機重用 Bug、加入全局語音及思考動畫)
+// 📷 探索魔鏡功能 (完整版：複雜場景修復 + 防卡死 + 全局語音)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -56,7 +56,6 @@ if (!document.getElementById('thinking-style')) {
     document.head.appendChild(style);
 }
 
-// 🌟 修復 1：打開相機時，強制重置並播放影片
 window.openCamera = async function() {
     window.stopAllAudio(); 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -64,7 +63,7 @@ window.openCamera = async function() {
         return;
     }
     try {
-        // 確保舊嘅 Stream 已經完全死心
+        // 確保舊 Stream 徹底關閉
         if (window.stream) {
             window.stream.getTracks().forEach(track => track.stop());
             window.stream = null;
@@ -75,7 +74,6 @@ window.openCamera = async function() {
         const video = document.getElementById('camera-video');
         
         video.srcObject = stream;
-        // 🌟 關鍵：iOS 需要明確呼叫 play() 先會識得郁
         video.play().catch(e => console.error("Video play error:", e));
         
         video.style.display = 'block';
@@ -101,7 +99,6 @@ window.openCamera = async function() {
     } catch (err) { alert("開唔到相機：" + err.message); }
 };
 
-// 🌟 修復 2：關閉相機時，徹底清空影片來源
 window.closeCamera = function() {
     window.stopAllAudio();
     if (window.stream) {
@@ -109,7 +106,7 @@ window.closeCamera = function() {
         window.stream = null;
     }
     const video = document.getElementById('camera-video');
-    if (video) video.srcObject = null; // 徹底釋放鏡頭資源
+    if (video) video.srcObject = null;
 
     document.getElementById('camera-overlay').style.display = 'none';
 };
@@ -118,7 +115,6 @@ window.takePhoto = async function() {
     window.stopAllAudio(); 
     const video = document.getElementById('camera-video');
     
-    // 🌟 修復 3：防呆機制。如果畫面未載入（0x0），唔畀影相，避免 AI 報錯
     if (!video.videoWidth || video.videoWidth === 0) {
         window.playCantoneseTTS("鏡頭仲未準備好呀，等多一秒先啦！");
         return; 
@@ -143,7 +139,8 @@ window.takePhoto = async function() {
     preview.style.display = 'block';
     video.style.display = 'none';
 
-    await identifyWithAI(canvas.toDataURL('image/jpeg', 0.2).split(',')[1]);
+    // 提高畫質到 0.4，等 AI 睇清楚複雜背景
+    await identifyWithAI(canvas.toDataURL('image/jpeg', 0.4).split(',')[1]);
 };
 
 async function identifyWithAI(base64Image) {
@@ -163,10 +160,10 @@ async function identifyWithAI(base64Image) {
 
     for (const model of models) {
         document.getElementById('loading-msg').innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...`;
-        let timeoutId; // 🌟 確保 timeout 會被正確清理
+        let timeoutId; 
         try {
             const controller = new AbortController();
-            timeoutId = setTimeout(() => controller.abort(), 25000);
+            timeoutId = setTimeout(() => controller.abort(), 20000);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -176,7 +173,8 @@ async function identifyWithAI(base64Image) {
                     messages: [{
                         role: "user",
                         content: [
-                            { type: "text", text: "What is the main physical object in this image? Reply with a simple English noun or short noun phrase (e.g. 'cat', 'remote control'). Lowercase only, no articles, no punctuation." },
+                            // 死命令：睇正中間，最多兩個字，唔准作句
+                            { type: "text", text: "Look at the EXACT CENTER of this image. What is the main object there? Reply with ONLY ONE simple English noun or short phrase (MAXIMUM 2 WORDS). Do not write sentences. No punctuation. Lowercase only." },
                             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                         ]
                     }]
@@ -189,7 +187,14 @@ async function identifyWithAI(base64Image) {
 
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                const word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
+                let word = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ');
+                
+                // 強制攔截：如果 AI 唔聽話講多過三個字，只抽最後兩個字
+                let wordsArray = word.split(' ');
+                if (wordsArray.length > 3) {
+                    word = wordsArray.slice(-2).join(' '); 
+                }
+
                 if (word.length > 0) {
                     document.getElementById('loading-msg').innerText = `✨ 搵到喇！係 ${word}！`;
                     setTimeout(() => { window.closeCamera(); processWord(word); }, 500);
