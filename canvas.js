@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染與描寫演算法模組 (canvas.js)
+// 🎨 畫布渲染與描寫演算法模組 (加入動態長字縮放功能)
 // ==========================================
 
 window.resetCanvas = function() {
@@ -109,33 +109,61 @@ window.loop = function() {
             let phase = D[idx].p.slice().reverse().find(p => dt >= p.t);
             if(phase) {
                 ctx.textAlign='center'; ctx.textBaseline='middle';
-                if(phase.type === 'letter') { ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150); }
+                if(phase.type === 'letter') { 
+                    ctx.font='bold 200px Arial'; ctx.fillStyle='#ff595e'; ctx.fillText(phase.text, 150, 150); 
+                }
                 else if(phase.type === 'phonic') {
-                    let totalW = 0;
-                    let widths = phase.pData.map(pd => { ctx.font='bold 65px Comic Sans MS'; let w = ctx.measureText(pd.letter).width + 15; totalW += w; return w; });
-                    let startX = 150 - (totalW / 2); 
+                    // 🌟 修正：動態計算 Phonics 排版闊度，太長自動縮細
+                    let baseFSize = 65;
+                    let ipaFSize = 26;
+                    ctx.font = `bold ${baseFSize}px Comic Sans MS`;
+                    
+                    let widths = phase.pData.map(pd => {
+                        if (pd.letter === ' ') return 15; // 空格闊度
+                        ctx.font = `bold ${baseFSize}px Comic Sans MS`;
+                        return ctx.measureText(pd.letter).width + 10;
+                    });
+                    let totalW = widths.reduce((a,b) => a + b, 0);
+                    
+                    let scale = totalW > 280 ? 280 / totalW : 1;
+                    let scaledBaseFSize = Math.floor(baseFSize * scale);
+                    let scaledIpaFSize = Math.floor(ipaFSize * scale);
+                    let startX = 150 - (totalW * scale / 2);
+
                     phase.pData.forEach((pd, i) => {
-                        let isHl = (i === phase.hlIdx);
-                        ctx.font='bold 65px Comic Sans MS'; ctx.fillStyle = isHl ? '#ff595e' : '#1d3557';
-                        ctx.fillText(pd.letter, startX + widths[i]/2, 120);
-                        ctx.font='bold 26px Arial'; ctx.fillStyle = isHl ? '#ffca3a' : '#8ac926';
-                        ctx.fillText(pd.ipa, startX + widths[i]/2, 190);
-                        startX += widths[i];
+                        let w = widths[i] * scale;
+                        if (pd.letter !== ' ') {
+                            let isHl = (i === phase.hlIdx);
+                            ctx.font = `bold ${scaledBaseFSize}px Comic Sans MS`; 
+                            ctx.fillStyle = isHl ? '#ff595e' : '#1d3557';
+                            ctx.fillText(pd.letter, startX + w/2, 120);
+                            
+                            ctx.font = `bold ${scaledIpaFSize}px Arial`; 
+                            ctx.fillStyle = isHl ? '#ffca3a' : '#8ac926';
+                            ctx.fillText(pd.ipa, startX + w/2, 190);
+                        }
+                        startX += w;
                     });
                 } else if(phase.type === 'word') {
-                    // 🌟 修正：按比例縮放圖片並置中，不再變形
                     if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) {
                         let img = imgCache[phase.img];
-                        let maxWidth = 220; 
-                        let maxHeight = 160;
+                        let maxWidth = 220, maxHeight = 160;
                         let ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
-                        let drawW = img.width * ratio;
-                        let drawH = img.height * ratio;
+                        let drawW = img.width * ratio, drawH = img.height * ratio;
                         ctx.drawImage(img, 150 - (drawW / 2), 110 - (drawH / 2), drawW, drawH);
                     }
                     else { ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100); }
                     
-                    ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.text, 150, 260);
+                    // 🌟 修正：字太長自動縮細 Font Size (最多縮到 20px)
+                    let fSize = 50;
+                    ctx.font = `bold ${fSize}px Comic Sans MS`;
+                    while(ctx.measureText(phase.text).width > 280 && fSize > 20) {
+                        fSize -= 2;
+                        ctx.font = `bold ${fSize}px Comic Sans MS`;
+                    }
+                    ctx.fillStyle='#1d3557'; 
+                    ctx.fillText(phase.text, 150, 260);
+                    
                     if(!fired) { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }}); fired=true; }
                 }
             }
@@ -188,10 +216,7 @@ window.magic = async function() {
         let data = await res.json();
         if(data.error) throw data.error;
         mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-        
-        // 將播放速度減慢至 0.75 倍，音軌拉長
         mAudio.playbackRate = 0.75; 
-
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); mAudio.play();
