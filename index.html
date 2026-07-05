@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 雙模式版</title>
+    <title>孜孜學英文 - 雙模式版 fallback</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 首頁模式選擇 -->
 <div id="start-overlay">
     <h1 style="color:#ff595e; margin-bottom: 40px; font-size: 40px;">🌟 孜孜學英文</h1>
     <button class="btn mode-btn" style="background:#8ac926;" onclick="startApp('standard')">📚 標準學習模式</button>
     <button class="btn mode-btn" style="background:#457b9d;" onclick="startApp('camera')">📷 探索魔鏡模式</button>
 </div>
 
-<!-- 頂部標題與切換按鈕 -->
 <div class="top-bar">
     <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
     <button class="btn btn-switch" onclick="toggleMode()">🔄 轉模式</button>
@@ -28,21 +26,19 @@
     <div class="controls">
         <button class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
         <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
+        <button class="btn" id="btn-re-cam" style="background:#ffca3a; color:#1d3557; display:none;" onclick="openCamera()">📸 影下一個</button>
     </div>
 </div>
 
-<!-- 標準模式 UI -->
 <div id="standard-ui">
     <div id="group-tabs"></div>
     <div id="kb"></div>
 </div>
 
-<!-- 相機模式 UI (已隱藏，由腳本自動觸發) -->
 <div id="camera-ui-container" style="display:none;">
     <button class="btn btn-big-camera" onclick="openCamera()">📷 打開相機搵字！</button>
 </div>
 
-<!-- 相機預覽層 -->
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline autoplay></video>
     <div id="camera-controls">
@@ -58,28 +54,43 @@
 <script src="canvas.js"></script>
 <script src="camera.js"></script>
 
-<!-- 🌟 自動直入相機攔截器 -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const originalStartApp = window.startApp;
     const originalToggleMode = window.toggleMode;
 
-    // 攔截主頁按鈕
+    // 1. 攔截首頁模式選擇
     window.startApp = function(mode) {
         if (originalStartApp) originalStartApp(mode);
+        const reCamBtn = document.getElementById('btn-re-cam');
+        const camUi = document.getElementById('camera-ui-container');
+        
         if (mode === 'camera') {
-            document.getElementById('camera-ui-container').style.display = 'none';
-            if(typeof openCamera === 'function') openCamera();
+            if (camUi) camUi.style.display = 'none'; // 隱藏原本的大按鈕空白頁
+            if (reCamBtn) reCamBtn.style.display = 'inline-block'; // 顯示「影下一個」按鈕
+            if (typeof openCamera === 'function') openCamera(); // 直接開鏡頭
+        } else {
+            if (reCamBtn) reCamBtn.style.display = 'none';
         }
     };
 
-    // 攔截右上角轉模式按鈕
+    // 2. 攔截頂部「轉模式」按鈕
     window.toggleMode = function() {
         if (originalToggleMode) originalToggleMode();
-        if (document.getElementById('camera-ui-container').style.display !== 'none') {
-            document.getElementById('camera-ui-container').style.display = 'none';
-            if(typeof openCamera === 'function') openCamera();
-        }
+        
+        // 稍等 50ms 等原本系統嘅 ui.js/state.js 切換完 UI 狀態後再修正
+        setTimeout(() => {
+            const camUi = document.getElementById('camera-ui-container');
+            const reCamBtn = document.getElementById('btn-re-cam');
+            
+            if (camUi && camUi.style.display !== 'none') {
+                camUi.style.display = 'none'; // 隱藏大按鈕
+                if (reCamBtn) reCamBtn.style.display = 'inline-block'; // 顯示「影下一個」
+                if (typeof openCamera === 'function') openCamera();
+            } else {
+                if (reCamBtn) reCamBtn.style.display = 'none';
+            }
+        }, 50);
     };
 });
 </script>
