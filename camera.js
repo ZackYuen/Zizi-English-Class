@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (動態生成 Jolly Phonics 版)
+// 📷 探索魔鏡功能 (動態生成 Jolly Phonics + 修正預覽比例版)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -15,12 +15,15 @@ window.openCamera = async function() {
         video.srcObject = stream;
         video.style.display = 'block';
 
+        // 動態生成預覽圖片元素
         let preview = document.getElementById('photo-preview');
         if (!preview) {
             preview = document.createElement('img');
             preview.id = 'photo-preview';
             preview.style.display = 'none';
             preview.style.width = '100%';
+            preview.style.maxHeight = '55vh';    // 🌟 限制最高高度，不撐爆版面
+            preview.style.objectFit = 'contain';  // 🌟 保持原圖長寬比，不變形
             preview.style.borderRadius = '10px';
             video.parentNode.insertBefore(preview, video.nextSibling);
         }
@@ -57,6 +60,7 @@ window.takePhoto = async function() {
     
     window.lastCapturedImg = fullBase64;
 
+    // 即時凍結長方形畫面
     preview.src = fullBase64;
     preview.style.display = 'block';
     video.style.display = 'none';
@@ -123,10 +127,9 @@ window.processWord = function(word) {
     let letterData = D.find(d => d.l === firstLetter);
 
     if (letterData) {
-        // 🌟 核心改動 1：建立簡易 Jolly Phonics 字典 (動態配音標)
+        // 建立簡易 Jolly Phonics 字典 (動態配音標)
         const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
         
-        // 準備視覺上嘅 Phonics 數據
         let pData = word.split('').map(char => ({
             letter: char,
             ipa: simpleIPA[char.toLowerCase()] || ''
@@ -136,27 +139,25 @@ window.processWord = function(word) {
         let currentTime = 1000;
         let ssmlPhonics = "";
         
-        // 🌟 核心改動 2：動態生成畫板高光動畫及 SSML 讀音
+        // 動態生成畫板高光拆音動畫及 SSML 讀音語法
         word.split('').forEach((char, i) => {
-            // 每一個字母加一個 Phonics Phase
             dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
             currentTime += 700; // 每個音停留 0.7 秒
             
-            // 組合 Google TTS 嘅發音語法
             let ipa = simpleIPA[char.toLowerCase()] || char;
             let cleanIpa = ipa.replace(/\//g, '');
             ssmlPhonics += `<phoneme alphabet="ipa" ph="${cleanIpa}">${char}</phoneme> <break time="0.2s"/> `;
         });
         
-        // 最後顯示相片同讀出完整單字
+        // 魔術時間顯示剛拍的照片 (已處理防變形邏輯)
         dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
         
         let dynamicEntry = {
             l: firstLetter,
             w: word,
             st: letterData.st, 
-            p: dynamicP, // 載入動態生成嘅動畫
-            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>` // 載入動態生成嘅發音
+            p: dynamicP, 
+            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>`
         };
 
         D.push(dynamicEntry);
