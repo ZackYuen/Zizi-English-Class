@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (動態生成 Jolly Phonics + 修正預覽比例版)
+// 📷 探索魔鏡功能 (Gemma 免費版 + 防卡死機制)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -15,15 +15,14 @@ window.openCamera = async function() {
         video.srcObject = stream;
         video.style.display = 'block';
 
-        // 動態生成預覽圖片元素
         let preview = document.getElementById('photo-preview');
         if (!preview) {
             preview = document.createElement('img');
             preview.id = 'photo-preview';
             preview.style.display = 'none';
             preview.style.width = '100%';
-            preview.style.maxHeight = '55vh';    // 🌟 限制最高高度，不撐爆版面
-            preview.style.objectFit = 'contain';  // 🌟 保持原圖長寬比，不變形
+            preview.style.maxHeight = '55vh';
+            preview.style.objectFit = 'contain';
             preview.style.borderRadius = '10px';
             video.parentNode.insertBefore(preview, video.nextSibling);
         }
@@ -60,7 +59,6 @@ window.takePhoto = async function() {
     
     window.lastCapturedImg = fullBase64;
 
-    // 即時凍結長方形畫面
     preview.src = fullBase64;
     preview.style.display = 'block';
     video.style.display = 'none';
@@ -77,12 +75,16 @@ async function identifyWithAI(base64Image) {
         else { window.closeCamera(); return; }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: "nvidia/nemotron-nano-12b-v2-vl:free", 
+                // 🌟 轉用你指定嘅 Gemma 模型
+                model: "google/gemma-4-31b-it:free", 
                 messages: [{
                     role: "user",
                     content: [
@@ -90,8 +92,11 @@ async function identifyWithAI(base64Image) {
                         { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                     ]
                 }]
-            })
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -111,7 +116,15 @@ async function identifyWithAI(base64Image) {
         }, 1000);
 
     } catch (err) {
-        document.getElementById('loading-msg').innerText = "❌ 分析失敗，試多次。";
+        clearTimeout(timeoutId);
+        
+        if (err.name === 'AbortError') {
+            document.getElementById('loading-msg').innerText = "⏳ AI 諗得太耐啦，請再試一次。";
+        } else {
+            document.getElementById('loading-msg').innerText = "❌ 分析失敗，試多次。";
+            console.error("API Error:", err);
+        }
+        
         setTimeout(() => {
             document.getElementById('loading-msg').style.display = 'none';
             document.getElementById('camera-controls').style.display = 'flex';
@@ -127,7 +140,6 @@ window.processWord = function(word) {
     let letterData = D.find(d => d.l === firstLetter);
 
     if (letterData) {
-        // 建立簡易 Jolly Phonics 字典 (動態配音標)
         const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
         
         let pData = word.split('').map(char => ({
@@ -139,17 +151,15 @@ window.processWord = function(word) {
         let currentTime = 1000;
         let ssmlPhonics = "";
         
-        // 動態生成畫板高光拆音動畫及 SSML 讀音語法
         word.split('').forEach((char, i) => {
             dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
-            currentTime += 700; // 每個音停留 0.7 秒
+            currentTime += 700;
             
             let ipa = simpleIPA[char.toLowerCase()] || char;
             let cleanIpa = ipa.replace(/\//g, '');
             ssmlPhonics += `<phoneme alphabet="ipa" ph="${cleanIpa}">${char}</phoneme> <break time="0.2s"/> `;
         });
         
-        // 魔術時間顯示剛拍的照片 (已處理防變形邏輯)
         dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
         
         let dynamicEntry = {
