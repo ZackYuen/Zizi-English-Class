@@ -1,8 +1,8 @@
 // ==========================================
-// 📷 探索魔鏡功能 (UX 強化與即時動態字卡版)
+// 📷 探索魔鏡功能 (動態生成 Jolly Phonics 版)
 // ==========================================
 
-window.lastCapturedImg = null; // 用來儲存剛剛拍下的照片
+window.lastCapturedImg = null;
 
 window.openCamera = async function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -13,9 +13,8 @@ window.openCamera = async function() {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         const video = document.getElementById('camera-video');
         video.srcObject = stream;
-        video.style.display = 'block'; // 確保鏡頭畫面顯示
+        video.style.display = 'block';
 
-        // 動態生成預覽圖片元素 (如果 HTML 內沒有)
         let preview = document.getElementById('photo-preview');
         if (!preview) {
             preview = document.createElement('img');
@@ -43,30 +42,26 @@ window.takePhoto = async function() {
     
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
-    loadingMsg.innerText = "📸 影到啦！Freeze 緊畫面...";
+    loadingMsg.innerText = "📸 Freeze 緊畫面...";
 
     const video = document.getElementById('camera-video');
     const preview = document.getElementById('photo-preview');
     const canvas = document.createElement('canvas');
     
-    // 1. Freeze 畫面：將 video 內容畫入 canvas
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // 儲存高畫質圖片作預覽及魔術揭曉用
     const fullBase64 = canvas.toDataURL('image/jpeg', 0.8);
-    // 儲存低畫質圖片給 AI 分析以加快速度
     const aiBase64 = canvas.toDataURL('image/jpeg', 0.2).split(',')[1];
     
     window.lastCapturedImg = fullBase64;
 
-    // 隱藏影片，顯示定格相片
     preview.src = fullBase64;
     preview.style.display = 'block';
     video.style.display = 'none';
 
-    loadingMsg.innerText = "🧠 AI 分析緊係咩嚟...";
+    loadingMsg.innerText = "🧠 AI 分析緊...";
     await identifyWithAI(aiBase64);
 };
 
@@ -81,10 +76,7 @@ async function identifyWithAI(base64Image) {
     try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: "nvidia/nemotron-nano-12b-v2-vl:free", 
                 messages: [{
@@ -105,22 +97,17 @@ async function identifyWithAI(base64Image) {
         const data = await response.json();
         if (!data.choices || data.choices.length === 0) throw new Error("API 無回傳結果");
 
-        // 提取並清理 AI 回傳的單字
         const recognizedWord = data.choices[0].message.content.trim().toLowerCase().replace(/[^a-z]/g, '');
 
-        document.getElementById('loading-msg').innerText = `✨ 認到啦！係 ${recognizedWord}！`;
+        document.getElementById('loading-msg').innerText = `✨ 係 ${recognizedWord}！`;
         
-        // 延遲 1 秒關閉，讓使用者看清楚認到的字
         setTimeout(() => {
             window.closeCamera();
             processWord(recognizedWord);
         }, 1000);
 
     } catch (err) {
-        console.error("API Error:", err);
-        document.getElementById('loading-msg').innerText = "❌ 分析失敗，試多次！";
-        
-        // 失敗時恢復相機狀態
+        document.getElementById('loading-msg').innerText = "❌ 分析失敗，試多次。";
         setTimeout(() => {
             document.getElementById('loading-msg').style.display = 'none';
             document.getElementById('camera-controls').style.display = 'flex';
@@ -133,33 +120,53 @@ async function identifyWithAI(base64Image) {
 window.processWord = function(word) {
     if (!word) return;
     let firstLetter = word.charAt(0).toUpperCase();
-
-    // 尋找字典中是否有這個開頭字母的筆順資料
     let letterData = D.find(d => d.l === firstLetter);
 
     if (letterData) {
-        // 🌟 核心改動：即時動態生成字卡，VLM 出咩字就教咩字
+        // 🌟 核心改動 1：建立簡易 Jolly Phonics 字典 (動態配音標)
+        const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
+        
+        // 準備視覺上嘅 Phonics 數據
+        let pData = word.split('').map(char => ({
+            letter: char,
+            ipa: simpleIPA[char.toLowerCase()] || ''
+        }));
+
+        let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
+        let currentTime = 1000;
+        let ssmlPhonics = "";
+        
+        // 🌟 核心改動 2：動態生成畫板高光動畫及 SSML 讀音
+        word.split('').forEach((char, i) => {
+            // 每一個字母加一個 Phonics Phase
+            dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
+            currentTime += 700; // 每個音停留 0.7 秒
+            
+            // 組合 Google TTS 嘅發音語法
+            let ipa = simpleIPA[char.toLowerCase()] || char;
+            let cleanIpa = ipa.replace(/\//g, '');
+            ssmlPhonics += `<phoneme alphabet="ipa" ph="${cleanIpa}">${char}</phoneme> <break time="0.2s"/> `;
+        });
+        
+        // 最後顯示相片同讀出完整單字
+        dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
+        
         let dynamicEntry = {
             l: firstLetter,
             w: word,
-            st: letterData.st, // 借用字典中該字母的筆順
-            p: [
-                { t: 0, type: 'letter', text: firstLetter },
-                { t: 1500, type: 'word', text: word, img: window.lastCapturedImg } // 魔術時間顯示剛拍的照片
-            ],
-            ssml: `<speak><prosody rate="0.85">${firstLetter}, ${word}</prosody></speak>`
+            st: letterData.st, 
+            p: dynamicP, // 載入動態生成嘅動畫
+            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>` // 載入動態生成嘅發音
         };
 
-        // 將動態字卡推入字典，並將當前索引指向它
         D.push(dynamicEntry);
         idx = D.length - 1;
         
-        speakAlert(`呢個係 ${word}，我哋一齊寫 ${firstLetter}！`);
+        speakAlert(`呢個係 ${word}，一齊寫 ${firstLetter} 啦。`);
     } else {
-        speakAlert(`認到係 ${word}，但我哋未有 ${firstLetter} 嘅筆順呀。`);
+        speakAlert(`認到係 ${word}，但未有 ${firstLetter} 嘅筆順。`);
     }
     
-    // 顯示畫板開始學習
     const canvasWrapper = document.getElementById('canvas-wrapper');
     if (canvasWrapper) canvasWrapper.style.display = 'block';
     
