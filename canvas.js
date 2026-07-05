@@ -123,8 +123,18 @@ window.loop = function() {
                         startX += widths[i];
                     });
                 } else if(phase.type === 'word') {
-                    if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) ctx.drawImage(imgCache[phase.img], 50, 20, 200, 200);
+                    // 🌟 修正：按比例縮放圖片並置中，不再變形
+                    if(phase.img && imgCache[phase.img] && imgCache[phase.img].complete) {
+                        let img = imgCache[phase.img];
+                        let maxWidth = 220; 
+                        let maxHeight = 160;
+                        let ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+                        let drawW = img.width * ratio;
+                        let drawH = img.height * ratio;
+                        ctx.drawImage(img, 150 - (drawW / 2), 110 - (drawH / 2), drawW, drawH);
+                    }
                     else { ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100); }
+                    
                     ctx.font='bold 50px Comic Sans MS'; ctx.fillStyle='#1d3557'; ctx.fillText(phase.text, 150, 260);
                     if(!fired) { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }}); fired=true; }
                 }
@@ -179,7 +189,7 @@ window.magic = async function() {
         if(data.error) throw data.error;
         mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
         
-        // 🌟 將播放速度減慢至 0.75 倍，以達到「音拉長啲」嘅效果
+        // 將播放速度減慢至 0.75 倍，音軌拉長
         mAudio.playbackRate = 0.75; 
 
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
