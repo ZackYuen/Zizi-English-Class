@@ -1,11 +1,13 @@
 // ==========================================
-// 📷 探索魔鏡功能 (完整版：手動圈選 + 5歲設定 + 觸控位移修正)
+// 📷 探索魔鏡功能 (完整版：手動圈選 + 5歲設定 + 觸控位移修正 + 10秒超時取消掣)
 // ==========================================
 
 window.lastCapturedImg = null;
 window.uiAudio = new Audio();
 window.mAudio = window.mAudio || new Audio(); 
 window.fullImgCanvas = null; 
+window.isAnalyzing = false; 
+window.currentAborter = null; 
 
 window.stopAllAudio = function() {
     if (window.uiAudio) { window.uiAudio.pause(); window.uiAudio.currentTime = 0; }
@@ -96,7 +98,6 @@ function setupDrawingEvents(canvas) {
     window.isCropping = false;
     const ctx = canvas.getContext('2d');
 
-    // 🌟 修正觸控位移 (Offset Bug)
     const getPos = (e) => {
         const r = canvas.getBoundingClientRect();
         const scaleX = canvas.width / r.width;
@@ -175,6 +176,7 @@ function setupDrawingEvents(canvas) {
 
 window.openCamera = async function() {
     window.stopAllAudio(); 
+    window.isAnalyzing = false;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
         return;
@@ -205,6 +207,8 @@ window.openCamera = async function() {
 
 window.closeCamera = function() {
     window.stopAllAudio();
+    window.isAnalyzing = false;
+    if (window.currentAborter) window.currentAborter.abort();
     if (window.stream) {
         window.stream.getTracks().forEach(track => track.stop());
         window.stream = null;
@@ -254,7 +258,25 @@ window.takePhoto = async function() {
     loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
 };
 
+// 🌟 新增：手動取消分析邏輯
+window.cancelAnalysis = function() {
+    window.isAnalyzing = false;
+    if (window.currentAborter) window.currentAborter.abort();
+    
+    window.stopAllAudio();
+    window.playCantoneseTTS("無問題，我哋影過第二樣啦！");
+    
+    document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('preview-container').style.display = 'none';
+    document.getElementById('camera-controls').style.display = 'flex';
+    
+    const video = document.getElementById('camera-video');
+    video.style.display = 'block';
+    video.play().catch(e => console.error("Video play error:", e));
+};
+
 async function identifyWithAI(croppedBase64) {
+    window.isAnalyzing = true;
     const models = [
         "google/gemini-1.5-flash:free",
         "qwen/qwen-2-vl-7b-instruct:free",
@@ -269,12 +291,38 @@ async function identifyWithAI(croppedBase64) {
         else { window.closeCamera(); return; }
     }
 
+    const loadingMsg = document.getElementById('loading-msg');
+    
+    // 🌟 10秒後自動顯示取消掣
+    let cancelTimer = setTimeout(() => {
+        if (window.isAnalyzing) {
+            let existingBtn = document.getElementById('cancel-analyze-btn');
+            if (!existingBtn) {
+                loadingMsg.insertAdjacentHTML('beforeend', `
+                    <div id="cancel-analyze-btn" style="margin-top: 25px;">
+                        <button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onclick="cancelAnalysis()">❌ 太耐喇，影過張</button>
+                    </div>
+                `);
+                window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+            }
+        }
+    }, 10000); 
+
     for (const model of models) {
-        document.getElementById('loading-msg').innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...`;
+        if (!window.isAnalyzing) break; // 若用家已按取消，停止後續嘗試
+
+        let cancelBtnDiv = document.getElementById('cancel-analyze-btn');
+        let cancelHtml = cancelBtnDiv ? cancelBtnDiv.outerHTML : '';
+        
+        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...${cancelHtml}`;
+        
+        window.currentAborter = new AbortController();
         let timeoutId; 
         try {
-            const controller = new AbortController();
-            timeoutId = setTimeout(() => controller.abort(), 15000);
+            // 🌟 每個 Model 最多只等 10 秒
+            timeoutId = setTimeout(() => {
+                if(window.currentAborter) window.currentAborter.abort();
+            }, 10000);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
@@ -289,7 +337,7 @@ async function identifyWithAI(croppedBase64) {
                         ]
                     }]
                 }),
-                signal: controller.signal
+                signal: window.currentAborter.signal
             });
 
             clearTimeout(timeoutId);
@@ -305,7 +353,9 @@ async function identifyWithAI(croppedBase64) {
                 if (wordsArray.length > 2) { word = wordsArray.slice(-2).join(' '); }
 
                 if (word.length > 0) {
-                    document.getElementById('loading-msg').innerText = `✨ 搵到喇！係 ${word}！`;
+                    clearTimeout(cancelTimer);
+                    window.isAnalyzing = false;
+                    loadingMsg.innerText = `✨ 搵到喇！係 ${word}！`;
                     setTimeout(() => { window.closeCamera(); processWord(word); }, 500);
                     return; 
                 }
@@ -314,18 +364,24 @@ async function identifyWithAI(croppedBase64) {
 
         } catch (err) {
             if (timeoutId) clearTimeout(timeoutId);
+            if (!window.isAnalyzing) break; // 若由 Cancel 掣觸發的中斷，不印錯誤
             console.error(`${model} 失敗: ${err.message}`);
         }
     }
 
-    window.playCantoneseTTS("哎呀，伺服器太忙喇，不如再影過啦。");
-    document.getElementById('loading-msg').innerText = "❌ 伺服器忙緊，請重試。";
-    setTimeout(() => {
-        document.getElementById('loading-msg').style.display = 'none';
-        document.getElementById('camera-controls').style.display = 'flex';
-        document.getElementById('preview-container').style.display = 'none';
-        document.getElementById('camera-video').style.display = 'block';
-    }, 3000);
+    clearTimeout(cancelTimer);
+    if (window.isAnalyzing) {
+        window.isAnalyzing = false;
+        window.playCantoneseTTS("哎呀，伺服器太忙喇，不如再影過啦。");
+        loadingMsg.innerText = "❌ 伺服器忙緊，請重試。";
+        setTimeout(() => {
+            loadingMsg.style.display = 'none';
+            document.getElementById('camera-controls').style.display = 'flex';
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('camera-video').style.display = 'block';
+            document.getElementById('camera-video').play().catch(e=>console.error(e));
+        }, 3000);
+    }
 }
 
 window.processWord = function(word) {
