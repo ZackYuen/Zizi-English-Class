@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 雙模式版 fallback</title>
+    <title>孜孜學英文 - 雙模式版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 首頁模式選擇 (確保 z-index 最高，阻擋後面點擊) -->
+<!-- 首頁模式選擇 -->
 <div id="start-overlay">
     <h1 style="color:#ff595e; margin-bottom: 40px; font-size: 40px;">🌟 孜孜學英文</h1>
     <button class="btn mode-btn" style="background:#8ac926;" onclick="startApp('standard')">📚 標準學習模式</button>
@@ -31,18 +31,18 @@
     </div>
 </div>
 
-<!-- 標準模式 UI (群組 Tabs 與鍵盤) -->
+<!-- 標準模式 UI -->
 <div id="standard-ui">
     <div id="group-tabs"></div>
     <div id="kb"></div>
 </div>
 
-<!-- 相機模式 UI (大型相機按鈕) -->
+<!-- 相機模式 UI (已隱藏，由腳本自動觸發) -->
 <div id="camera-ui-container" style="display:none;">
     <button class="btn btn-big-camera" onclick="openCamera()">📷 打開相機搵字！</button>
 </div>
 
-<!-- 相機預覽層 (拍攝時顯示) -->
+<!-- 相機預覽層 -->
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline autoplay></video>
     <div id="camera-controls">
@@ -51,13 +51,37 @@
     </div>
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
+
 <script src="data.js"></script>
 <script src="state.js"></script>
 <script src="ui.js"></script>
 <script src="canvas.js"></script>
 <script src="camera.js"></script>
-</body>
-</html>
 
+<!-- 🌟 自動直入相機攔截器 -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const originalStartApp = window.startApp;
+    const originalToggleMode = window.toggleMode;
+
+    // 攔截主頁按鈕
+    window.startApp = function(mode) {
+        if (originalStartApp) originalStartApp(mode);
+        if (mode === 'camera') {
+            document.getElementById('camera-ui-container').style.display = 'none';
+            if(typeof openCamera === 'function') openCamera();
+        }
+    };
+
+    // 攔截右上角轉模式按鈕
+    window.toggleMode = function() {
+        if (originalToggleMode) originalToggleMode();
+        if (document.getElementById('camera-ui-container').style.display !== 'none') {
+            document.getElementById('camera-ui-container').style.display = 'none';
+            if(typeof openCamera === 'function') openCamera();
+        }
+    };
+});
+</script>
 </body>
 </html>
