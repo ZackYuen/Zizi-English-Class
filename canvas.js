@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染、描寫演算法與字詞處理模組 (完美同步節奏版)
+// 🎨 畫布渲染、描寫演算法與字詞處理模組 (完美統一 data.js IPA 版)
 // ==========================================
 
 window.resetCanvas = function() {
@@ -153,7 +153,7 @@ window.loop = function() {
                         let drawW = img.width * ratio, drawH = img.height * ratio;
                         ctx.drawImage(img, 150 - (drawW / 2), 110 - (drawH / 2), drawW, drawH);
                     }
-                    else { ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100); }
+                    else { ctx.font='100px Arial'; ctx.fillText(phase.emoji || '✨', 150, 100); }
                     
                     let fSize = 50;
                     ctx.font = `bold ${fSize}px Comic Sans MS`;
@@ -215,7 +215,12 @@ if(cvs) {
                 isDrawing=false;
                 cvs.releasePointerCapture(e.pointerId);
                 currentPercent = 100; updateMsg(); 
+                
                 setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); 
+                
+                if (D[idx] && D[idx].l) {
+                    setTimeout(() => { if(window.playCantoneseTTS) window.playCantoneseTTS(D[idx].l); }, 500);
+                }
             } else {
                 let nextStart = currentWPs[0];
                 if (nextStart && Math.hypot(x - nextStart.x, y - nextStart.y) < 60) {
@@ -248,7 +253,6 @@ window.magic = async function() {
         if(data.error) throw data.error;
         window.mAudio = window.mAudio || new Audio();
         window.mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-        window.mAudio.playbackRate = 0.85; 
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); window.mAudio.play();
@@ -257,45 +261,58 @@ window.magic = async function() {
     }, 600);
 };
 
-// 🌟 修正版：完美還原基礎版節奏 (R... Rose)，加慢拼音速度
+// 🌟 核心修正：完美接合 data.js
 window.processWord = function(word, imgUrl = null) {
     if (!word) return;
+    
+    let targetWord = word.toLowerCase();
+    
+    // 🌟 1. 優先匹配 `data.js` 字庫 (完美 IPA 組合)
+    let existingIdx = D.findIndex(d => d.w.toLowerCase() === targetWord);
+    
+    if (existingIdx !== -1) {
+        idx = existingIdx;
+        // 將最後一格字詞階段嘅圖像替換為相機相片
+        D[idx].p[D[idx].p.length - 1].img = imgUrl; 
+        if(window.speakAlert) window.speakAlert(`搵到喇！係 ${D[idx].w}，孜孜，一齊寫 ${D[idx].l} 啦。`);
+        
+        let wrap = document.getElementById('canvas-wrapper');
+        if (wrap) wrap.style.display = 'block';
+        resetCanvas();
+        return;
+    }
+
+    // 🌟 2. 如果係新字 (Fallback)，嚴格 100% 複製 data.js 嘅時間軸與 SSML
     let firstLetter = word.charAt(0).toUpperCase();
     let letterData = D.find(d => d.l === firstLetter);
 
     if (letterData) {
-        const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
+        const simpleIPA = { a:'æ', b:'b', c:'k', d:'d', e:'ɛ', f:'f', g:'g', h:'h', i:'ɪ', j:'dʒ', k:'k', l:'l', m:'m', n:'n', o:'ɒ', p:'p', q:'kw', r:'r', s:'s', t:'t', u:'ʌ', v:'v', w:'w', x:'ks', y:'j', z:'z' };
         
-        let pData = word.split('').map(char => ({ 
-            letter: char, 
-            ipa: char === ' ' ? '' : (simpleIPA[char.toLowerCase()] || '') 
-        }));
-        
-        // 🌟 第 0 秒顯示大字母
-        let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
-        // 🌟 等候 1.5 秒 (讓 TTS 讀首字母並停頓)
-        let currentTime = 1500; 
-        let ssmlPhonics = "";
-        
-        word.split('').forEach((char, i) => {
-            if (char !== ' ') {
-                dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
-                // 🌟 加慢動畫跳轉時間，由 0.7 秒加到 0.85 秒
-                currentTime += 850; 
-                let ipa = simpleIPA[char.toLowerCase()] || char;
-                // 🌟 使用 SSML 停頓 0.6 秒以配合動畫節奏
-                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.6s"/> `;
-            }
+        let pData = word.split('').map(char => {
+            let lowerChar = char.toLowerCase();
+            let ipa = simpleIPA[lowerChar] || lowerChar;
+            return { letter: lowerChar, ipa: `/${ipa}/`, rawIpa: ipa };
         });
         
-        dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: imgUrl });
+        // 🌟 完全複製 data.js 嘅寫法 (唔加 prosody)
+        let ssml = `<speak><emphasis level="strong">${firstLetter}</emphasis>.<break time="1s"/>`;
+        let phases = [{t: 0, type: 'letter', text: firstLetter}];
         
-        // 🌟 加返 firstLetter 喺開頭，完美還原 R -> 拼音 -> Rose 嘅流程
-        let finalSSML = `<speak><prosody rate="0.85">${firstLetter} <break time="1s"/> ${ssmlPhonics} <break time="0.6s"/> ${word}</prosody></speak>`;
+        // 🌟 跟隨 data.js，由 1500ms 起跳，每格 1300ms
+        let curT = 1500; 
+        
+        pData.forEach((pd, index) => {
+            ssml += `<phoneme alphabet="ipa" ph="${pd.rawIpa}">${pd.letter}</phoneme><break time="1s"/>`;
+            phases.push({t: curT, type: 'phonic', pData: pData, hlIdx: index});
+            curT += 1300;
+        });
+        
+        ssml += `${word}.</speak>`;
+        phases.push({t: curT, type: 'word', text: word.toUpperCase(), emoji: '✨', img: imgUrl});
         
         D.push({
-            l: firstLetter, w: word, st: letterData.st, p: dynamicP,
-            ssml: finalSSML
+            l: firstLetter, w: word, emoji: '✨', ssml: ssml, p: phases, st: letterData.st
         });
         idx = D.length - 1;
         
