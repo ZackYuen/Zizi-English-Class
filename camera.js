@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (終極修正版：修復下三分一死角 + 獨立取消掣)
+// 📷 探索魔鏡功能
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -82,8 +82,6 @@ function initCropUI() {
         drawCanvas.id = 'draw-layer';
         drawCanvas.style.position = 'absolute';
         drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
-        
-        // 🌟 核心修復 1：強制 100% 貼合容器，防止底部無法觸控
         drawCanvas.style.width = '100%';
         drawCanvas.style.height = '100%';
         drawCanvas.style.zIndex = '10';
@@ -98,14 +96,14 @@ function initCropUI() {
         setupDrawingEvents(drawCanvas);
     }
 
-    // 🌟 核心修復 2：獨立嘅取消按鈕容器，唔會再畀文字覆蓋
     if (!document.getElementById('cancel-analyze-btn')) {
         let btnDiv = document.createElement('div');
         btnDiv.id = 'cancel-analyze-btn';
         btnDiv.style.display = 'none';
         btnDiv.style.marginTop = '20px';
         btnDiv.style.zIndex = '200';
-        btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onclick="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
+        // 🌟 轉用 onpointerdown，解決手機 Safari 需要禁兩下先 click 嘅 Bug
+        btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onpointerdown="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
         document.getElementById('camera-overlay').appendChild(btnDiv);
     }
 }
@@ -312,15 +310,15 @@ async function identifyWithAI(croppedBase64) {
     }
 
     const loadingMsg = document.getElementById('loading-msg');
+    loadingMsg.style.zIndex = "100";
     
-    // 🌟 提早喺第 8 秒彈出取消掣，避免同 10 秒死線撞車
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
             let btn = document.getElementById('cancel-analyze-btn');
             if (btn) btn.style.display = 'block';
             window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
         }
-    }, 8000); 
+    }, 10000); 
 
     for (const model of models) {
         if (!window.isAnalyzing) break;
@@ -330,7 +328,7 @@ async function identifyWithAI(croppedBase64) {
         window.currentAborter = new AbortController();
         let timeoutId; 
         try {
-            // 每個 Model 最多等 10 秒
+            // 🌟 每一個 Model 嚴格計 10 秒 Timeout
             timeoutId = setTimeout(() => {
                 if(window.currentAborter) window.currentAborter.abort();
             }, 10000);
@@ -357,10 +355,9 @@ async function identifyWithAI(croppedBase64) {
             const data = await response.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 let rawWord = data.choices[0].message.content.trim().toLowerCase();
-                
-                // 暴力清除 a/an/the
                 let cleanWord = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
                 let wordsArray = cleanWord.split(' ');
+                
                 const fillers = ['a', 'an', 'the', 'some', 'one', 'this', 'that', 'it', 'its', 'is', 'i', 'see', 'shows', 'picture', 'image', 'of', 'looks', 'like', 'probably', 'maybe', 'here', 'there', 'are'];
                 while (wordsArray.length > 1 && fillers.includes(wordsArray[0])) {
                     wordsArray.shift();
