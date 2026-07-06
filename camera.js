@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (修正 Cancel 後無法圈選 Bug)
+// 📷 探索魔鏡功能 (加入 AI 字庫提示，提升匹配率)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -84,7 +84,6 @@ function initCropUI() {
         drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
         drawCanvas.style.width = '100%';
         drawCanvas.style.height = '100%';
-        // 🌟 確保畫布層級最高
         drawCanvas.style.zIndex = '200';
         drawCanvas.style.touchAction = 'none'; 
         drawCanvas.style.userSelect = 'none';
@@ -93,6 +92,17 @@ function initCropUI() {
         container.appendChild(img);
         container.appendChild(drawCanvas);
         video.parentNode.insertBefore(container, video.nextSibling);
+        
+        let retakeDiv = document.createElement('div');
+        retakeDiv.id = 'retake-photo-btn';
+        retakeDiv.style.position = 'absolute';
+        retakeDiv.style.bottom = '15px';
+        retakeDiv.style.width = '100%';
+        retakeDiv.style.textAlign = 'center';
+        retakeDiv.style.zIndex = '300';
+        retakeDiv.style.display = 'none';
+        retakeDiv.innerHTML = `<button class="cam-btn" style="background-color: #118ab2; color: white; font-size: 18px; padding: 10px 20px;" onpointerdown="retakePhoto()">🔄 影得唔好？重影啦</button>`;
+        container.appendChild(retakeDiv);
         
         setupDrawingEvents(drawCanvas);
     }
@@ -124,6 +134,9 @@ function setupDrawingEvents(canvas) {
     };
 
     canvas.addEventListener('pointerdown', e => {
+        let retakeBtn = document.getElementById('retake-photo-btn');
+        if (retakeBtn) retakeBtn.style.display = 'none';
+        
         window.isCropping = true;
         const pos = getPos(e);
         window.cropPoints = [pos];
@@ -156,6 +169,8 @@ function setupDrawingEvents(canvas) {
         if (maxX - minX < 30 || maxY - minY < 30) {
             window.playCantoneseTTS("圈大少少啦，再畫過！");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let retakeBtn = document.getElementById('retake-photo-btn');
+            if (retakeBtn) retakeBtn.style.display = 'block';
             return;
         }
 
@@ -266,21 +281,32 @@ window.takePhoto = async function() {
     let drawCanvas = document.getElementById('draw-layer');
     drawCanvas.width = finalW; drawCanvas.height = finalH;
     
-    // 🌟 徹底重置畫布狀態，解決 Cancel 後死機
     drawCanvas.style.pointerEvents = 'auto'; 
     drawCanvas.style.zIndex = '200';
     window.isCropping = false;
     window.cropPoints = [];
     drawCanvas.getContext('2d').clearRect(0, 0, finalW, finalH);
     
+    let retakeBtn = document.getElementById('retake-photo-btn');
+    if (retakeBtn) retakeBtn.style.display = 'block';
+    
     video.style.display = 'none';
     
     window.playCantoneseTTS("影好喇！孜孜，用手指圈出你想知嘅嘢啦！");
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
-    // 🌟 防止 loading-msg 遮擋畫布觸控
-    loadingMsg.style.pointerEvents = 'none';
+    loadingMsg.style.pointerEvents = 'none'; 
     loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
+};
+
+window.retakePhoto = function() {
+    window.stopAllAudio();
+    document.getElementById('preview-container').style.display = 'none';
+    document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('camera-controls').style.display = 'flex';
+    const video = document.getElementById('camera-video');
+    video.style.display = 'block';
+    video.play().catch(e => console.error("Video play error:", e));
 };
 
 window.cancelAnalysis = function() {
@@ -294,6 +320,11 @@ window.cancelAnalysis = function() {
     document.getElementById('cancel-analyze-btn').style.display = 'none';
     document.getElementById('preview-container').style.display = 'none';
     document.getElementById('camera-controls').style.display = 'flex';
+    
+    let drawCanvas = document.getElementById('draw-layer');
+    if(drawCanvas) {
+        drawCanvas.style.pointerEvents = 'auto'; 
+    }
     
     const video = document.getElementById('camera-video');
     video.style.display = 'block';
@@ -318,7 +349,7 @@ async function identifyWithAI(croppedBase64) {
 
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.zIndex = "100";
-    loadingMsg.style.pointerEvents = 'none';
+    loadingMsg.style.pointerEvents = 'none'; 
     
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
@@ -327,6 +358,9 @@ async function identifyWithAI(croppedBase64) {
             window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
         }
     }, 8000); 
+
+    // 🌟 核心：抽出現有字庫，令 AI 優先選擇 data.js 裡面嘅字！
+    let vocabList = window.D ? window.D.map(d => d.w).join(', ') : '';
 
     for (const model of models) {
         if (!window.isAnalyzing) break;
@@ -348,7 +382,8 @@ async function identifyWithAI(croppedBase64) {
                     messages: [{
                         role: "user",
                         content: [
-                            { type: "text", text: "You are a kindergarten teacher. Look at this cropped image. What is the main object shown? Name it using the everyday English vocabulary suitable for a 5-year-old child to learn (e.g., 'leaf', 'flower', 'tree', 'shoe'). MAXIMUM 2 WORDS. Reply with the noun ONLY. No sentences, no articles. Lowercase only." },
+                            // 🌟 聰明 Prompt：逼 AI 優先答 data.js 入面嘅字庫
+                            { type: "text", text: `You are a kindergarten teacher. Look at this cropped image. What is the main object shown? Name it using everyday English. IF the object matches one of these words, you MUST prioritize using it: [${vocabList}]. If not, provide a simple 1-2 word noun. Reply with the noun ONLY. No sentences, no articles. Lowercase only.` },
                             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${croppedBase64}` } }
                         ]
                     }]
