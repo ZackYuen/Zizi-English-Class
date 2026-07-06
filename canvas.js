@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染與描寫演算法模組
+// 🎨 畫布渲染、描寫演算法與字詞處理模組
 // ==========================================
 
 window.resetCanvas = function() {
@@ -132,9 +132,13 @@ window.loop = function() {
                     phase.pData.forEach((pd, i) => {
                         let w = widths[i] * scale;
                         if (pd.letter !== ' ') {
+                            // 🌟 判斷係咪響音 (Vowel)
+                            let isVowel = ['a','e','i','o','u'].includes(pd.letter.toLowerCase());
                             let isHl = (i === phase.hlIdx);
+                            
                             ctx.font = `bold ${scaledBaseFSize}px Comic Sans MS`; 
-                            ctx.fillStyle = isHl ? '#ff595e' : '#1d3557';
+                            // 🌟 顏色設定：Highlight時紅色。非Highlight時，響音橙色，輔音深藍。
+                            ctx.fillStyle = isHl ? '#e63946' : (isVowel ? '#f4a261' : '#1d3557');
                             ctx.fillText(pd.letter, startX + w/2, 120);
                             
                             ctx.font = `bold ${scaledIpaFSize}px Arial`; 
@@ -201,7 +205,6 @@ if(cvs) {
         curStroke.push(x, y);
         while(nextWpIdx < currentWPs.length && Math.hypot(x - currentWPs[nextWpIdx].x, y - currentWPs[nextWpIdx].y) < 60) nextWpIdx++;
         
-        // 🌟 筆畫完成邏輯更新
         if(nextWpIdx >= currentWPs.length) {
             let endWp = currentWPs[currentWPs.length-1];
             curStroke.push(endWp.x, endWp.y); 
@@ -216,7 +219,6 @@ if(cvs) {
                 currentPercent = 100; updateMsg(); 
                 setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); 
             } else {
-                // 🌟 連筆判斷：如果目前位置同下一筆起點距離近於 60px，自動接軌
                 let nextStart = currentWPs[0];
                 if (nextStart && Math.hypot(x - nextStart.x, y - nextStart.y) < 60) {
                     curStroke.push(x, y);
@@ -248,11 +250,57 @@ window.magic = async function() {
         if(data.error) throw data.error;
         window.mAudio = window.mAudio || new Audio();
         window.mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-        window.mAudio.playbackRate = 0.75; 
+        window.mAudio.playbackRate = 0.85; 
     } catch(e) { document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; return; }
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); window.mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
         document.getElementById('msg').innerText = typeof currentMode !== 'undefined' && currentMode === 'camera' ? "魔術成功！再撳下面掣影過啦！" : "成功！";
     }, 600);
+};
+
+// 🌟 獨立出嚟嘅生字處理與時間線建立函數
+window.processWord = function(word, imgUrl = null) {
+    if (!word) return;
+    let firstLetter = word.charAt(0).toUpperCase();
+    let letterData = D.find(d => d.l === firstLetter);
+
+    if (letterData) {
+        const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
+        
+        let pData = word.split('').map(char => ({ 
+            letter: char, 
+            ipa: char === ' ' ? '' : (simpleIPA[char.toLowerCase()] || '') 
+        }));
+        
+        let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
+        let currentTime = 1000;
+        let ssmlPhonics = "";
+        
+        word.split('').forEach((char, i) => {
+            if (char !== ' ') {
+                dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
+                currentTime += 700; // 每一格動畫跳轉時間
+                let ipa = simpleIPA[char.toLowerCase()] || char;
+                // 🌟 使用 SSML break time 強制對齊畫面跳動節奏 (0.5s停頓對齊0.7s動畫)
+                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.5s"/> `;
+            }
+        });
+        
+        dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: imgUrl });
+        
+        D.push({
+            l: firstLetter, w: word, st: letterData.st, p: dynamicP,
+            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>`
+        });
+        idx = D.length - 1;
+        
+        if(window.speakAlert) window.speakAlert(`搵到喇！係 ${word}，孜孜，一齊寫 ${firstLetter} 啦。`);
+    } else {
+        if(window.speakAlert) window.speakAlert(`搵到係 ${word}，但系統未有 ${firstLetter} 嘅筆順，試下影其他嘢啦。`);
+    }
+    
+    let wrap = document.getElementById('canvas-wrapper');
+    if (wrap) wrap.style.display = 'block';
+    resetCanvas();
 };
