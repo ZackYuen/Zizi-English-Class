@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染與描寫演算法模組 (完整版：加入縮放修正與語音中斷)
+// 🎨 畫布渲染與描寫演算法模組
 // ==========================================
 
 window.resetCanvas = function() {
@@ -172,10 +172,9 @@ window.loop = function() {
 
 if(cvs) {
     cvs.addEventListener('pointerdown', e => {
-        if(window.stopAllAudio) window.stopAllAudio(); // 孜孜落筆即刻收聲
+        if(window.stopAllAudio) window.stopAllAudio(); 
         if(isMagic || strokeIdx >= D[idx].st.length) return;
         
-        // 🌟 修正觸控位移 (Offset Bug)
         const r = cvs.getBoundingClientRect();
         const scaleX = cvs.width / r.width;
         const scaleY = cvs.height / r.height;
@@ -193,7 +192,6 @@ if(cvs) {
     cvs.addEventListener('pointermove', e => {
         if(!isDrawing || isMagic) return;
         
-        // 🌟 修正觸控位移 (Offset Bug)
         const r = cvs.getBoundingClientRect();
         const scaleX = cvs.width / r.width;
         const scaleY = cvs.height / r.height;
@@ -202,14 +200,31 @@ if(cvs) {
         
         curStroke.push(x, y);
         while(nextWpIdx < currentWPs.length && Math.hypot(x - currentWPs[nextWpIdx].x, y - currentWPs[nextWpIdx].y) < 60) nextWpIdx++;
+        
+        // 🌟 筆畫完成邏輯更新
         if(nextWpIdx >= currentWPs.length) {
             let endWp = currentWPs[currentWPs.length-1];
             curStroke.push(endWp.x, endWp.y); 
             playSnd(880, 'sine', 0.2); 
-            doneStrokes.push(curStroke); curStroke=[]; strokeIdx++; isDrawing=false;
-            cvs.releasePointerCapture(e.pointerId);
+            doneStrokes.push(curStroke); curStroke=[]; strokeIdx++; 
+
             initWaypoints(); 
-            if(strokeIdx >= D[idx].st.length) { currentPercent = 100; updateMsg(); setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); }
+
+            if(strokeIdx >= D[idx].st.length) { 
+                isDrawing=false;
+                cvs.releasePointerCapture(e.pointerId);
+                currentPercent = 100; updateMsg(); 
+                setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); 
+            } else {
+                // 🌟 連筆判斷：如果目前位置同下一筆起點距離近於 60px，自動接軌
+                let nextStart = currentWPs[0];
+                if (nextStart && Math.hypot(x - nextStart.x, y - nextStart.y) < 60) {
+                    curStroke.push(x, y);
+                } else {
+                    isDrawing=false;
+                    cvs.releasePointerCapture(e.pointerId);
+                }
+            }
         }
     });
 
