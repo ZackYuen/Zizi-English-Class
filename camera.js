@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能
+// 📷 探索魔鏡功能 (架構重構版：只負責相機與 AI)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -102,7 +102,6 @@ function initCropUI() {
         btnDiv.style.display = 'none';
         btnDiv.style.marginTop = '20px';
         btnDiv.style.zIndex = '200';
-        // 🌟 轉用 onpointerdown，解決手機 Safari 需要禁兩下先 click 嘅 Bug
         btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onpointerdown="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
         document.getElementById('camera-overlay').appendChild(btnDiv);
     }
@@ -318,7 +317,7 @@ async function identifyWithAI(croppedBase64) {
             if (btn) btn.style.display = 'block';
             window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
         }
-    }, 10000); 
+    }, 8000); 
 
     for (const model of models) {
         if (!window.isAnalyzing) break;
@@ -328,7 +327,6 @@ async function identifyWithAI(croppedBase64) {
         window.currentAborter = new AbortController();
         let timeoutId; 
         try {
-            // 🌟 每一個 Model 嚴格計 10 秒 Timeout
             timeoutId = setTimeout(() => {
                 if(window.currentAborter) window.currentAborter.abort();
             }, 10000);
@@ -370,7 +368,9 @@ async function identifyWithAI(croppedBase64) {
                     window.isAnalyzing = false;
                     document.getElementById('cancel-analyze-btn').style.display = 'none';
                     loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-                    setTimeout(() => { window.closeCamera(); processWord(finalWord); }, 500);
+                    
+                    // 🌟 呼叫 canvas.js 裡面處理字詞嘅專用函數
+                    setTimeout(() => { window.closeCamera(); window.processWord(finalWord, window.lastCapturedImg); }, 500);
                     return; 
                 }
             }
@@ -398,45 +398,3 @@ async function identifyWithAI(croppedBase64) {
         }, 3000);
     }
 }
-
-window.processWord = function(word) {
-    if (!word) return;
-    let firstLetter = word.charAt(0).toUpperCase();
-    let letterData = D.find(d => d.l === firstLetter);
-
-    if (letterData) {
-        const simpleIPA = { a:'/æ/', b:'/b/', c:'/k/', d:'/d/', e:'/ɛ/', f:'/f/', g:'/g/', h:'/h/', i:'/ɪ/', j:'/dʒ/', k:'/k/', l:'/l/', m:'/m/', n:'/n/', o:'/ɒ/', p:'/p/', q:'/kw/', r:'/r/', s:'/s/', t:'/t/', u:'/ʌ/', v:'/v/', w:'/w/', x:'/ks/', y:'/j/', z:'/z/' };
-        
-        let pData = word.split('').map(char => ({ 
-            letter: char, 
-            ipa: char === ' ' ? '' : (simpleIPA[char.toLowerCase()] || '') 
-        }));
-        
-        let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
-        let currentTime = 1000;
-        let ssmlPhonics = "";
-        
-        word.split('').forEach((char, i) => {
-            if (char !== ' ') {
-                dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
-                currentTime += 700;
-                let ipa = simpleIPA[char.toLowerCase()] || char;
-                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.2s"/> `;
-            }
-        });
-        
-        dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: window.lastCapturedImg });
-        
-        D.push({
-            l: firstLetter, w: word, st: letterData.st, p: dynamicP,
-            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>`
-        });
-        idx = D.length - 1;
-        
-        window.speakAlert(`搵到喇！係 ${word}，孜孜，一齊寫 ${firstLetter} 啦。`);
-    } else {
-        window.speakAlert(`搵到係 ${word}，但系統未有 ${firstLetter} 嘅筆順，試下影其他嘢啦。`);
-    }
-    if (document.getElementById('canvas-wrapper')) document.getElementById('canvas-wrapper').style.display = 'block';
-    resetCanvas();
-};
