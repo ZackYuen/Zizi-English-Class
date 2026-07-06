@@ -1,5 +1,5 @@
 // ==========================================
-// 📷 探索魔鏡功能 (架構重構版：只負責相機與 AI)
+// 📷 探索魔鏡功能 (修正 Cancel 後無法圈選 Bug)
 // ==========================================
 
 window.lastCapturedImg = null;
@@ -84,7 +84,8 @@ function initCropUI() {
         drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
         drawCanvas.style.width = '100%';
         drawCanvas.style.height = '100%';
-        drawCanvas.style.zIndex = '10';
+        // 🌟 確保畫布層級最高
+        drawCanvas.style.zIndex = '200';
         drawCanvas.style.touchAction = 'none'; 
         drawCanvas.style.userSelect = 'none';
         drawCanvas.style.webkitUserSelect = 'none';
@@ -101,7 +102,7 @@ function initCropUI() {
         btnDiv.id = 'cancel-analyze-btn';
         btnDiv.style.display = 'none';
         btnDiv.style.marginTop = '20px';
-        btnDiv.style.zIndex = '200';
+        btnDiv.style.zIndex = '300';
         btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onpointerdown="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
         document.getElementById('camera-overlay').appendChild(btnDiv);
     }
@@ -264,7 +265,12 @@ window.takePhoto = async function() {
     
     let drawCanvas = document.getElementById('draw-layer');
     drawCanvas.width = finalW; drawCanvas.height = finalH;
+    
+    // 🌟 徹底重置畫布狀態，解決 Cancel 後死機
     drawCanvas.style.pointerEvents = 'auto'; 
+    drawCanvas.style.zIndex = '200';
+    window.isCropping = false;
+    window.cropPoints = [];
     drawCanvas.getContext('2d').clearRect(0, 0, finalW, finalH);
     
     video.style.display = 'none';
@@ -272,6 +278,8 @@ window.takePhoto = async function() {
     window.playCantoneseTTS("影好喇！孜孜，用手指圈出你想知嘅嘢啦！");
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
+    // 🌟 防止 loading-msg 遮擋畫布觸控
+    loadingMsg.style.pointerEvents = 'none';
     loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
 };
 
@@ -310,6 +318,7 @@ async function identifyWithAI(croppedBase64) {
 
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.zIndex = "100";
+    loadingMsg.style.pointerEvents = 'none';
     
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
@@ -368,8 +377,6 @@ async function identifyWithAI(croppedBase64) {
                     window.isAnalyzing = false;
                     document.getElementById('cancel-analyze-btn').style.display = 'none';
                     loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-                    
-                    // 🌟 呼叫 canvas.js 裡面處理字詞嘅專用函數
                     setTimeout(() => { window.closeCamera(); window.processWord(finalWord, window.lastCapturedImg); }, 500);
                     return; 
                 }
