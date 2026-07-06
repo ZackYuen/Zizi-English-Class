@@ -1,5 +1,5 @@
 // ==========================================
-// 🎨 畫布渲染、描寫演算法與字詞處理模組
+// 🎨 畫布渲染、描寫演算法與字詞處理模組 (完美同步節奏版)
 // ==========================================
 
 window.resetCanvas = function() {
@@ -132,12 +132,10 @@ window.loop = function() {
                     phase.pData.forEach((pd, i) => {
                         let w = widths[i] * scale;
                         if (pd.letter !== ' ') {
-                            // 🌟 判斷係咪響音 (Vowel)
                             let isVowel = ['a','e','i','o','u'].includes(pd.letter.toLowerCase());
                             let isHl = (i === phase.hlIdx);
                             
                             ctx.font = `bold ${scaledBaseFSize}px Comic Sans MS`; 
-                            // 🌟 顏色設定：Highlight時紅色。非Highlight時，響音橙色，輔音深藍。
                             ctx.fillStyle = isHl ? '#e63946' : (isVowel ? '#f4a261' : '#1d3557');
                             ctx.fillText(pd.letter, startX + w/2, 120);
                             
@@ -259,7 +257,7 @@ window.magic = async function() {
     }, 600);
 };
 
-// 🌟 獨立出嚟嘅生字處理與時間線建立函數
+// 🌟 修正版：完美還原基礎版節奏 (R... Rose)，加慢拼音速度
 window.processWord = function(word, imgUrl = null) {
     if (!word) return;
     let firstLetter = word.charAt(0).toUpperCase();
@@ -273,25 +271,31 @@ window.processWord = function(word, imgUrl = null) {
             ipa: char === ' ' ? '' : (simpleIPA[char.toLowerCase()] || '') 
         }));
         
+        // 🌟 第 0 秒顯示大字母
         let dynamicP = [ { t: 0, type: 'letter', text: firstLetter } ];
-        let currentTime = 1000;
+        // 🌟 等候 1.5 秒 (讓 TTS 讀首字母並停頓)
+        let currentTime = 1500; 
         let ssmlPhonics = "";
         
         word.split('').forEach((char, i) => {
             if (char !== ' ') {
                 dynamicP.push({ t: currentTime, type: 'phonic', pData: pData, hlIdx: i });
-                currentTime += 700; // 每一格動畫跳轉時間
+                // 🌟 加慢動畫跳轉時間，由 0.7 秒加到 0.85 秒
+                currentTime += 850; 
                 let ipa = simpleIPA[char.toLowerCase()] || char;
-                // 🌟 使用 SSML break time 強制對齊畫面跳動節奏 (0.5s停頓對齊0.7s動畫)
-                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.5s"/> `;
+                // 🌟 使用 SSML 停頓 0.6 秒以配合動畫節奏
+                ssmlPhonics += `<phoneme alphabet="ipa" ph="${ipa.replace(/\//g, '')}">${char}</phoneme> <break time="0.6s"/> `;
             }
         });
         
         dynamicP.push({ t: currentTime + 500, type: 'word', text: word, img: imgUrl });
         
+        // 🌟 加返 firstLetter 喺開頭，完美還原 R -> 拼音 -> Rose 嘅流程
+        let finalSSML = `<speak><prosody rate="0.85">${firstLetter} <break time="1s"/> ${ssmlPhonics} <break time="0.6s"/> ${word}</prosody></speak>`;
+        
         D.push({
             l: firstLetter, w: word, st: letterData.st, p: dynamicP,
-            ssml: `<speak><prosody rate="0.85">${ssmlPhonics} <break time="0.4s"/> ${word}</prosody></speak>`
+            ssml: finalSSML
         });
         idx = D.length - 1;
         
