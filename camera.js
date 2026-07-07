@@ -234,7 +234,7 @@ window.openCamera = async function() {
         let cancelBtn = document.getElementById('cancel-analyze-btn');
         if (cancelBtn) cancelBtn.style.display = 'none';
         
-        window.playCantoneseTTS("打開相機啦，影低你想學嘅嘢啦！");
+        window.playCantoneseTTS("影低你想學嘅嘢啦！");
     } catch (err) { alert("開唔到相機：" + err.message); }
 };
 
@@ -292,7 +292,7 @@ window.takePhoto = async function() {
     
     video.style.display = 'none';
     
-    window.playCantoneseTTS("影好喇！孜孜，用手指圈出你想知嘅嘢啦！");
+    window.playCantoneseTTS("影好喇！用手指圈出你想知嘅嘢啦！");
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.display = 'block';
     loadingMsg.style.pointerEvents = 'none'; 
