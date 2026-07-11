@@ -66,6 +66,9 @@ window.exitGame = function() {
     document.getElementById('start-overlay').style.display = 'flex';
 };
 
+// 🌟 喺 game.js 最頂加入一個變量記錄上一個生字
+window.lastWord = '';
+
 window.nextGameQuestion = function() {
     if(!window.isGamePlaying) return;
     
@@ -73,23 +76,31 @@ window.nextGameQuestion = function() {
     const targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
     
-    // 隨機喺該組字庫抽一個字出嚟
-    const wordList = gameWordBank[window.currentGameTarget];
-    const randomItem = wordList[Math.floor(Math.random() * wordList.length)];
+    // 🌟 防重複鎖：確保唔會連續兩次出同一個字
+    let wordList = gameWordBank[window.currentGameTarget];
+    let randomItem;
+    do {
+        randomItem = wordList[Math.floor(Math.random() * wordList.length)];
+    } while (randomItem.w === window.lastWord && wordList.length > 1);
+    
     window.currentWord = randomItem.w;
+    window.lastWord = randomItem.w; // 記住呢個係上一個字
     window.currentEmoji = randomItem.e;
     
-    // 更新 UI 顯示 Emoji
+    // 更新 UI
     document.getElementById('game-emoji-display').innerText = window.currentEmoji;
     document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
     document.getElementById('game-msg').style.color = "#1d3557";
     
-    const speaker = document.getElementById('game-speaker');
-    speaker.style.transform = "scale(1.1)";
-    setTimeout(() => speaker.style.transform = "scale(1)", 300);
-    
-    playGameSound();
+    // 播音前稍微停頓，避免太急
+    setTimeout(() => {
+        const speaker = document.getElementById('game-speaker');
+        speaker.style.transform = "scale(1.1)";
+        setTimeout(() => speaker.style.transform = "scale(1)", 300);
+        playGameSound();
+    }, 500);
 };
+
 
 window.playGameSound = async function() {
     if(window.stopAllAudio) window.stopAllAudio();
