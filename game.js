@@ -1,13 +1,12 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (防重疊修正版)
+// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (代表字強化版)
 // ==========================================
 
 window.currentGameTarget = '';
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
-window.isGameProcessing = false; // 🌟 新增：防止小朋友狂撳掣導致聲畫炒車
+window.isGameProcessing = false; 
 
-// 🌟 新增：確保遊戲音效會被系統正確中斷，唔會疊聲
 const originalStopAllAudio = window.stopAllAudio;
 window.stopAllAudio = function() {
     if (originalStopAllAudio) originalStopAllAudio();
@@ -55,7 +54,7 @@ window.nextGameQuestion = function() {
     const targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
     
-    document.getElementById('game-msg').innerText = "👇 聽清楚喇，係咩音？";
+    document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
     document.getElementById('game-msg').style.color = "#1d3557";
     
     const speaker = document.getElementById('game-speaker');
@@ -75,11 +74,23 @@ window.playGameSound = async function() {
         return; 
     }
     
+    // 🌟 新增：將純發音綁定代表字 (Anchor Word)
     const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
-    const targetIPA = ipaMap[window.currentGameTarget];
+    const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
+    const anchorMap = { 'A': 'ant', 'E': 'egg', 'I': 'ink' };
     
-    // SSML：純粹讀出音標，停頓 0.6 秒再讀一次
-    let ssml = `<speak><prosody rate="0.75"><phoneme alphabet="ipa" ph="${targetIPA}">sound</phoneme> <break time="0.6s"/> <phoneme alphabet="ipa" ph="${targetIPA}">sound</phoneme></prosody></speak>`;
+    const targetIPA = ipaMap[window.currentGameTarget];
+    const targetLetter = letterMap[window.currentGameTarget];
+    const targetWord = anchorMap[window.currentGameTarget];
+    
+    // 🌟 SSML 升級：讀兩次音標，然後讀出代表字 (例如： /æ/ ... /æ/ ... ant)
+    let ssml = `<speak><prosody rate="0.8">
+        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
+        <break time="0.5s"/> 
+        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
+        <break time="0.5s"/> 
+        ${targetWord}
+    </prosody></speak>`;
 
     try {
         let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
@@ -100,7 +111,6 @@ window.playGameSound = async function() {
 };
 
 window.checkAnswer = function(choice) {
-    // 🌟 防撞鎖定：如果處理緊上一題，或者已經退出，唔接受點擊
     if(!window.isGamePlaying || window.isGameProcessing) return;
     window.isGameProcessing = true;
     
@@ -109,32 +119,27 @@ window.checkAnswer = function(choice) {
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
     
     if (choice === window.currentGameTarget) {
-        // 答啱
         if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
         document.getElementById('game-msg').innerText = `✨ 叻仔！係 ${ipaSymbolMap[choice]} 音！`;
         document.getElementById('game-msg').style.color = "#06d6a0";
         if(window.playCantoneseTTS) window.playCantoneseTTS("叻仔！答啱喇！");
         
-        // 留 2.5 秒畀佢慶祝，然後出下一題
         setTimeout(() => {
             window.isGameProcessing = false;
             window.nextGameQuestion();
         }, 2500);
         
     } else {
-        // 答錯
         btn.classList.add('shake-anim');
         setTimeout(() => btn.classList.remove('shake-anim'), 400);
         
-        document.getElementById('game-msg').innerText = `❌ 你揀咗 ${ipaSymbolMap[choice]} 喎，再聽真啲！`;
+        document.getElementById('game-msg').innerText = `❌ 呢個係 ${ipaSymbolMap[choice]} 喎，聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
         
-        // 🌟 即時糾正：話畀佢知佢啱啱撳咗咩音，再叫佢重聽
         if(window.playCantoneseTTS) {
             window.playCantoneseTTS(`呢個係 ${letterMap[choice]} 嘅音，唔係呢個喎。聽多次啦！`);
         }
         
-        // 留 3 秒等廣東話講完，解鎖並重新播問題聲音
         setTimeout(() => {
             window.isGameProcessing = false;
             window.playGameSound();
