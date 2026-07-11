@@ -1,12 +1,19 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組
+// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (防重疊修正版)
 // ==========================================
 
 window.currentGameTarget = '';
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
+window.isGameProcessing = false; // 🌟 新增：防止小朋友狂撳掣導致聲畫炒車
 
-// 注入遊戲專用嘅 CSS 動畫
+// 🌟 新增：確保遊戲音效會被系統正確中斷，唔會疊聲
+const originalStopAllAudio = window.stopAllAudio;
+window.stopAllAudio = function() {
+    if (originalStopAllAudio) originalStopAllAudio();
+    if (window.gameAudio) { window.gameAudio.pause(); window.gameAudio.currentTime = 0; }
+};
+
 const gameStyle = document.createElement('style');
 gameStyle.innerHTML = `
     @keyframes shake-wrong {
@@ -26,15 +33,17 @@ window.startGame = function() {
     document.getElementById('start-overlay').style.display = 'none';
     document.getElementById('game-overlay').style.display = 'flex';
     window.isGamePlaying = true;
+    window.isGameProcessing = false;
     
     if(window.playCantoneseTTS) {
-        window.playCantoneseTTS("聽音大挑戰開始！聽清楚係咩音，然後揀啱嘅圖案啦！");
+        window.playCantoneseTTS("聽音大挑戰開始！睇下上面嘅音標，聽清楚係咩音啦！");
     }
     setTimeout(window.nextGameQuestion, 3500);
 };
 
 window.exitGame = function() {
     window.isGamePlaying = false;
+    window.isGameProcessing = false;
     if(window.stopAllAudio) window.stopAllAudio();
     document.getElementById('game-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'flex';
@@ -43,14 +52,12 @@ window.exitGame = function() {
 window.nextGameQuestion = function() {
     if(!window.isGamePlaying) return;
     
-    // 隨機揀選 A, E, I 考孜孜
     const targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
     
     document.getElementById('game-msg').innerText = "👇 聽清楚喇，係咩音？";
     document.getElementById('game-msg').style.color = "#1d3557";
     
-    // 放大喇叭提佢聽
     const speaker = document.getElementById('game-speaker');
     speaker.style.transform = "scale(1.2)";
     setTimeout(() => speaker.style.transform = "scale(1)", 300);
@@ -68,14 +75,11 @@ window.playGameSound = async function() {
         return; 
     }
     
-    // a, e, i 嘅精準 IPA 設定
     const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
-    const charMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
-    const targetChar = charMap[window.currentGameTarget];
     const targetIPA = ipaMap[window.currentGameTarget];
     
-    // SSML：純粹讀出兩次音標，中間停頓 0.6 秒
-    let ssml = `<speak><prosody rate="0.75"><phoneme alphabet="ipa" ph="${targetIPA}">${targetChar}</phoneme> <break time="0.6s"/> <phoneme alphabet="ipa" ph="${targetIPA}">${targetChar}</phoneme></prosody></speak>`;
+    // SSML：純粹讀出音標，停頓 0.6 秒再讀一次
+    let ssml = `<speak><prosody rate="0.75"><phoneme alphabet="ipa" ph="${targetIPA}">sound</phoneme> <break time="0.6s"/> <phoneme alphabet="ipa" ph="${targetIPA}">sound</phoneme></prosody></speak>`;
 
     try {
         let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
@@ -96,29 +100,44 @@ window.playGameSound = async function() {
 };
 
 window.checkAnswer = function(choice) {
-    if(!window.isGamePlaying) return;
+    // 🌟 防撞鎖定：如果處理緊上一題，或者已經退出，唔接受點擊
+    if(!window.isGamePlaying || window.isGameProcessing) return;
+    window.isGameProcessing = true;
     
     const btn = document.getElementById(`btn-${choice}`);
+    const ipaSymbolMap = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
+    const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
     
     if (choice === window.currentGameTarget) {
-        // 答啱：放紙炮 + 讚賞
+        // 答啱
         if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
-        document.getElementById('game-msg').innerText = "✨ 好叻仔！答啱喇！";
+        document.getElementById('game-msg').innerText = `✨ 叻仔！係 ${ipaSymbolMap[choice]} 音！`;
         document.getElementById('game-msg').style.color = "#06d6a0";
         if(window.playCantoneseTTS) window.playCantoneseTTS("叻仔！答啱喇！");
         
-        // 兩秒後自動出下一題
-        setTimeout(window.nextGameQuestion, 2000);
+        // 留 2.5 秒畀佢慶祝，然後出下一題
+        setTimeout(() => {
+            window.isGameProcessing = false;
+            window.nextGameQuestion();
+        }, 2500);
+        
     } else {
-        // 答錯：按鈕震動 + 鼓勵
+        // 答錯
         btn.classList.add('shake-anim');
         setTimeout(() => btn.classList.remove('shake-anim'), 400);
         
-        document.getElementById('game-msg').innerText = "❌ 唔係呢個喎，再聽真啲！";
+        document.getElementById('game-msg').innerText = `❌ 你揀咗 ${ipaSymbolMap[choice]} 喎，再聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
-        if(window.playCantoneseTTS) window.playCantoneseTTS("唔係呢個喎，試多次啦。");
         
-        // 鼓勵完自動播多次音畀佢聽
-        setTimeout(window.playGameSound, 1500);
+        // 🌟 即時糾正：話畀佢知佢啱啱撳咗咩音，再叫佢重聽
+        if(window.playCantoneseTTS) {
+            window.playCantoneseTTS(`呢個係 ${letterMap[choice]} 嘅音，唔係呢個喎。聽多次啦！`);
+        }
+        
+        // 留 3 秒等廣東話講完，解鎖並重新播問題聲音
+        setTimeout(() => {
+            window.isGameProcessing = false;
+            window.playGameSound();
+        }, 3000);
     }
 };
