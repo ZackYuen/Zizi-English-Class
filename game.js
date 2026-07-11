@@ -1,15 +1,17 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (多字庫 + 圖文並茂版)
+// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (終極隨機解謎版)
 // ==========================================
 
 window.currentGameTarget = '';
 window.currentWord = '';
 window.currentEmoji = '';
+window.lastWord = ''; 
+window.currentChoices = {}; // 🌟 新增：記住每次下面三個掣出咗咩字
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
 window.isGameProcessing = false; 
 
-// 🌟 擴充字庫：a, e, i 各有 6 個精選代表字
+// 擴充字庫：a, e, i 各有 6 個精選代表字
 const gameWordBank = {
     'A': [
         { w: 'ant', e: '🐜' }, { w: 'cat', e: '🐱' }, { w: 'bat', e: '🦇' },
@@ -40,7 +42,7 @@ gameStyle.innerHTML = `
         75% { transform: translateX(-10px); }
     }
     .shake-anim { animation: shake-wrong 0.4s ease-in-out; }
-    .game-ans-btn { cursor: pointer; transition: transform 0.1s; }
+    .game-ans-btn { cursor: pointer; transition: transform 0.1s; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; border:4px solid #fff; border-radius:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width:100px; height:140px; font-size:40px; }
     .game-ans-btn:active { transform: scale(0.9); }
 `;
 document.head.appendChild(gameStyle);
@@ -51,9 +53,10 @@ window.startGame = function() {
     document.getElementById('game-overlay').style.display = 'flex';
     window.isGamePlaying = true;
     window.isGameProcessing = false;
+    window.lastWord = ''; 
     
     if(window.playCantoneseTTS) {
-        window.playCantoneseTTS("聽音大挑戰開始！睇下上面係咩圖案，聽清楚係咩音啦！");
+        window.playCantoneseTTS("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！");
     }
     setTimeout(window.nextGameQuestion, 3500);
 };
@@ -66,33 +69,51 @@ window.exitGame = function() {
     document.getElementById('start-overlay').style.display = 'flex';
 };
 
-// 🌟 喺 game.js 最頂加入一個變量記錄上一個生字
-window.lastWord = '';
-
 window.nextGameQuestion = function() {
     if(!window.isGamePlaying) return;
     
-    // 隨機抽 A, E, 還是 I
     const targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
     
-    // 🌟 防重複鎖：確保唔會連續兩次出同一個字
-    let wordList = gameWordBank[window.currentGameTarget];
-    let randomItem;
-    do {
-        randomItem = wordList[Math.floor(Math.random() * wordList.length)];
-    } while (randomItem.w === window.lastWord && wordList.length > 1);
+    // 🌟 核心升級：為 A, E, I 每個掣都隨機抽一個圖案
+    window.currentChoices = {};
+    targets.forEach(letter => {
+        let wordList = gameWordBank[letter];
+        let randomItem;
+        if (letter === window.currentGameTarget) {
+            // 正確答案：確保唔好同上一題重複
+            do { randomItem = wordList[Math.floor(Math.random() * wordList.length)]; } 
+            while (randomItem.w === window.lastWord && wordList.length > 1);
+            window.currentWord = randomItem.w;
+            window.lastWord = randomItem.w;
+            window.currentEmoji = randomItem.e;
+        } else {
+            // 錯誤選項：隨便抽一個圖案做干擾
+            randomItem = wordList[Math.floor(Math.random() * wordList.length)];
+        }
+        window.currentChoices[letter] = randomItem;
+    });
     
-    window.currentWord = randomItem.w;
-    window.lastWord = randomItem.w; // 記住呢個係上一個字
-    window.currentEmoji = randomItem.e;
-    
-    // 更新 UI
-    document.getElementById('game-emoji-display').innerText = window.currentEmoji;
+    // 🌟 隱藏答案：出題時上面顯示問號，迫佢聽聲
+    document.getElementById('game-emoji-display').innerText = '❓';
     document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
     document.getElementById('game-msg').style.color = "#1d3557";
     
-    // 播音前稍微停頓，避免太急
+    // 🌟 動態更新三個掣嘅圖案
+    const colors = { 'A': '#d90429', 'E': '#023e8a', 'I': '#4a4e69' };
+    const ipas = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
+    
+    targets.forEach(letter => {
+        const btn = document.getElementById(`btn-${letter}`);
+        if(btn) {
+            btn.innerHTML = `
+                <span style="font-size:45px; margin-bottom:5px;">${window.currentChoices[letter].e}</span>
+                <span style="font-size:28px; color:${colors[letter]}; font-weight:bold;">${letter.toLowerCase()}</span>
+                <span style="font-size:20px; color:${colors[letter]}; font-family:Arial;">${ipas[letter]}</span>
+            `;
+        }
+    });
+    
     setTimeout(() => {
         const speaker = document.getElementById('game-speaker');
         speaker.style.transform = "scale(1.1)";
@@ -100,7 +121,6 @@ window.nextGameQuestion = function() {
         playGameSound();
     }, 500);
 };
-
 
 window.playGameSound = async function() {
     if(window.stopAllAudio) window.stopAllAudio();
@@ -118,7 +138,6 @@ window.playGameSound = async function() {
     const targetIPA = ipaMap[window.currentGameTarget];
     const targetLetter = letterMap[window.currentGameTarget];
     
-    // SSML：讀音標 -> 停頓 -> 讀音標 -> 停頓 -> 讀隨機生字
     let ssml = `<speak><prosody rate="0.8">
         <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
         <break time="0.5s"/> 
@@ -155,24 +174,30 @@ window.checkAnswer = function(choice) {
     
     if (choice === window.currentGameTarget) {
         if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+        
+        // 🌟 答啱解鎖圖案：將問號變返做隻動物/物件！
+        document.getElementById('game-emoji-display').innerText = window.currentEmoji;
+        
         document.getElementById('game-msg').innerText = `✨ 叻仔！${window.currentWord} 係 ${ipaSymbolMap[choice]} 音！`;
         document.getElementById('game-msg').style.color = "#06d6a0";
-        if(window.playCantoneseTTS) window.playCantoneseTTS("叻仔！答啱喇！");
+        if(window.playCantoneseTTS) window.playCantoneseTTS("叻仔！");
         
         setTimeout(() => {
             window.isGameProcessing = false;
             window.nextGameQuestion();
-        }, 2500);
+        }, 1800);
         
     } else {
         btn.classList.add('shake-anim');
         setTimeout(() => btn.classList.remove('shake-anim'), 400);
         
-        document.getElementById('game-msg').innerText = `❌ 呢個係 ${ipaSymbolMap[choice]} 喎，聽真啲！`;
+        // 🌟 答錯即時糾正：話畀佢聽佢啱啱㩒咗咩字
+        let clickedWord = window.currentChoices[choice].w;
+        document.getElementById('game-msg').innerText = `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
         
         if(window.playCantoneseTTS) {
-            window.playCantoneseTTS(`呢個圖案係 ${window.currentWord}，你啱啱揀咗 ${letterMap[choice]} 嘅音，唔係呢個喎。聽多次啦！`);
+            window.playCantoneseTTS(`呢個係 ${clickedWord}，係 ${letterMap[choice]} 嘅音。唔係呢個喎，聽多次啦！`);
         }
         
         setTimeout(() => {
