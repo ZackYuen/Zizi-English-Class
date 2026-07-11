@@ -1,11 +1,29 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (代表字強化版)
+// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (多字庫 + 圖文並茂版)
 // ==========================================
 
 window.currentGameTarget = '';
+window.currentWord = '';
+window.currentEmoji = '';
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
 window.isGameProcessing = false; 
+
+// 🌟 擴充字庫：a, e, i 各有 6 個精選代表字
+const gameWordBank = {
+    'A': [
+        { w: 'ant', e: '🐜' }, { w: 'cat', e: '🐱' }, { w: 'bat', e: '🦇' },
+        { w: 'hat', e: '🎩' }, { w: 'map', e: '🗺️' }, { w: 'pan', e: '🍳' }
+    ],
+    'E': [
+        { w: 'egg', e: '🥚' }, { w: 'bed', e: '🛏️' }, { w: 'hen', e: '🐔' },
+        { w: 'net', e: '🥅' }, { w: 'pen', e: '🖊️' }, { w: 'jet', e: '✈️' }
+    ],
+    'I': [
+        { w: 'ink', e: '✒️' }, { w: 'pig', e: '🐷' }, { w: 'lip', e: '👄' },
+        { w: 'six', e: '6️⃣' }, { w: 'zip', e: '🤐' }, { w: 'sit', e: '🪑' }
+    ]
+};
 
 const originalStopAllAudio = window.stopAllAudio;
 window.stopAllAudio = function() {
@@ -35,7 +53,7 @@ window.startGame = function() {
     window.isGameProcessing = false;
     
     if(window.playCantoneseTTS) {
-        window.playCantoneseTTS("聽音大挑戰開始！睇下上面嘅音標，聽清楚係咩音啦！");
+        window.playCantoneseTTS("聽音大挑戰開始！睇下上面係咩圖案，聽清楚係咩音啦！");
     }
     setTimeout(window.nextGameQuestion, 3500);
 };
@@ -51,14 +69,23 @@ window.exitGame = function() {
 window.nextGameQuestion = function() {
     if(!window.isGamePlaying) return;
     
+    // 隨機抽 A, E, 還是 I
     const targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
     
+    // 隨機喺該組字庫抽一個字出嚟
+    const wordList = gameWordBank[window.currentGameTarget];
+    const randomItem = wordList[Math.floor(Math.random() * wordList.length)];
+    window.currentWord = randomItem.w;
+    window.currentEmoji = randomItem.e;
+    
+    // 更新 UI 顯示 Emoji
+    document.getElementById('game-emoji-display').innerText = window.currentEmoji;
     document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
     document.getElementById('game-msg').style.color = "#1d3557";
     
     const speaker = document.getElementById('game-speaker');
-    speaker.style.transform = "scale(1.2)";
+    speaker.style.transform = "scale(1.1)";
     setTimeout(() => speaker.style.transform = "scale(1)", 300);
     
     playGameSound();
@@ -74,22 +101,19 @@ window.playGameSound = async function() {
         return; 
     }
     
-    // 🌟 新增：將純發音綁定代表字 (Anchor Word)
     const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
-    const anchorMap = { 'A': 'ant', 'E': 'egg', 'I': 'ink' };
     
     const targetIPA = ipaMap[window.currentGameTarget];
     const targetLetter = letterMap[window.currentGameTarget];
-    const targetWord = anchorMap[window.currentGameTarget];
     
-    // 🌟 SSML 升級：讀兩次音標，然後讀出代表字 (例如： /æ/ ... /æ/ ... ant)
+    // SSML：讀音標 -> 停頓 -> 讀音標 -> 停頓 -> 讀隨機生字
     let ssml = `<speak><prosody rate="0.8">
         <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
         <break time="0.5s"/> 
         <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
         <break time="0.5s"/> 
-        ${targetWord}
+        ${window.currentWord}
     </prosody></speak>`;
 
     try {
@@ -120,7 +144,7 @@ window.checkAnswer = function(choice) {
     
     if (choice === window.currentGameTarget) {
         if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
-        document.getElementById('game-msg').innerText = `✨ 叻仔！係 ${ipaSymbolMap[choice]} 音！`;
+        document.getElementById('game-msg').innerText = `✨ 叻仔！${window.currentWord} 係 ${ipaSymbolMap[choice]} 音！`;
         document.getElementById('game-msg').style.color = "#06d6a0";
         if(window.playCantoneseTTS) window.playCantoneseTTS("叻仔！答啱喇！");
         
@@ -137,12 +161,12 @@ window.checkAnswer = function(choice) {
         document.getElementById('game-msg').style.color = "#e63946";
         
         if(window.playCantoneseTTS) {
-            window.playCantoneseTTS(`呢個係 ${letterMap[choice]} 嘅音，唔係呢個喎。聽多次啦！`);
+            window.playCantoneseTTS(`呢個圖案係 ${window.currentWord}，你啱啱揀咗 ${letterMap[choice]} 嘅音，唔係呢個喎。聽多次啦！`);
         }
         
         setTimeout(() => {
             window.isGameProcessing = false;
             window.playGameSound();
-        }, 3000);
+        }, 3500);
     }
 };
