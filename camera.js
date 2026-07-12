@@ -1,5 +1,5 @@
 // ==========================================
-// 📸 探索魔鏡 (相機與 AI 認字模組 - 自由畫圈修復版)
+// 📸 探索魔鏡 (相機與 AI 認字模組 - 觸控防中斷及無縫過場版)
 // ==========================================
 
 window.cameraStream = null;
@@ -35,7 +35,6 @@ window.openCamera = async function() {
     const container = document.getElementById('preview-container');
     if (container) container.style.display = 'none';
 
-    // 初始化畫圈圖層
     initCropUI();
 
     try {
@@ -95,9 +94,15 @@ function setupDrawingEvents(canvas) {
         const r = canvas.getBoundingClientRect();
         const scaleX = canvas.width / r.width;
         const scaleY = canvas.height / r.height;
-        // 🌟 修正：相容滑鼠點擊同手機 Touch 事件
-        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
         return {
             x: (clientX - r.left) * scaleX,
             y: (clientY - r.top) * scaleY
@@ -105,6 +110,7 @@ function setupDrawingEvents(canvas) {
     };
 
     const startCrop = (e) => {
+        if(e.cancelable) e.preventDefault(); // 🌟 強制防止手機當成 Scrolling
         let rb = document.getElementById('retake-btn-div');
         if (rb) rb.style.display = 'none';
 
@@ -117,6 +123,7 @@ function setupDrawingEvents(canvas) {
     };
 
     const moveCrop = (e) => {
+        if(e.cancelable) e.preventDefault(); // 🌟 強制防止手機當成 Scrolling
         if (!window.isCropping) return;
         const pos = getPos(e);
         window.cropPoints.push(pos);
@@ -129,9 +136,12 @@ function setupDrawingEvents(canvas) {
     };
 
     const endCrop = async (e) => {
+        if(e.cancelable) e.preventDefault(); // 🌟 強制防止手機當成 Scrolling
         if (!window.isCropping) return;
         window.isCropping = false;
         
+        if (window.cropPoints.length < 2) return;
+
         let xs = window.cropPoints.map(p => p.x);
         let ys = window.cropPoints.map(p => p.y);
         let minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -168,19 +178,33 @@ function setupDrawingEvents(canvas) {
         window.lastCapturedImg = cropCvs.toDataURL('image/jpeg', 0.8);
         
         document.getElementById('preview-container').style.display = 'none';
-        document.getElementById('loading-msg').style.display = 'block';
+        
+        // 🌟 確保 Loading 字眼彈出，畀家長知個 App 做緊嘢
+        const loadingMsg = document.getElementById('loading-msg');
+        if (loadingMsg) {
+            loadingMsg.style.display = 'block';
+            loadingMsg.style.zIndex = '9999';
+            loadingMsg.innerText = '聯絡緊 AI 睇下係咩嚟... 🤖';
+        }
         
         if (window.playCantoneseTTS) window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
         
-        await window.identifyWithAI(window.lastCapturedImg);
+        // 畀 UI 一啲時間刷新出 Loading 畫面，然後先叫 AI
+        setTimeout(() => {
+            window.identifyWithAI(window.lastCapturedImg);
+        }, 100);
     };
 
     canvas.addEventListener('mousedown', startCrop);
     canvas.addEventListener('mousemove', moveCrop);
     canvas.addEventListener('mouseup', endCrop);
-    canvas.addEventListener('touchstart', startCrop, {passive: true});
-    canvas.addEventListener('touchmove', moveCrop, {passive: true});
-    canvas.addEventListener('touchend', endCrop);
+    canvas.addEventListener('mouseleave', endCrop);
+    
+    // 🌟 觸控事件核心修復區：passive 必須為 false
+    canvas.addEventListener('touchstart', startCrop, {passive: false});
+    canvas.addEventListener('touchmove', moveCrop, {passive: false});
+    canvas.addEventListener('touchend', endCrop, {passive: false});
+    canvas.addEventListener('touchcancel', endCrop, {passive: false});
 }
 
 window.takePhoto = function() {
@@ -294,11 +318,17 @@ window.identifyWithAI = async function(base64Img) {
             window.isAnalyzing = false;
             window.closeCamera();
             
+            // 🌟 無縫切換返去基礎寫字模式
             document.getElementById('app').style.display = 'block';
             document.getElementById('btn-re-cam').style.display = 'inline-block';
             document.getElementById('standard-top-bar').style.display = 'flex';
             
-            if (window.processWord) window.processWord(word, window.lastCapturedImg);
+            if (window.processWord) {
+                window.processWord(word, window.lastCapturedImg);
+            } else {
+                console.error("搵唔到 window.processWord");
+                alert("進入寫字模式時發生錯誤！");
+            }
         } else {
             throw new Error("AI 無法識別");
         }
