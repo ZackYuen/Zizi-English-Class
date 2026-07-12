@@ -1,439 +1,156 @@
 // ==========================================
-// 📷 探索魔鏡功能 (加入 AI 字庫提示，提升匹配率)
+// 📸 探索魔鏡 (相機與 AI 認字模組)
 // ==========================================
 
+window.cameraStream = null;
 window.lastCapturedImg = null;
-window.uiAudio = new Audio();
-window.mAudio = window.mAudio || new Audio(); 
-window.fullImgCanvas = null; 
-window.isAnalyzing = false; 
-window.currentAborter = null; 
-
-window.stopAllAudio = function() {
-    if (window.uiAudio) { window.uiAudio.pause(); window.uiAudio.currentTime = 0; }
-    if (window.mAudio) { window.mAudio.pause(); window.mAudio.currentTime = 0; }
-    window.speechSynthesis.cancel(); 
-};
-
-window.playCantoneseTTS = async function(text) {
-    window.stopAllAudio(); 
-    let key = localStorage.getItem('google_tts_key');
-    if (!key) {
-        let u = new SpeechSynthesisUtterance(text);
-        u.lang = 'zh-HK';
-        window.speechSynthesis.speak(u);
-        return;
-    }
-    try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method: 'POST',
-            body: JSON.stringify({
-                input: { text: text },
-                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, 
-                audioConfig: { audioEncoding: 'MP3' }
-            })
-        });
-        let data = await res.json();
-        if (data.audioContent) {
-            window.uiAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-            window.uiAudio.play();
-        }
-    } catch(e) { console.error("TTS Error", e); }
-};
-
-window.speakAlert = function(msg) {
-    window.playCantoneseTTS(msg);
-};
-
-if (!document.getElementById('thinking-style')) {
-    const style = document.createElement('style');
-    style.id = 'thinking-style';
-    style.innerHTML = `
-        @keyframes pulse-brain {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .thinking-anim { display: inline-block; animation: pulse-brain 0.8s infinite ease-in-out; }
-    `;
-    document.head.appendChild(style);
-}
-
-function initCropUI() {
-    let video = document.getElementById('camera-video');
-    let container = document.getElementById('preview-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'preview-container';
-        container.style.position = 'relative';
-        container.style.margin = '0 auto';
-        container.style.display = 'none';
-        container.style.borderRadius = '10px';
-        container.style.overflow = 'hidden';
-        
-        let img = document.createElement('img');
-        img.id = 'photo-preview';
-        img.style.position = 'absolute';
-        img.style.top = '0'; img.style.left = '0';
-        img.style.width = '100%'; img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        
-        let drawCanvas = document.createElement('canvas');
-        drawCanvas.id = 'draw-layer';
-        drawCanvas.style.position = 'absolute';
-        drawCanvas.style.top = '0'; drawCanvas.style.left = '0';
-        drawCanvas.style.width = '100%';
-        drawCanvas.style.height = '100%';
-        drawCanvas.style.zIndex = '200';
-        drawCanvas.style.touchAction = 'none'; 
-        drawCanvas.style.userSelect = 'none';
-        drawCanvas.style.webkitUserSelect = 'none';
-        
-        container.appendChild(img);
-        container.appendChild(drawCanvas);
-        video.parentNode.insertBefore(container, video.nextSibling);
-        
-        let retakeDiv = document.createElement('div');
-        retakeDiv.id = 'retake-photo-btn';
-        retakeDiv.style.position = 'absolute';
-        retakeDiv.style.bottom = '15px';
-        retakeDiv.style.width = '100%';
-        retakeDiv.style.textAlign = 'center';
-        retakeDiv.style.zIndex = '300';
-        retakeDiv.style.display = 'none';
-        retakeDiv.innerHTML = `<button class="cam-btn" style="background-color: #118ab2; color: white; font-size: 18px; padding: 10px 20px;" onpointerdown="retakePhoto()">🔄 影得唔好？重影啦</button>`;
-        container.appendChild(retakeDiv);
-        
-        setupDrawingEvents(drawCanvas);
-    }
-
-    if (!document.getElementById('cancel-analyze-btn')) {
-        let btnDiv = document.createElement('div');
-        btnDiv.id = 'cancel-analyze-btn';
-        btnDiv.style.display = 'none';
-        btnDiv.style.marginTop = '20px';
-        btnDiv.style.zIndex = '300';
-        btnDiv.innerHTML = `<button class="cam-btn cam-btn-close" style="font-size: 18px; padding: 12px 25px;" onpointerdown="cancelAnalysis()">❌ 太耐喇，影過張</button>`;
-        document.getElementById('camera-overlay').appendChild(btnDiv);
-    }
-}
-
-function setupDrawingEvents(canvas) {
-    window.cropPoints = [];
-    window.isCropping = false;
-    const ctx = canvas.getContext('2d');
-
-    const getPos = (e) => {
-        const r = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / r.width;
-        const scaleY = canvas.height / r.height;
-        return {
-            x: (e.clientX - r.left) * scaleX,
-            y: (e.clientY - r.top) * scaleY
-        };
-    };
-
-    canvas.addEventListener('pointerdown', e => {
-        let retakeBtn = document.getElementById('retake-photo-btn');
-        if (retakeBtn) retakeBtn.style.display = 'none';
-        
-        window.isCropping = true;
-        const pos = getPos(e);
-        window.cropPoints = [pos];
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-    });
-
-    canvas.addEventListener('pointermove', e => {
-        if (!window.isCropping) return;
-        const pos = getPos(e);
-        window.cropPoints.push(pos);
-        ctx.lineTo(pos.x, pos.y);
-        ctx.strokeStyle = '#ffca3a'; 
-        ctx.lineWidth = 20; 
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-    });
-
-    canvas.addEventListener('pointerup', async e => {
-        if (!window.isCropping) return;
-        window.isCropping = false;
-        
-        let xs = window.cropPoints.map(p => p.x);
-        let ys = window.cropPoints.map(p => p.y);
-        let minX = Math.min(...xs), maxX = Math.max(...xs);
-        let minY = Math.min(...ys), maxY = Math.max(...ys);
-
-        if (maxX - minX < 30 || maxY - minY < 30) {
-            window.playCantoneseTTS("圈大少少啦，再畫過！");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let retakeBtn = document.getElementById('retake-photo-btn');
-            if (retakeBtn) retakeBtn.style.display = 'block';
-            return;
-        }
-
-        canvas.style.pointerEvents = 'none'; 
-        
-        const scaleX = window.fullImgCanvas.width / canvas.width;
-        const scaleY = window.fullImgCanvas.height / canvas.height;
-        
-        let srcX = minX * scaleX;
-        let srcY = minY * scaleY;
-        let srcW = (maxX - minX) * scaleX;
-        let srcH = (maxY - minY) * scaleY;
-
-        let padX = srcW * 0.2, padY = srcH * 0.2;
-        srcX = Math.max(0, srcX - padX);
-        srcY = Math.max(0, srcY - padY);
-        srcW = Math.min(window.fullImgCanvas.width - srcX, srcW + padX * 2);
-        srcH = Math.min(window.fullImgCanvas.height - srcY, srcH + padY * 2);
-
-        const cropCvs = document.createElement('canvas');
-        cropCvs.width = srcW; cropCvs.height = srcH;
-        cropCvs.getContext('2d').drawImage(window.fullImgCanvas, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
-        
-        let croppedBase64 = cropCvs.toDataURL('image/jpeg', 0.6).split(',')[1];
-        
-        document.getElementById('loading-msg').style.display = 'block';
-        window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
-        document.getElementById('loading-msg').innerHTML = `<span class="thinking-anim">📸</span> 傳送緊去大腦...`;
-        
-        await identifyWithAI(croppedBase64);
-    });
-}
+window.isAnalyzing = false;
 
 window.openCamera = async function() {
-    window.stopAllAudio(); 
+    if (window.stopAllAudio) window.stopAllAudio();
     window.isAnalyzing = false;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("瀏覽器唔支援相機！請用 HTTPS 網址。");
-        return;
-    }
-    try {
-        if (window.stream) {
-            window.stream.getTracks().forEach(track => track.stop());
-            window.stream = null;
-        }
-        initCropUI();
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        window.stream = stream;
+    // 顯示相機介面，隱藏畫布
+    const overlay = document.getElementById('camera-overlay');
+    if(overlay) overlay.style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('btn-re-cam').style.display = 'none';
+
+    try {
+        // 強制要求後置鏡頭
+        window.cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false
+        });
         const video = document.getElementById('camera-video');
-        
-        video.srcObject = stream;
-        video.play().catch(e => console.error("Video play error:", e));
-        
-        video.style.display = 'block';
-        document.getElementById('preview-container').style.display = 'none';
-        document.getElementById('camera-overlay').style.display = 'flex';
-        document.getElementById('camera-controls').style.display = 'flex';
-        document.getElementById('loading-msg').style.display = 'none';
-        
-        let cancelBtn = document.getElementById('cancel-analyze-btn');
-        if (cancelBtn) cancelBtn.style.display = 'none';
-        
-        window.playCantoneseTTS("影低你想學嘅嘢啦！");
-    } catch (err) { alert("開唔到相機：" + err.message); }
+        if(video) {
+            video.srcObject = window.cameraStream;
+        }
+        if(window.playCantoneseTTS) {
+            window.playCantoneseTTS("魔鏡開咗喇！搵下有咩得意嘢，影低佢啦！");
+        }
+    } catch (err) {
+        console.error("相機權限錯誤:", err);
+        alert("開唔到相機呀，請檢查瀏覽器權限！");
+        window.closeCamera();
+        if (typeof window.backToHome === 'function') window.backToHome();
+    }
 };
 
 window.closeCamera = function() {
-    window.stopAllAudio();
-    window.isAnalyzing = false;
-    if (window.currentAborter) window.currentAborter.abort();
-    if (window.stream) {
-        window.stream.getTracks().forEach(track => track.stop());
-        window.stream = null;
+    // 徹底釋放相機資源
+    if (window.cameraStream) {
+        window.cameraStream.getTracks().forEach(track => track.stop());
+        window.cameraStream = null;
     }
-    if (document.getElementById('camera-video')) document.getElementById('camera-video').srcObject = null;
-    document.getElementById('camera-overlay').style.display = 'none';
+    const overlay = document.getElementById('camera-overlay');
+    if(overlay) overlay.style.display = 'none';
 };
 
-window.takePhoto = async function() {
-    window.stopAllAudio(); 
+window.takePhoto = function() {
+    if (window.isAnalyzing) return;
+
     const video = document.getElementById('camera-video');
-    
-    if (!video.videoWidth || video.videoWidth === 0) {
-        window.playCantoneseTTS("鏡頭仲未準備好呀，等多一秒先啦！");
-        return; 
-    }
+    if (!video || !window.cameraStream) return;
 
-    document.getElementById('camera-controls').style.display = 'none';
-    
-    let vW = video.videoWidth, vH = video.videoHeight;
-    let maxH = window.innerHeight * 0.55, maxW = window.innerWidth * 0.9;
-    let ratio = Math.min(maxW / vW, maxH / vH);
-    let finalW = vW * ratio, finalH = vH * ratio;
+    if(window.playCantoneseTTS) window.playCantoneseTTS("影咗喇！等我睇下係咩先！");
 
-    let container = document.getElementById('preview-container');
-    container.style.width = finalW + 'px';
-    container.style.height = finalH + 'px';
-    container.style.display = 'block';
+    // 將 Video 畫面畫落 Canvas 轉做 Base64
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    window.fullImgCanvas = document.createElement('canvas');
-    window.fullImgCanvas.width = vW; window.fullImgCanvas.height = vH;
-    window.fullImgCanvas.getContext('2d').drawImage(video, 0, 0, vW, vH);
+    // 壓縮圖片質素以加快上傳速度
+    window.lastCapturedImg = canvas.toDataURL('image/jpeg', 0.7);
     
-    window.lastCapturedImg = window.fullImgCanvas.toDataURL('image/jpeg', 0.8);
-    document.getElementById('photo-preview').src = window.lastCapturedImg;
+    // 顯示 Loading
+    document.getElementById('loading-msg').style.display = 'block';
     
-    let drawCanvas = document.getElementById('draw-layer');
-    drawCanvas.width = finalW; drawCanvas.height = finalH;
-    
-    drawCanvas.style.pointerEvents = 'auto'; 
-    drawCanvas.style.zIndex = '200';
-    window.isCropping = false;
-    window.cropPoints = [];
-    drawCanvas.getContext('2d').clearRect(0, 0, finalW, finalH);
-    
-    let retakeBtn = document.getElementById('retake-photo-btn');
-    if (retakeBtn) retakeBtn.style.display = 'block';
-    
-    video.style.display = 'none';
-    
-    window.playCantoneseTTS("影好喇！用手指圈出你想知嘅嘢啦！");
-    const loadingMsg = document.getElementById('loading-msg');
-    loadingMsg.style.display = 'block';
-    loadingMsg.style.pointerEvents = 'none'; 
-    loadingMsg.innerHTML = `👆 請喺相度圈出你想學嘅嘢`;
+    // 進行 AI 分析
+    identifyWithAI(window.lastCapturedImg);
 };
 
-window.retakePhoto = function() {
-    window.stopAllAudio();
-    document.getElementById('preview-container').style.display = 'none';
-    document.getElementById('loading-msg').style.display = 'none';
-    document.getElementById('camera-controls').style.display = 'flex';
-    const video = document.getElementById('camera-video');
-    video.style.display = 'block';
-    video.play().catch(e => console.error("Video play error:", e));
-};
-
-window.cancelAnalysis = function() {
-    window.isAnalyzing = false;
-    if (window.currentAborter) window.currentAborter.abort();
-    
-    window.stopAllAudio();
-    window.playCantoneseTTS("無問題，我哋影過第二樣啦！");
-    
-    document.getElementById('loading-msg').style.display = 'none';
-    document.getElementById('cancel-analyze-btn').style.display = 'none';
-    document.getElementById('preview-container').style.display = 'none';
-    document.getElementById('camera-controls').style.display = 'flex';
-    
-    let drawCanvas = document.getElementById('draw-layer');
-    if(drawCanvas) {
-        drawCanvas.style.pointerEvents = 'auto'; 
-    }
-    
-    const video = document.getElementById('camera-video');
-    video.style.display = 'block';
-    video.play().catch(e => console.error("Video play error:", e));
-};
-
-async function identifyWithAI(croppedBase64) {
+window.identifyWithAI = async function(base64Img) {
     window.isAnalyzing = true;
-    const models = [
-        "google/gemini-1.5-flash:free",
-        "qwen/qwen-2-vl-7b-instruct:free",
-        "qwen/qwen2.5-vl-7b-instruct:free",
-        "nvidia/nemotron-nano-12b-v2-vl:free"
-    ];
-
-    let apiKey = localStorage.getItem('openrouter_api_key');
-    if (!apiKey) { window.closeCamera(); window.openSettings(); return; }
-
-
-    const loadingMsg = document.getElementById('loading-msg');
-    loadingMsg.style.zIndex = "100";
-    loadingMsg.style.pointerEvents = 'none'; 
     
-    let cancelTimer = setTimeout(() => {
-        if (window.isAnalyzing) {
-            let btn = document.getElementById('cancel-analyze-btn');
-            if (btn) btn.style.display = 'block';
-            window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+    let apiKey = localStorage.getItem('openrouter_api_key');
+    if (!apiKey) {
+        window.isAnalyzing = false;
+        window.closeCamera();
+        // 🌟 自動彈出你整好嘅設定介面
+        if(window.openSettings) {
+            window.openSettings();
+        } else {
+            alert("請先設定 OpenRouter API Key");
         }
-    }, 8000); 
+        return;
+    }
 
-    // 🌟 核心：抽出現有字庫，令 AI 優先選擇 data.js 裡面嘅字！
-    let vocabList = window.D ? window.D.map(d => d.w).join(', ') : '';
-
-    for (const model of models) {
-        if (!window.isAnalyzing) break;
-        
-        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 嘗試用 ${model.split('/')[1]} 分析緊...`;
-        
-        window.currentAborter = new AbortController();
-        let timeoutId; 
-        try {
-            timeoutId = setTimeout(() => {
-                if(window.currentAborter) window.currentAborter.abort();
-            }, 10000);
-
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [{
+    try {
+        // 使用 OpenRouter 免費 Vision 模型
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen-2-vl-7b-instruct:free",
+                messages: [
+                    {
                         role: "user",
                         content: [
-                            // 🌟 聰明 Prompt：逼 AI 優先答 data.js 入面嘅字庫
-                            { type: "text", text: `You are a kindergarten teacher. Look at this cropped image. What is the main object shown? Name it using everyday English. IF the object matches one of these words, you MUST prioritize using it: [${vocabList}]. If not, provide a simple 1-2 word noun. Reply with the noun ONLY. No sentences, no articles. Lowercase only.` },
-                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${croppedBase64}` } }
+                            { type: "text", text: "What is the main object in this image? Reply with ONLY ONE English word. Do not include any punctuation or extra text." },
+                            { type: "image_url", image_url: { url: base64Img } }
                         ]
-                    }]
-                }),
-                signal: window.currentAborter.signal
-            });
+                    }
+                ]
+            })
+        });
 
-            clearTimeout(timeoutId);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error.message || "API 發生錯誤");
+        }
 
-            const data = await response.json();
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                let rawWord = data.choices[0].message.content.trim().toLowerCase();
-                let cleanWord = rawWord.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
-                let wordsArray = cleanWord.split(' ');
-                
-                const fillers = ['a', 'an', 'the', 'some', 'one', 'this', 'that', 'it', 'its', 'is', 'i', 'see', 'shows', 'picture', 'image', 'of', 'looks', 'like', 'probably', 'maybe', 'here', 'there', 'are'];
-                while (wordsArray.length > 1 && fillers.includes(wordsArray[0])) {
-                    wordsArray.shift();
-                }
-                
-                let finalWord = wordsArray.length > 2 ? wordsArray.slice(-2).join(' ') : wordsArray.join(' ');
+        // 清理 AI 回應，確保淨係得一個英文生字
+        let word = data.choices[0].message.content.trim().toLowerCase();
+        word = word.replace(/[^a-z]/g, '');
 
-                if (finalWord.length > 0) {
-                    clearTimeout(cancelTimer);
-                    window.isAnalyzing = false;
-                    document.getElementById('cancel-analyze-btn').style.display = 'none';
-                    loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-                    setTimeout(() => { window.closeCamera(); window.processWord(finalWord, window.lastCapturedImg); }, 500);
-                    return; 
-                }
+        if (word.length > 0) {
+            window.isAnalyzing = false;
+            window.closeCamera();
+            
+            // 🌟 手動恢復畫布 UI (因為相機模式下預設係隱藏嘅)
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('btn-re-cam').style.display = 'inline-block'; // 顯示「影下一個」
+            document.getElementById('standard-top-bar').style.display = 'flex';
+            
+            // 將生字交畀 canvas.js 處理
+            if(window.processWord) {
+                window.processWord(word, window.lastCapturedImg);
             }
-            throw new Error("無內容回傳");
+        } else {
+            throw new Error("AI 無法識別");
+        }
 
-        } catch (err) {
-            if (timeoutId) clearTimeout(timeoutId);
-            if (!window.isAnalyzing) break; 
-            console.error(`${model} 失敗: ${err.message}`);
+    } catch (error) {
+        console.error("AI 辨識失敗:", error);
+        document.getElementById('loading-msg').style.display = 'none';
+        window.isAnalyzing = false;
+        
+        if(window.playCantoneseTTS) {
+            window.playCantoneseTTS("哎呀，我睇唔清楚，不如你影多次啦！");
+        }
+        
+        // 遇到 Error 嗰陣，如果 API Key 錯咗，可以清空佢等家長重新入
+        if (error.message.includes("401") || error.message.includes("key")) {
+            localStorage.removeItem('openrouter_api_key');
+            alert("API Key 可能無效，請重新輸入！");
         }
     }
-
-    clearTimeout(cancelTimer);
-    if (window.isAnalyzing) {
-        window.isAnalyzing = false;
-        document.getElementById('cancel-analyze-btn').style.display = 'none';
-        window.playCantoneseTTS("哎呀，伺服器太忙喇，不如再影過啦。");
-        loadingMsg.innerText = "❌ 伺服器忙緊，請重試。";
-        setTimeout(() => {
-            loadingMsg.style.display = 'none';
-            document.getElementById('camera-controls').style.display = 'flex';
-            document.getElementById('preview-container').style.display = 'none';
-            document.getElementById('camera-video').style.display = 'block';
-            document.getElementById('camera-video').play().catch(e=>console.error(e));
-        }, 3000);
-    }
-}
+};
