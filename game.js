@@ -1,5 +1,5 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (動態反應版)
+// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (精準無縫不截斷版)
 // ==========================================
 
 window.currentGameTarget = '';
@@ -11,8 +11,9 @@ window.gameAudio = new Audio();
 window.isGamePlaying = false;
 window.isGameProcessing = false; 
 
-window.gameNextTimeout = null;
-window.gameReplayTimeout = null;
+// 🌟 異步音效防重疊 Token
+window.gameAudioToken = 0;
+window.uiAudioToken = 0;
 
 const gameWordBank = {
     'A': [
@@ -29,10 +30,24 @@ const gameWordBank = {
     ]
 };
 
-const originalStopAllAudio = window.stopAllAudio;
+// 🌟 全局強行停止所有音效 (並清除事件監聽)
 window.stopAllAudio = function() {
-    if (originalStopAllAudio) originalStopAllAudio();
-    if (window.gameAudio) { window.gameAudio.pause(); window.gameAudio.currentTime = 0; }
+    if (window.gameAudio) { 
+        window.gameAudio.pause(); 
+        window.gameAudio.currentTime = 0; 
+        window.gameAudio.onended = null;
+    }
+    if (window.uiAudio) { 
+        window.uiAudio.pause(); 
+        window.uiAudio.currentTime = 0; 
+        window.uiAudio.onended = null; 
+    }
+    if (window.mAudio) {
+        window.mAudio.pause();
+        window.mAudio.currentTime = 0;
+    }
+    window.gameAudioToken = 0;
+    window.uiAudioToken = 0;
 };
 
 const gameStyle = document.createElement('style');
@@ -49,9 +64,58 @@ gameStyle.innerHTML = `
 `;
 document.head.appendChild(gameStyle);
 
+// 🌟 核心升級：精準等待廣東話讀完先執行 Callback
+window.playGameMessage = async function(text, callback) {
+    if(window.stopAllAudio) window.stopAllAudio();
+    
+    let token = Date.now();
+    window.uiAudioToken = token;
+    
+    let key = localStorage.getItem('google_tts_key');
+    if (!key) { 
+        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
+        return; 
+    }
+    
+    try {
+        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
+            method: 'POST',
+            body: JSON.stringify({
+                input: { text: text },
+                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, 
+                audioConfig: { audioEncoding: 'MP3' }
+            })
+        });
+        let data = await res.json();
+        
+        // 確保無被中途打斷先繼續
+        if (window.uiAudioToken !== token || !window.isGamePlaying) return;
+        
+        if (data.audioContent) {
+            window.uiAudio = window.uiAudio || new Audio();
+            window.uiAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
+            
+            // 真正監聽「播完」嗰一刻
+            window.uiAudio.onended = () => {
+                window.uiAudio.onended = null;
+                if (window.uiAudioToken === token && window.isGamePlaying) {
+                    setTimeout(() => {
+                        if (window.uiAudioToken === token && window.isGamePlaying) callback();
+                    }, 300); // 播完畀 0.3 秒呼吸位
+                }
+            };
+            window.uiAudio.play();
+        } else {
+            setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500);
+        }
+    } catch(e) { 
+        console.error(e);
+        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
+    }
+};
+
 window.startGame = function() {
     if(window.stopAllAudio) window.stopAllAudio();
-    if(window.gameNextTimeout) clearTimeout(window.gameNextTimeout);
     
     document.getElementById('start-overlay').style.display = 'none';
     document.getElementById('game-overlay').style.display = 'flex';
@@ -59,11 +123,21 @@ window.startGame = function() {
     window.isGameProcessing = false;
     window.lastWord = ''; 
     
-    if(window.playCantoneseTTS) {
-        window.playCantoneseTTS("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！");
-    }
+    // 講完開場白自動出題
+    window.playGameMessage("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！", () => {
+        window.nextGameQuestion();
+    });
+};
+
+window.exitGame = function() {
+    window.isGamePlaying = false;
+    window.isGameProcessing = false;
+    if(window.stopAllAudio) window.stopAllAudio();
     
-    window.gameNextTimeout = setTimeout(window.nextGameQuestion, 5000);
+    let overlay = document.getElementById('game-overlay');
+    if(overlay) overlay.style.display = 'none';
+    let start = document.getElementById('start-overlay');
+    if(start) start.style.display = 'flex';
 };
 
 window.nextGameQuestion = function() {
@@ -108,8 +182,10 @@ window.nextGameQuestion = function() {
     
     setTimeout(() => {
         const speaker = document.getElementById('game-speaker');
-        speaker.style.transform = "scale(1.1)";
-        setTimeout(() => speaker.style.transform = "scale(1)", 300);
+        if(speaker) {
+            speaker.style.transform = "scale(1.1)";
+            setTimeout(() => speaker.style.transform = "scale(1)", 300);
+        }
         playGameSound();
     }, 500);
 };
@@ -117,9 +193,15 @@ window.nextGameQuestion = function() {
 window.playGameSound = async function() {
     if(window.stopAllAudio) window.stopAllAudio();
     
+    let token = Date.now();
+    window.gameAudioToken = token;
+    
     let key = localStorage.getItem('google_tts_key');
-    if(!key) { window.exitGame(); window.openSettings(); return; }
-
+    if(!key) { 
+        alert("請先設定 Google TTS API Key"); 
+        window.exitGame();
+        return; 
+    }
     
     const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
@@ -145,6 +227,10 @@ window.playGameSound = async function() {
         });
         let data = await res.json();
         if(data.error) throw data.error;
+        
+        // 如果 Fetch 緊嗰陣佢撳咗掣，就放棄播放
+        if (window.gameAudioToken !== token || !window.isGamePlaying) return;
+        
         window.gameAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
         window.gameAudio.play();
     } catch(e) { 
@@ -156,8 +242,8 @@ window.playGameSound = async function() {
 window.checkAnswer = function(choice) {
     if(!window.isGamePlaying || window.isGameProcessing) return;
     
+    // 一撳即刻打斷上一把聲
     if(window.stopAllAudio) window.stopAllAudio();
-    if(window.gameReplayTimeout) clearTimeout(window.gameReplayTimeout);
     
     const btn = document.getElementById(`btn-${choice}`);
     const ipaSymbolMap = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
@@ -168,7 +254,6 @@ window.checkAnswer = function(choice) {
         
         if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
         
-        // 🌟 動態反應庫：純粹確認結果
         const correctPhrases = ["啱喇！", "無錯！", "正確！", "對喇！", "搵到喇！"];
         const randomPhrase = correctPhrases[Math.floor(Math.random() * correctPhrases.length)];
         
@@ -176,12 +261,11 @@ window.checkAnswer = function(choice) {
         document.getElementById('game-msg').innerText = `✨ ${randomPhrase}${window.currentWord} 係 ${ipaSymbolMap[choice]} 音！`;
         document.getElementById('game-msg').style.color = "#06d6a0";
         
-        if(window.playCantoneseTTS) window.playCantoneseTTS(randomPhrase);
-        
-        setTimeout(() => {
+        // 播完讚賞之後，自動出下一題
+        window.playGameMessage(randomPhrase, () => {
             window.isGameProcessing = false;
             window.nextGameQuestion();
-        }, 1800);
+        });
         
     } else {
         btn.classList.add('shake-anim');
@@ -191,14 +275,15 @@ window.checkAnswer = function(choice) {
         document.getElementById('game-msg').innerText = `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
         
-        if(window.playCantoneseTTS) {
-            window.playCantoneseTTS(`呢個係 ${clickedWord}，係 ${letterMap[choice]} 嘅音。聽多次啦！`);
-        }
+        let txt = `呢個係 ${clickedWord}，係 ${letterMap[choice]} 嘅音。聽多次啦！`;
         
-        window.gameReplayTimeout = setTimeout(() => {
+        // 播完即時糾正之後，先重新播英文
+        window.playGameMessage(txt, () => {
             if(window.isGamePlaying && !window.isGameProcessing) {
-                window.playGameSound();
+                setTimeout(() => {
+                    if(window.isGamePlaying && !window.isGameProcessing) window.playGameSound();
+                }, 400);
             }
-        }, 4500);
+        });
     }
 };
