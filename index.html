@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孜孜學英文 - 雙模式版 fallback</title>
+    <title>孜孜學英文 - 統一選單版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 統一主選單 (Home Menu) -->
 <div id="home-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100vh; background:#f0f4f8; position:absolute; top:0; left:0; z-index:9000;">
-    <h1 style="color:#1d3557; font-size:36px; margin-bottom:10px;">孜孜拼音大冒險</h1>
+    <h1 style="color:#1d3557; font-size:36px; margin-bottom:10px;">🌟 孜孜拼音大冒險</h1>
     <p style="color:#457b9d; font-size:18px; margin-bottom:40px;">請選擇你想玩嘅模式：</p>
     
     <div style="display:flex; flex-direction:column; gap:20px; width:80%; max-width:300px;">
@@ -24,26 +23,26 @@
         <button onclick="enterMode('game')" style="padding:15px 20px; font-size:20px; border-radius:15px; border:none; background:#f4a261; color:#fff; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
             🎮 聽音大挑戰
         </button>
-        <!-- 將 API Key 設定收埋喺主頁最底 -->
+        
         <button onclick="localStorage.removeItem('google_tts_key'); localStorage.removeItem('openrouter_api_key'); alert('API Keys 已清除，下次使用時會重新要求輸入。');" style="margin-top:30px; padding:10px 15px; font-size:14px; border-radius:10px; border:none; background:#ccc; color:#333; cursor:pointer;">
             ⚙️ 重設 API Keys
         </button>
     </div>
 </div>
 
-<!-- 統一返回主頁按鈕 (所有模式共用) -->
 <button id="back-to-home-btn" onclick="backToHome()" style="display:none; position:fixed; top:20px; right:20px; font-size:18px; padding:10px 15px; border-radius:10px; border:none; background:#ff595e; color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index:9999; cursor:pointer;">
-    🏠 返回主頁
+    🏠 返回主選單
 </button>
 
-<div class="top-bar">
+<div class="top-bar" id="standard-top-bar" style="display:none;">
     <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
-    <button class="btn btn-switch" onclick="toggleMode()">🔄 轉模式</button>
 </div>
 
-<div id="app">
+<div id="start-overlay" style="display:none;"></div>
+
+<div id="app" style="display:none;">
     <div id="msg">由綠色點出發，畫到尾為止！</div>
-    <div id="canvas-wrapper" display:none;><canvas id="cvs" width="300" height="300"></canvas></div>
+    <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
         <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
@@ -51,59 +50,37 @@
     </div>
 </div>
 
-<div id="standard-ui">
+<div id="standard-ui" style="display:none;">
     <div id="group-tabs"></div>
     <div id="kb"></div>
 </div>
 
-<div id="camera-ui-container" style="display:none;">
-    <button class="btn btn-big-camera" onclick="openCamera()">📷 打開相機搵字！</button>
-</div>
+<div id="camera-ui-container" style="display:none;"></div>
 
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline autoplay></video>
     <div id="camera-controls">
         <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
-        <button id="close-camera-btn" onclick="closeCamera()">❌ 取消</button>
+        <button id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
     </div>
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
-<!-- 🎮 聽音遊戲專屬 UI (多字庫 + 動態圖片版) -->
-<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f8edeb; z-index:999; flex-direction:column; align-items:center; justify-content:center;">
-    <button onclick="exitGame()" style="position:absolute; top:20px; right:20px; font-size:20px; padding:10px 15px; border-radius:10px; border:none; background:#ffb7b2; color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">❌ 返主頁</button>
+<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f8edeb; z-index:8000; flex-direction:column; align-items:center; justify-content:center;">
     <h2 style="color:#1d3557; font-size:32px; margin-bottom:10px;">🎧 聽音大挑戰</h2>
     <div id="game-msg" style="font-size:22px; color:#e63946; margin-bottom:10px; font-weight:bold;">睇下係咩圖案，聽下係咩音！</div>
     
-    <!-- 🌟 動態出題大圖案 / 播放按鈕 -->
     <button id="game-speaker" onclick="playGameSound()" style="font-size:75px; width:150px; height:150px; border-radius:20px; border:none; background:#a2d2ff; box-shadow: 0 8px 15px rgba(0,0,0,0.2); margin-bottom:30px; cursor:pointer; transition: transform 0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center;">
         <span id="game-emoji-display">🔊</span>
         <span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
     </button>
     
     <div style="display:flex; gap:15px;">
-        <!-- A 按鈕 (已修正為 🐜 Ant) -->
-        <button id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')" style="font-size:40px; width:100px; height:140px; border-radius:20px; border:4px solid #fff; background:#ffcad4; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0;">
-            🐜
-            <span style="font-size:28px; color:#d90429; font-weight:bold; margin-top:5px;">a</span>
-            <span style="font-size:20px; color:#d90429; font-family:Arial; font-weight:normal;">/æ/</span>
-        </button>
-        <!-- E 按鈕 -->
-        <button id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')" style="font-size:40px; width:100px; height:140px; border-radius:20px; border:4px solid #fff; background:#bde0fe; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0;">
-            🥚
-            <span style="font-size:28px; color:#023e8a; font-weight:bold; margin-top:5px;">e</span>
-            <span style="font-size:20px; color:#023e8a; font-family:Arial; font-weight:normal;">/ɛ/</span>
-        </button>
-        <!-- I 按鈕 -->
-        <button id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')" style="font-size:40px; width:100px; height:140px; border-radius:20px; border:4px solid #fff; background:#d8b4e2; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0;">
-            ✒️
-            <span style="font-size:28px; color:#4a4e69; font-weight:bold; margin-top:5px;">i</span>
-            <span style="font-size:20px; color:#4a4e69; font-family:Arial; font-weight:normal;">/ɪ/</span>
-        </button>
+        <button id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
+        <button id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
+        <button id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')"></button>
     </div>
 </div>
-
-
 
 <script src="data.js"></script>
 <script src="state.js"></script>
@@ -112,47 +89,5 @@
 <script src="camera.js"></script>
 <script src="game.js"></script>
 <script src="router.js"></script>
-
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const originalStartApp = window.startApp;
-    const originalToggleMode = window.toggleMode;
-
-    // 1. 攔截首頁模式選擇
-    window.startApp = function(mode) {
-        if (originalStartApp) originalStartApp(mode);
-        const reCamBtn = document.getElementById('btn-re-cam');
-        const camUi = document.getElementById('camera-ui-container');
-        
-        if (mode === 'camera') {
-            if (camUi) camUi.style.display = 'none'; // 隱藏原本的大按鈕空白頁
-            if (reCamBtn) reCamBtn.style.display = 'inline-block'; // 顯示「影下一個」按鈕
-            if (typeof openCamera === 'function') openCamera(); // 直接開鏡頭
-        } else {
-            if (reCamBtn) reCamBtn.style.display = 'none';
-        }
-    };
-
-    // 2. 攔截頂部「轉模式」按鈕
-    window.toggleMode = function() {
-        if (originalToggleMode) originalToggleMode();
-        
-        // 稍等 50ms 等原本系統嘅 ui.js/state.js 切換完 UI 狀態後再修正
-        setTimeout(() => {
-            const camUi = document.getElementById('camera-ui-container');
-            const reCamBtn = document.getElementById('btn-re-cam');
-            
-            if (camUi && camUi.style.display !== 'none') {
-                camUi.style.display = 'none'; // 隱藏大按鈕
-                if (reCamBtn) reCamBtn.style.display = 'inline-block'; // 顯示「影下一個」
-                if (typeof openCamera === 'function') openCamera();
-            } else {
-                if (reCamBtn) reCamBtn.style.display = 'none';
-            }
-        }, 50);
-    };
-});
-</script>
 </body>
 </html>
