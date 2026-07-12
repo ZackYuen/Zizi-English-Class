@@ -7,58 +7,60 @@ window.currentMode = 'none';
 window.enterMode = function(mode) {
     window.currentMode = mode;
     
-    // 1. 隱藏主選單
+    // 隱藏主選單，顯示返回主頁按鈕
     document.getElementById('home-menu').style.display = 'none';
-    
-    // 2. 顯示返回主頁按鈕
     document.getElementById('back-to-home-btn').style.display = 'block';
     
-    // 3. 根據模式啟動對應功能
     if (mode === 'standard') {
-        document.getElementById('start-overlay').style.display = 'flex';
-        document.getElementById('canvas-wrapper').style.display = 'block';
+        document.getElementById('standard-top-bar').style.display = 'flex';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('standard-ui').style.display = 'block';
+        document.getElementById('btn-re-cam').style.display = 'none';
+        
+        // 觸發 state.js 入面嘅邏輯建構標準 UI
+        if (typeof startApp === 'function') startApp('standard'); 
         if (window.playCantoneseTTS) window.playCantoneseTTS("一齊寫字啦！");
-        // 確保畫布重置
-        if (window.resetCanvas) window.resetCanvas();
     } 
     else if (mode === 'camera') {
-        document.getElementById('start-overlay').style.display = 'none';
-        document.getElementById('canvas-wrapper').style.display = 'none';
+        document.getElementById('standard-top-bar').style.display = 'none';
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('standard-ui').style.display = 'none';
+        
         if (window.openCamera) window.openCamera();
     } 
     else if (mode === 'game') {
-        document.getElementById('start-overlay').style.display = 'none';
-        document.getElementById('canvas-wrapper').style.display = 'none';
+        document.getElementById('standard-top-bar').style.display = 'none';
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('standard-ui').style.display = 'none';
+        
         if (window.startGame) window.startGame();
     }
 };
 
 window.backToHome = function() {
-    // 1. 停止所有聲音同進行中嘅邏輯
+    // 停止所有聲音及倒數
     if(window.stopAllAudio) window.stopAllAudio();
     if(window.gameNextTimeout) clearTimeout(window.gameNextTimeout);
     if(window.gameReplayTimeout) clearTimeout(window.gameReplayTimeout);
     
-    // 2. 關閉所有子模式嘅專屬 UI
+    // 關閉目前模式嘅特定 UI
     if (window.currentMode === 'camera') {
         if (window.closeCamera) window.closeCamera();
     } else if (window.currentMode === 'game') {
         window.isGamePlaying = false;
         let gameOverlay = document.getElementById('game-overlay');
         if (gameOverlay) gameOverlay.style.display = 'none';
-    } else if (window.currentMode === 'standard') {
-        document.getElementById('start-overlay').style.display = 'none';
-        document.getElementById('canvas-wrapper').style.display = 'none';
     }
     
-    // 3. 隱藏額外彈出嘅嘢 (例如相機模式搵完字彈出嚟嘅畫布)
-    let extraCanvas = document.getElementById('canvas-wrapper');
-    if (extraCanvas) extraCanvas.style.display = 'none';
+    // 隱藏所有共用層
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('standard-ui').style.display = 'none';
+    document.getElementById('standard-top-bar').style.display = 'none';
+    if(document.getElementById('camera-overlay')) document.getElementById('camera-overlay').style.display = 'none';
     
-    // 4. 重置狀態
     window.currentMode = 'none';
     
-    // 5. 顯示主選單，隱藏返回按鈕
+    // 顯示主選單，隱藏返回按鈕
     document.getElementById('home-menu').style.display = 'flex';
     document.getElementById('back-to-home-btn').style.display = 'none';
 };
