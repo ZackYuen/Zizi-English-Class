@@ -242,7 +242,7 @@ window.magic = async function() {
     if(window.stopAllAudio) window.stopAllAudio(); 
     
     let key = localStorage.getItem('google_tts_key');
-    if(!key) { key = prompt("請輸入 Google TTS API Key:"); if(key) localStorage.setItem('google_tts_key', key); else return; }
+    if(!key) { window.openSettings(); return; }⁠
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
     document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
     try {
