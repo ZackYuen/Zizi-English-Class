@@ -25,7 +25,6 @@
             🎮 聽音大挑戰
         </button>
         
-        <!-- 🌟 新增：專屬設定按鈕 -->
         <button onclick="openSettings()" style="margin-top:30px; padding:10px 15px; font-size:16px; border-radius:10px; border:none; background:#d8e2dc; color:#1d3557; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:pointer;">
             ⚙️ 設定 API Keys
         </button>
@@ -57,14 +56,23 @@
     <div id="kb"></div>
 </div>
 
-<!-- 2. 相機模式區域 -->
+<!-- 2. 相機模式區域 (🌟 已補回畫圈 Canvas 及按鈕) -->
 <div id="camera-ui-container" style="display:none;"></div>
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline autoplay></video>
+    
+    <!-- 🌟 補回：呢個就係孜孜用嚟畫圈嗰塊透明板 -->
+    <canvas id="crop-canvas" style="display:none; touch-action:none; border: 2px solid #fff; border-radius: 10px; margin-bottom: 20px;"></canvas>
+    
     <div id="camera-controls">
+        <!-- 影相掣 -->
         <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
+        <!-- 🌟 補回：畫完圈之後確定嘅掣 (預設隱藏) -->
+        <button id="confirm-crop-btn" onclick="confirmCrop()" style="display:none; background-color: #06d6a0; border:none; padding:15px 30px; font-size:24px; color:white; border-radius:50px; font-weight:bold;">✅ 確定</button>
+        <!-- 取消掣 -->
         <button id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
     </div>
+    
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
@@ -82,7 +90,7 @@
     </div>
 </div>
 
-<!-- 🌟 新增：統一 API Key 設定彈出視窗 -->
+<!-- 設定彈出視窗 -->
 <div id="settings-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; flex-direction:column; align-items:center; justify-content:center;">
     <div style="background:#fff; padding:30px; border-radius:20px; width:85%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
         <h2 style="color:#1d3557; margin-top:0; margin-bottom:20px; text-align:center;">⚙️ 設定 API Keys</h2>
