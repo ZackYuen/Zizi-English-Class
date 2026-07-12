@@ -118,11 +118,8 @@ window.playGameSound = async function() {
     if(window.stopAllAudio) window.stopAllAudio();
     
     let key = localStorage.getItem('google_tts_key');
-    if(!key) { 
-        alert("請先設定 Google TTS API Key"); 
-        window.exitGame();
-        return; 
-    }
+    if(!key) { window.exitGame(); window.openSettings(); return; }
+
     
     const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
