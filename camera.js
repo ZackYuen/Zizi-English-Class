@@ -1,124 +1,42 @@
 // ==========================================
-// 📸 探索魔鏡 (相機與 AI 認字模組 - 畫框精準切割版)
+// 📸 探索魔鏡 (相機與 AI 認字模組 - 自由畫圈切割版)
 // ==========================================
 
 window.cameraStream = null;
 window.lastCapturedImg = null;
-window.isAnalyzing = false;
+window.fullImgCanvas = null; 
+window.isAnalyzing = false; 
 
-// 🌟 畫框切割專用變量
-window.cropCanvas = null;
-window.cropCtx = null;
-window.snapImg = null; 
-window.cropRect = null;
-window.isDragging = false;
-window.dragStart = {x: 0, y: 0};
+window.cropPoints = [];
+window.isCropping = false;
 
 window.openCamera = async function() {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isAnalyzing = false;
 
+    // 顯示相機，隱藏其餘 UI
     const overlay = document.getElementById('camera-overlay');
     if(overlay) overlay.style.display = 'flex';
     document.getElementById('app').style.display = 'none';
     document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('btn-re-cam').style.display = 'none';
+
+    // 確保回到相機鏡頭預覽狀態
+    const video = document.getElementById('camera-video');
+    if(video) video.style.display = 'block';
+    document.getElementById('camera-controls').style.display = 'flex';
     
-    // 重置為鏡頭模式
-    document.getElementById('camera-video').style.display = 'block';
-    document.getElementById('capture-btn').style.display = 'inline-block';
-    
-    let cc = document.getElementById('crop-container');
-    if(cc) cc.style.display = 'none';
-    
-    // 🌟 動態生成畫框 UI (如果未建立)
-    if (!document.getElementById('crop-container')) {
-        let ccDiv = document.createElement('div');
-        ccDiv.id = 'crop-container';
-        ccDiv.style.cssText = 'display:none; position:absolute; top:0; left:0; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.9); z-index:50;';
-        
-        let header = document.createElement('div');
-        header.innerText = '👆 用手指圈出要認嘅嘢';
-        header.style.cssText = 'color:#fff; font-size:24px; font-weight:bold; margin-bottom:20px;';
-        
-        let cvs = document.createElement('canvas');
-        cvs.id = 'crop-canvas';
-        cvs.style.cssText = 'max-width:95%; max-height:60vh; border:2px solid #fff; border-radius:10px; touch-action:none;';
-        
-        let btnDiv = document.createElement('div');
-        btnDiv.style.cssText = 'display:flex; gap:20px; margin-top:25px;';
-        
-        let btnRetake = document.createElement('button');
-        btnRetake.innerHTML = '🔄 再影過';
-        btnRetake.style.cssText = 'padding:15px 25px; font-size:20px; border-radius:15px; border:none; background:#ff595e; color:#fff; font-weight:bold; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.3);';
-        btnRetake.onclick = window.retakePhoto;
-        
-        let btnConfirm = document.createElement('button');
-        btnConfirm.innerHTML = '✅ 確定';
-        btnConfirm.style.cssText = 'padding:15px 25px; font-size:20px; border-radius:15px; border:none; background:#06d6a0; color:#fff; font-weight:bold; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.3);';
-        btnConfirm.onclick = window.confirmCrop;
-        
-        btnDiv.appendChild(btnRetake);
-        btnDiv.appendChild(btnConfirm);
-        ccDiv.appendChild(header);
-        ccDiv.appendChild(cvs);
-        ccDiv.appendChild(btnDiv);
-        
-        document.getElementById('camera-overlay').appendChild(ccDiv);
-        
-        window.cropCanvas = cvs;
-        window.cropCtx = cvs.getContext('2d');
-        
-        // 🌟 註冊畫框拖拉事件
-        const getPos = (e) => {
-            const rect = cvs.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: (clientX - rect.left) * (cvs.width / rect.width),
-                y: (clientY - rect.top) * (cvs.height / rect.height)
-            };
-        };
+    const container = document.getElementById('preview-container');
+    if(container) container.style.display = 'none';
 
-        const startDrag = (e) => {
-            e.preventDefault();
-            window.isDragging = true;
-            window.dragStart = getPos(e);
-            window.cropRect = { x: window.dragStart.x, y: window.dragStart.y, w: 0, h: 0 };
-        };
-
-        const onDrag = (e) => {
-            if (!window.isDragging) return;
-            e.preventDefault();
-            let pos = getPos(e);
-            window.cropRect.w = pos.x - window.dragStart.x;
-            window.cropRect.h = pos.y - window.dragStart.y;
-            window.drawCropUI();
-        };
-
-        const endDrag = (e) => {
-            if (!window.isDragging) return;
-            e.preventDefault();
-            window.isDragging = false;
-            // 修正反向拖拉嘅負數長闊
-            if (window.cropRect.w < 0) { window.cropRect.x += window.cropRect.w; window.cropRect.w = Math.abs(window.cropRect.w); }
-            if (window.cropRect.h < 0) { window.cropRect.y += window.cropRect.h; window.cropRect.h = Math.abs(window.cropRect.h); }
-        };
-
-        cvs.addEventListener('mousedown', startDrag);
-        cvs.addEventListener('mousemove', onDrag);
-        cvs.addEventListener('mouseup', endDrag);
-        cvs.addEventListener('mouseleave', endDrag);
-        cvs.addEventListener('touchstart', startDrag, {passive: false});
-        cvs.addEventListener('touchmove', onDrag, {passive: false});
-        cvs.addEventListener('touchend', endDrag);
-    }
+    // 初始化或重置自由畫圈 UI 图层
+    initCropUI();
 
     try {
         window.cameraStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' },
             audio: false
         });
-        const video = document.getElementById('camera-video');
         if(video) video.srcObject = window.cameraStream;
         
         if(window.playCantoneseTTS) {
@@ -132,102 +50,178 @@ window.openCamera = async function() {
     }
 };
 
-window.drawCropUI = function() {
-    if(!window.cropCtx || !window.snapImg) return;
-    let cvs = window.cropCanvas;
-    let ctx = window.cropCtx;
+function initCropUI() {
+    let video = document.getElementById('camera-video');
+    let container = document.getElementById('preview-container');
     
-    // 畫底圖
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    ctx.drawImage(window.snapImg, 0, 0, cvs.width, cvs.height);
-    
-    // 畫半透明黑色遮罩
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-    
-    // 如果有畫框，就喺框入面「𠝹穿」個遮罩
-    if (window.cropRect && window.cropRect.w !== 0 && window.cropRect.h !== 0) {
-        ctx.clearRect(window.cropRect.x, window.cropRect.y, window.cropRect.w, window.cropRect.h);
-        ctx.drawImage(window.snapImg, 
-                      window.cropRect.x, window.cropRect.y, window.cropRect.w, window.cropRect.h, 
-                      window.cropRect.x, window.cropRect.y, window.cropRect.w, window.cropRect.h);
-                      
-        // 畫綠色虛線邊框
-        ctx.strokeStyle = '#06d6a0';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([10, 8]);
-        ctx.strokeRect(window.cropRect.x, window.cropRect.y, window.cropRect.w, window.cropRect.h);
-        ctx.setLineDash([]);
+    if (!container && video) {
+        container = document.createElement('div');
+        container.id = 'preview-container';
+        container.style.cssText = 'position:relative; margin:0 auto; display:none; border-radius:10px; overflow:hidden;';
+        
+        let img = document.createElement('img');
+        img.id = 'photo-preview';
+        img.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;';
+        
+        let drawCanvas = document.createElement('canvas');
+        drawCanvas.id = 'draw-layer';
+        drawCanvas.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:200; touch-action:none; user-select:none; -webkit-user-select:none;';
+        
+        // 新增重影按鈕
+        let retakeBtnDiv = document.createElement('div');
+        retakeBtnDiv.id = 'retake-btn-div';
+        retakeBtnDiv.style.cssText = 'position:absolute; bottom:15px; width:100%; text-align:center; z-index:300;';
+        retakeBtnDiv.innerHTML = `<button class="btn" style="background-color:#118ab2; color:white; font-size:18px; padding:10px 20px; border:none; border-radius:10px;" onclick="window.retakePhoto()">🔄 重影一幅</button>`;
+        
+        container.appendChild(img);
+        container.appendChild(drawCanvas);
+        container.appendChild(retakeBtnDiv);
+        video.parentNode.insertBefore(container, video.nextSibling);
+        
+        setupDrawingEvents(drawCanvas);
     }
-};
+}
+
+function setupDrawingEvents(canvas) {
+    const ctx = canvas.getContext('2d');
+
+    const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+        return {
+            x: (e.clientX - r.left) * scaleX,
+            y: (e.clientY - r.top) * scaleY
+        };
+    };
+
+    canvas.addEventListener('pointerdown', e => {
+        // 開始劃圈時隱藏重影按鈕以免遮擋
+        let rb = document.getElementById('retake-btn-div');
+        if(rb) rb.style.display = 'none';
+
+        window.isCropping = true;
+        const pos = getPos(e);
+        window.cropPoints = [pos];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    });
+
+    canvas.addEventListener('pointermove', e => {
+        if (!window.isCropping) return;
+        const pos = getPos(e);
+        window.cropPoints.push(pos);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = '#ffca3a'; // 黃色自由劃圈線
+        ctx.lineWidth = 15; 
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    });
+
+    canvas.addEventListener('pointerup', async e => {
+        if (!window.isCropping) return;
+        window.isCropping = false;
+        
+        let xs = window.cropPoints.map(p => p.x);
+        let ys = window.cropPoints.map(p => p.y);
+        let minX = Math.min(...xs), maxX = Math.max(...xs);
+        let minY = Math.min(...ys), maxY = Math.max(...ys);
+
+        // 如果劃得太細，當作無效重劃
+        if (maxX - minX < 20 || maxY - minY < 20) {
+            if(window.playCantoneseTTS) window.playCantoneseTTS("圈大少少啦，再畫過！");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let rb = document.getElementById('retake-btn-div');
+            if(rb) rb.style.display = 'block';
+            return;
+        }
+
+        canvas.style.pointerEvents = 'none'; 
+        
+        // 將劃圈坐標投射回大圖 Canvas 進行精準切割
+        const scaleX = window.fullImgCanvas.width / canvas.width;
+        const scaleY = window.fullImgCanvas.height / canvas.height;
+        
+        let srcX = minX * scaleX;
+        let srcY = minY * scaleY;
+        let srcW = (maxX - minX) * scaleX;
+        let srcH = (maxY - minY) * scaleY;
+
+        // 稍微外擴 15% 邊界以免切得太死
+        let padX = srcW * 0.15, padY = srcH * 0.15;
+        srcX = Math.max(0, srcX - padX);
+        srcY = Math.max(0, srcY - padY);
+        srcW = Math.min(window.fullImgCanvas.width - srcX, srcW + padX * 2);
+        srcH = Math.min(window.fullImgCanvas.height - srcY, srcH + padY * 2);
+
+        const cropCvs = document.createElement('canvas');
+        cropCvs.width = srcW; cropCvs.height = srcH;
+        cropCvs.getContext('2d').drawImage(window.fullImgCanvas, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+        
+        window.lastCapturedImg = cropCvs.toDataURL('image/jpeg', 0.8);
+        
+        document.getElementById('preview-container').style.display = 'none';
+        document.getElementById('loading-msg').style.display = 'block';
+        
+        if(window.playCantoneseTTS) window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
+        
+        await window.identifyWithAI(window.lastCapturedImg);
+    });
+}
 
 window.takePhoto = function() {
-    if (window.isAnalyzing) return;
-    
     const video = document.getElementById('camera-video');
     if (!video || !window.cameraStream) return;
 
-    if(window.playCantoneseTTS) window.playCantoneseTTS("影咗喇！用手指圈出你想認嘅嘢啦！");
+    // 計算符合屏幕比例嘅大小
+    let vW = video.videoWidth, vH = video.videoHeight;
+    let maxH = window.innerHeight * 0.55, maxW = window.innerWidth * 0.95;
+    let ratio = Math.min(maxW / vW, maxH / vH);
+    let finalW = vW * ratio, finalH = vH * ratio;
 
-    // 截取全畫面
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    let container = document.getElementById('preview-container');
+    if(container) {
+        container.style.width = finalW + 'px';
+        container.style.height = finalH + 'px';
+        container.style.display = 'block';
+    }
     
-    window.snapImg = new Image();
-    window.snapImg.onload = () => {
-        let cvs = window.cropCanvas;
-        let ratio = window.snapImg.width / window.snapImg.height;
-        let displayWidth = Math.min(window.innerWidth * 0.9, window.snapImg.width);
-        let displayHeight = displayWidth / ratio;
-        
-        cvs.width = displayWidth;
-        cvs.height = displayHeight;
-        
-        window.cropRect = null; 
-        window.drawCropUI();
-        
-        // 隱藏鏡頭，顯示畫框 UI
-        video.style.display = 'none';
-        document.getElementById('capture-btn').style.display = 'none';
-        document.getElementById('crop-container').style.display = 'flex';
-    };
-    window.snapImg.src = canvas.toDataURL('image/jpeg', 0.9);
+    // 儲存全高解像度原始大圖
+    window.fullImgCanvas = document.createElement('canvas');
+    window.fullImgCanvas.width = vW; window.fullImgCanvas.height = vH;
+    window.fullImgCanvas.getContext('2d').drawImage(video, 0, 0, vW, vH);
+    
+    document.getElementById('photo-preview').src = window.fullImgCanvas.toDataURL('image/jpeg', 0.9);
+    
+    let drawCanvas = document.getElementById('draw-layer');
+    if(drawCanvas) {
+        drawCanvas.width = finalW; drawCanvas.height = finalH;
+        drawCanvas.style.pointerEvents = 'auto'; 
+        let ctx = drawCanvas.getContext('2d');
+        ctx.clearRect(0, 0, finalW, finalH);
+    }
+    
+    let rb = document.getElementById('retake-btn-div');
+    if(rb) rb.style.display = 'block';
+
+    video.style.display = 'none';
+    document.getElementById('camera-controls').style.display = 'none';
+    
+    if(window.playCantoneseTTS) window.playCantoneseTTS("影好喇！孜孜，用手指圈出你想知嘅嘢啦！");
 };
 
 window.retakePhoto = function() {
-    document.getElementById('crop-container').style.display = 'none';
-    document.getElementById('camera-video').style.display = 'block';
-    document.getElementById('capture-btn').style.display = 'inline-block';
+    let container = document.getElementById('preview-container');
+    if(container) container.style.display = 'none';
+    
+    let video = document.getElementById('camera-video');
+    if(video) video.style.display = 'block';
+    
+    document.getElementById('camera-controls').style.display = 'flex';
+    document.getElementById('loading-msg').style.display = 'none';
     if(window.playCantoneseTTS) window.playCantoneseTTS("再影過啦！");
-};
-
-window.confirmCrop = function() {
-    if (!window.cropRect || window.cropRect.w === 0 || window.cropRect.h === 0) {
-        if(window.playCantoneseTTS) window.playCantoneseTTS("你仲未圈出要認嘅嘢喎！");
-        return;
-    }
-    
-    // 🌟 將畫咗框嗰忽「剪」出嚟
-    let finalCanvas = document.createElement('canvas');
-    finalCanvas.width = window.cropRect.w;
-    finalCanvas.height = window.cropRect.h;
-    let finalCtx = finalCanvas.getContext('2d');
-    
-    finalCtx.drawImage(window.snapImg, 
-                       window.cropRect.x, window.cropRect.y, window.cropRect.w, window.cropRect.h, 
-                       0, 0, window.cropRect.w, window.cropRect.h);
-                       
-    // 將剪裁後嘅圖片轉為 Base64
-    window.lastCapturedImg = finalCanvas.toDataURL('image/jpeg', 0.8);
-    
-    document.getElementById('crop-container').style.display = 'none';
-    document.getElementById('loading-msg').style.display = 'block';
-    if(window.playCantoneseTTS) window.playCantoneseTTS("收到！等我睇下係咩先！");
-    
-    window.identifyWithAI(window.lastCapturedImg);
 };
 
 window.closeCamera = function() {
@@ -237,79 +231,9 @@ window.closeCamera = function() {
     }
     const overlay = document.getElementById('camera-overlay');
     if(overlay) overlay.style.display = 'none';
-    let cc = document.getElementById('crop-container');
-    if(cc) cc.style.display = 'none';
-};
-
-window.identifyWithAI = async function(base64Img) {
-    window.isAnalyzing = true;
     
-    let apiKey = localStorage.getItem('openrouter_api_key');
-    if (!apiKey) {
-        window.isAnalyzing = false;
-        window.closeCamera();
-        if(window.openSettings) { window.openSettings(); } 
-        else { alert("請先設定 OpenRouter API Key"); }
-        return;
-    }
-
-    try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "qwen/qwen-2-vl-7b-instruct:free",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: "What is the main object in this image? Reply with ONLY ONE English word. Do not include any punctuation or extra text." },
-                            { type: "image_url", image_url: { url: base64Img } }
-                        ]
-                    }
-                ]
-            })
-        });
-
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message || "API 發生錯誤");
-
-        let word = data.choices[0].message.content.trim().toLowerCase();
-        word = word.replace(/[^a-z]/g, ''); // 過濾符號，確保淨係得英文字
-
-        if (word.length > 0) {
-            window.isAnalyzing = false;
-            window.closeCamera();
-            
-            // 恢復畫布 UI
-            document.getElementById('app').style.display = 'block';
-            document.getElementById('btn-re-cam').style.display = 'inline-block';
-            document.getElementById('standard-top-bar').style.display = 'flex';
-            
-            if(window.processWord) window.processWord(word, window.lastCapturedImg);
-        } else {
-            throw new Error("AI 無法識別");
-        }
-
-    } catch (error) {
-        console.error("AI 辨識失敗:", error);
-        document.getElementById('loading-msg').style.display = 'none';
-        window.isAnalyzing = false;
-        
-        if(window.playCantoneseTTS) window.playCantoneseTTS("哎呀，我睇唔清楚，不如你影多次啦！");
-        
-        // 自動重置返去影相畫面
-        document.getElementById('camera-video').style.display = 'block';
-        document.getElementById('capture-btn').style.display = 'inline-block';
-        
-        if (error.message.includes("401") || error.message.includes("key")) {
-            localStorage.removeItem('openrouter_api_key');
-            alert("API Key 可能無效，請重新輸入！");
-            window.closeCamera();
-            if(window.openSettings) window.openSettings();
-        }
-    }
+    const container = document.getElementById('preview-container');
+    if(container) container.style.display = 'none';
 };
+
+window.identifyWithAI = async function(base64Img)
