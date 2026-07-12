@@ -341,11 +341,8 @@ async function identifyWithAI(croppedBase64) {
     ];
 
     let apiKey = localStorage.getItem('openrouter_api_key');
-    if (!apiKey) {
-        apiKey = prompt("請輸入 OpenRouter API Key:");
-        if(apiKey) localStorage.setItem('openrouter_api_key', apiKey);
-        else { window.closeCamera(); return; }
-    }
+    if (!apiKey) { window.closeCamera(); window.openSettings(); return; }
+
 
     const loadingMsg = document.getElementById('loading-msg');
     loadingMsg.style.zIndex = "100";
