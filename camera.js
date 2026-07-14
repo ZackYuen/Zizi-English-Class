@@ -182,69 +182,110 @@ window.closeCamera = function() {
     safeDisplay('camera-overlay', 'none');
 };
 
-window.identifyWithAI = async function(base64Img) {
-    let apiKey = localStorage.getItem('openrouter_api_key');
+async function identifyWithAI(croppedBase64) {
+    window.isAnalyzing = true;
     
+    // 🌟 核心調整：Nvidia 放第一位，確保優先調用
+    const models = [
+        "nvidia/nemotron-nano-12b-v2-vl:free",
+        "qwen/qwen-2-vl-7b-instruct:free",
+        "google/gemini-1.5-flash:free"
+    ];
+
+    let apiKey = localStorage.getItem('openrouter_api_key');
     if (!apiKey) {
-        window.closeCamera();
-        if (window.openSettings) window.openSettings();
-        else alert("請設定 OpenRouter API Key");
-        return;
+        apiKey = prompt("請輸入 OpenRouter API Key:");
+        if(apiKey) localStorage.setItem('openrouter_api_key', apiKey);
+        else { window.closeCamera(); return; }
     }
 
-    try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "qwen/qwen-2-vl-7b-instruct:free",
-                messages: [
-                    {
+    const loadingMsg = document.getElementById('loading-msg');
+    loadingMsg.style.zIndex = "100";
+    loadingMsg.style.pointerEvents = 'none'; 
+    
+    // 超時提示
+    let cancelTimer = setTimeout(() => {
+        if (window.isAnalyzing) {
+            let btn = document.getElementById('cancel-analyze-btn');
+            if (btn) btn.style.display = 'block';
+            window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+        }
+    }, 10000); 
+
+    let vocabList = window.D ? window.D.map(d => d.w).join(', ') : '';
+
+    for (const model of models) {
+        if (!window.isAnalyzing) break;
+        
+        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`;
+        
+        window.currentAborter = new AbortController();
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [{
                         role: "user",
                         content: [
-                            { type: "text", text: "What is the main object in this image? Reply with ONLY ONE English word. Do not include any punctuation or extra text." },
-                            { type: "image_url", image_url: { url: base64Img } }
+                            { type: "text", text: `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the noun, no other text.` },
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${croppedBase64}` } }
                         ]
-                    }
-                ]
-            })
-        });
+                    }]
+                }),
+                signal: window.currentAborter.signal
+            });
 
-        const data = await response.json();
-        
-        if (data.error) throw new Error(data.error.message || "API 發生錯誤");
+            if (!response.ok) continue;
 
-        let word = data.choices[0].message.content.trim().toLowerCase();
-        word = word.replace(/[^a-z]/g, '');
+            const data = await response.json();
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                // 🌟 強力清洗回應：只保留最後一個詞，移除所有句子結構
+                let rawWord = data.choices[0].message.content.trim().toLowerCase();
+                // 拆解所有文字只留英文單字
+                let words = rawWord.split(/[^a-z]+/).filter(w => w.length > 0);
+                
+                // 簡單邏輯：最後一個出現的單字通常就是目標物
+                let finalWord = words[words.length - 1]; 
 
-        if (word.length > 0) {
-            window.closeCamera();
-            
-            // 手動恢復寫字畫布
-            safeDisplay('app', 'block');
-            safeDisplay('standard-top-bar', 'flex');
-            safeDisplay('btn-re-cam', 'inline-block');
-            
-            if (typeof window.processWord === 'function') {
-                window.processWord(word, window.lastCapturedImg);
-            } else {
-                alert("錯誤：搵唔到 processWord，寫字畫布未能載入！請檢查 canvas.js 是否有載入。");
+                if (finalWord && finalWord.length > 0) {
+                    clearTimeout(cancelTimer);
+                    window.isAnalyzing = false;
+                    
+                    // 成功認字，即刻切換
+                    document.getElementById('loading-msg').innerText = `✨ 搵到喇！係 ${finalWord}！`;
+                    
+                    setTimeout(() => { 
+                        window.closeCamera(); 
+                        
+                        // 🌟 強制恢復寫字 UI，確保唔會卡死
+                        document.getElementById('app').style.display = 'block';
+                        document.getElementById('standard-top-bar').style.display = 'flex';
+                        
+                        if(window.processWord) {
+                            window.processWord(finalWord, window.lastCapturedImg);
+                        }
+                    }, 500);
+                    return; 
+                }
             }
-        } else {
-            throw new Error("AI 認唔到字");
+        } catch (err) {
+            console.error(`${model} 失敗: ${err.message}`);
         }
-
-    } catch (error) {
-        console.error("AI 辨識失敗:", error);
-        alert("AI 錯誤: " + error.message);
-        
-        safeDisplay('loading-msg', 'none');
-        safeDisplay('camera-video', 'block');
-        safeDisplay('crop-canvas', 'none');
-        safeDisplay('capture-btn', 'inline-block');
-        safeDisplay('confirm-crop-btn', 'none');
     }
+
+    clearTimeout(cancelTimer);
+    if (window.isAnalyzing) {
+        window.isAnalyzing = false;
+        window.playCantoneseTTS("哎呀，認唔到呀，不如影過第二樣啦。");
+        loadingMsg.innerText = "❌ 認唔到，請重試。";
+        setTimeout(() => {
+            loadingMsg.style.display = 'none';
+            document.getElementById('camera-controls').style.display = 'flex';
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('camera-video').style.display = 'block';
+        }, 2000);
+    }
+}
 };
