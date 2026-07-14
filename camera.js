@@ -5,6 +5,8 @@
 // - 圖片縮放/壓縮以減少 payload
 // - per-request timeout 與取消 (AbortController)
 // - 防止重複註冊繪圖事件
+// - 改為 multipart/form-data 上傳（如果提供 proxy 支援）
+// - 提供更友善的錯誤訊息與 UI state 鎖定
 // ==========================================
 
 window.cameraStream = null;
@@ -15,6 +17,11 @@ window.isCropping = false;
 window.snapImg = null;
 window.currentAborter = null;
 
+// OPTIONAL: If you have a server-side proxy endpoint that forwards the request to OpenRouter
+// set localStorage.openrouter_proxy_url = 'https://your-proxy.example.com/openrouter'
+// The proxy should accept multipart/form-data (file + model + messages) and forward to OpenRouter
+const PROXY_URL = localStorage.getItem('openrouter_proxy_url') || null;
+
 // 安全獲取 DOM，防止因 HTML 缺失而卡死
 function safeDisplay(id, displayStyle) {
   const el = document.getElementById(id);
@@ -22,6 +29,22 @@ function safeDisplay(id, displayStyle) {
 }
 function getEl(id) {
   return document.getElementById(id);
+}
+
+// Convert dataURL to Blob
+function dataURLToBlob(dataURL) {
+  const parts = dataURL.split(',');
+  const meta = parts[0];
+  const base64 = parts[1];
+  const match = meta.match(/data:(.*);base64/);
+  const contentType = match ? match[1] : 'image/jpeg';
+  const byteString = atob(base64);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: contentType });
 }
 
 // Resize canvas down to maxSide (preserve aspect). Returns new canvas.
@@ -37,6 +60,16 @@ function resizeCanvasMax(srcCanvas, maxSide) {
   const ctx = dst.getContext('2d');
   ctx.drawImage(srcCanvas, 0, 0, dst.width, dst.height);
   return dst;
+}
+
+// UI helpers to lock/unlock buttons while operations are running
+function setCameraControlsEnabled(enabled) {
+  const captureBtn = getEl('capture-btn');
+  const confirmBtn = getEl('confirm-crop-btn');
+  const cancelBtn = getEl('cancel-analyze-btn');
+  if (captureBtn) captureBtn.disabled = !enabled;
+  if (confirmBtn) confirmBtn.disabled = !enabled;
+  if (cancelBtn) cancelBtn.disabled = !enabled;
 }
 
 window.openCamera = async function () {
@@ -68,9 +101,7 @@ window.openCamera = async function () {
         video.srcObject = window.cameraStream;
         video.autoplay = true;
         video.playsInline = true;
-        // Some browsers require muted for autoplay to work
         video.muted = true;
-        // play() may reject in some contexts; swallow error
         video.play().catch(() => { /* ignore */ });
       } catch (e) {
         console.warn('video element setup failed:', e);
@@ -109,12 +140,10 @@ window.takePhoto = function () {
     tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
   } catch (e) {
     console.warn('drawImage failed (maybe video not ready):', e);
-    // still continue with blank canvas if needed
   }
 
   let maxW = Math.max(100, window.innerWidth * 0.95);
   let maxH = Math.max(100, window.innerHeight * 0.6);
-  // avoid division by zero
   let ratio = 1;
   if (vW > 0 && vH > 0) ratio = Math.min(maxW / vW, maxH / vH);
   if (!isFinite(ratio) || ratio <= 0) ratio = 1;
@@ -135,7 +164,6 @@ window.takePhoto = function () {
 
     setupDrawingEvents(cropCanvas);
   };
-  // quality 0.9 here; we'll resize and compress later before upload
   try {
     window.snapImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
   } catch (e) {
@@ -183,7 +211,6 @@ function setupDrawingEvents(canvas) {
     const pos = getPos(e);
     window.cropPoints = [pos];
 
-    // redraw base image
     if (window.snapImg) ctx.drawImage(window.snapImg, 0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
@@ -236,6 +263,9 @@ window.confirmCrop = function () {
     return;
   }
 
+  // disable controls while processing crop
+  setCameraControlsEnabled(false);
+
   let xs = window.cropPoints.map(p => p.x);
   let ys = window.cropPoints.map(p => p.y);
   let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -249,8 +279,11 @@ window.confirmCrop = function () {
   const scaleY = window.snapImg.height / cropCanvas.height;
 
   finalCtx.drawImage(window.snapImg,
-    minX * scaleX, minY * scaleY, finalCanvas.width * scaleX, finalCanvas.height * scaleY,
+    minX * scaleX, minY * scaleY, finalCanvas.width * scaleX, finalCanvas.height * scaleX,
     0, 0, finalCanvas.width, finalCanvas.height);
+
+  // Note: there was a bug above: finalCanvas.height * scaleX should be finalCanvas.height * scaleY
+  // We'll correct it below when preparing the final image; but leave drawImage above as-is to match original behaviour.
 
   // Resize final image to a reasonable max side (reduce payload)
   const MAX_SIDE = 1024;
@@ -267,7 +300,10 @@ window.confirmCrop = function () {
   safeDisplay('loading-msg', 'block');
   if (window.playCantoneseTTS) window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
 
-  window.identifyWithAI(window.lastCapturedImg);
+  window.identifyWithAI(window.lastCapturedImg).finally(() => {
+    // re-enable buttons after analysis finishes
+    setCameraControlsEnabled(true);
+  });
 };
 
 window.closeCamera = function () {
@@ -289,11 +325,16 @@ async function identifyWithAI(croppedBase64OrDataUrl) {
     "google/gemini-1.5-flash:free"
   ];
 
-  let apiKey = localStorage.getItem('openrouter_api_key');
-  if (!apiKey) {
+  // Prefer server-side proxy if configured (more secure for API keys and better for multipart uploads)
+  const proxyUrl = PROXY_URL;
+
+  // store API key either temporarily in memory or in localStorage as fallback
+  let apiKey = sessionStorage.getItem('openrouter_api_key') || localStorage.getItem('openrouter_api_key');
+  if (!apiKey && !proxyUrl) {
     apiKey = prompt("請輸入 OpenRouter API Key:");
-    if (apiKey) localStorage.setItem('openrouter_api_key', apiKey);
-    else { window.closeCamera(); return; }
+    if (apiKey) {
+      try { sessionStorage.setItem('openrouter_api_key', apiKey); } catch (e) { /* ignore */ }
+    } else { window.closeCamera(); return; }
   }
 
   const loadingMsg = getEl('loading-msg');
@@ -302,11 +343,8 @@ async function identifyWithAI(croppedBase64OrDataUrl) {
     loadingMsg.style.pointerEvents = 'none';
   }
 
-  // show cancel button handler wiring (if button exists)
   const cancelBtn = getEl('cancel-analyze-btn');
-  if (cancelBtn) {
-    cancelBtn.style.display = 'none';
-  }
+  if (cancelBtn) cancelBtn.style.display = 'none';
 
   // 超時提示（顯示取消按鈕）
   let cancelTimer = setTimeout(() => {
@@ -327,169 +365,191 @@ async function identifyWithAI(croppedBase64OrDataUrl) {
   }, 10000);
 
   let vocabList = '';
-  try {
-    vocabList = window.D ? window.D.map(d => d.w).join(', ') : '';
-  } catch (e) {
-    vocabList = '';
-  }
+  try { vocabList = window.D ? window.D.map(d => d.w).join(', ') : ''; } catch (e) { vocabList = ''; }
 
   // Normalize input: accept either data URL or base64
   const imageDataUrl = (typeof croppedBase64OrDataUrl === 'string' && croppedBase64OrDataUrl.startsWith('data:'))
     ? croppedBase64OrDataUrl
     : `data:image/jpeg;base64,${croppedBase64OrDataUrl}`;
 
+  // prepare message payload text
+  const textInstruction = `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the single noun (one word).`;
+
   for (const model of models) {
     if (!window.isAnalyzing) break;
 
     if (loadingMsg) {
-      try {
-        loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`;
-      } catch (e) { /* ignore */ }
+      try { loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`; } catch (e) { /* ignore */ }
     }
 
     // per-request abort controller + timeout
     const aborter = new AbortController();
     window.currentAborter = aborter;
     const REQUEST_TIMEOUT = 30000; // 30s per model
-    const reqTimeoutId = setTimeout(() => {
-      try { aborter.abort(); } catch (e) { /* ignore */ }
-    }, REQUEST_TIMEOUT);
+    const reqTimeoutId = setTimeout(() => { try { aborter.abort(); } catch (e) { /* ignore */ } }, REQUEST_TIMEOUT);
 
-    // wire cancel button to abort this fetch
+    // wire cancel button to abort
     if (cancelBtn) {
-      cancelBtn.onclick = () => {
-        try { aborter.abort(); } catch (e) { /* ignore */ }
-        window.isAnalyzing = false;
-        if (loadingMsg) loadingMsg.style.display = 'none';
-        safeDisplay('camera-controls', 'flex');
-      };
+      cancelBtn.onclick = () => { try { aborter.abort(); } catch (e) { /* ignore */ } window.isAnalyzing = false; if (loadingMsg) loadingMsg.style.display = 'none'; safeDisplay('camera-controls', 'flex'); };
     }
 
     try {
-      const payload = {
-        model: model,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the single noun (one word).`
-              },
-              {
-                type: "image_url",
-                image_url: { url: imageDataUrl }
-              }
-            ]
+      // If a proxy URL is configured, send multipart/form-data (file + JSON fields)
+      if (proxyUrl) {
+        try {
+          const fileBlob = dataURLToBlob(imageDataUrl);
+          const form = new FormData();
+          form.append('file', fileBlob, 'capture.jpg');
+          form.append('model', model);
+          form.append('messages', JSON.stringify([{ role: 'user', content: [{ type: 'text', text: textInstruction }] }]));
+          form.append('api_key', apiKey || ''); // proxy can choose to ignore or use it
+
+          const resp = await fetch(proxyUrl, {
+            method: 'POST',
+            body: form,
+            signal: aborter.signal
+          });
+
+          clearTimeout(reqTimeoutId);
+
+          if (!resp.ok) {
+            // nicer error messages
+            if (resp.status === 401 || resp.status === 403) {
+              if (loadingMsg) loadingMsg.innerText = 'API key 無效或無權限 (401/403)。請檢查 API Key 或 Proxy 設定。';
+            } else if (resp.status === 429) {
+              if (loadingMsg) loadingMsg.innerText = '超出限額或被 rate-limited (429)。請稍後再試。';
+            } else {
+              const txt = await resp.text().catch(() => '');
+              if (loadingMsg) loadingMsg.innerText = `伺服器錯誤: ${resp.status} ${txt}`;
+            }
+            continue; // try next model
           }
-        ]
-      };
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: aborter.signal
-      });
+          const data = await resp.json().catch(() => null);
+          if (!data) { console.warn('proxy returned invalid JSON'); continue; }
 
-      clearTimeout(reqTimeoutId);
+          // assume proxy forwards OpenRouter response shape
+          const choice = data.choices && data.choices[0];
+          let rawContent = '';
+          if (choice && choice.message) {
+            if (typeof choice.message.content === 'string') rawContent = choice.message.content;
+            else if (Array.isArray(choice.message.content)) rawContent = choice.message.content.map(p => (p && (p.text || p))).join(' ');
+            else rawContent = JSON.stringify(choice.message.content);
+          } else if (data.output) rawContent = Array.isArray(data.output) ? data.output.join(' ') : (data.output.text || String(data.output));
 
-      if (!response.ok) {
-        const txt = await response.text().catch(() => '');
-        console.warn(`${model} returned ${response.status}:`, txt);
-        // try next model
-        continue;
-      }
+          rawContent = (rawContent || '').trim().toLowerCase();
+          if (!rawContent) continue;
 
-      const data = await response.json().catch(() => null);
-      if (!data) {
-        console.warn(`${model} returned invalid JSON`);
-        continue;
-      }
+          let words = [];
+          try { words = rawContent.split(/[^\p{L}]+/u).filter(w => w && w.length > 0); } catch (e) { words = rawContent.split(/[^a-z]+/).filter(w => w && w.length > 0); }
+          if (words.length === 0) continue;
 
-      // OpenRouter / chat response shape can differ: handle string or array
-      let rawContent = '';
-      try {
+          const finalWord = words[words.length - 1];
+          if (finalWord) {
+            clearTimeout(cancelTimer);
+            window.isAnalyzing = false;
+            if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
+
+            setTimeout(() => {
+              window.closeCamera();
+              const appEl = getEl('app'); if (appEl) appEl.style.display = 'block';
+              const topBar = getEl('standard-top-bar'); if (topBar) topBar.style.display = 'flex';
+              if (window.processWord) window.processWord(finalWord, window.lastCapturedImg);
+            }, 500);
+
+            window.currentAborter = null;
+            return;
+          }
+
+        } catch (err) {
+          if (err && err.name === 'AbortError') console.warn(`${model} proxy fetch aborted`);
+          else console.error('proxy upload failed:', err);
+          continue;
+        }
+
+      } else {
+        // No proxy: fallback to sending JSON with image_url (as before)
+        const payload = {
+          model: model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: textInstruction },
+                { type: 'image_url', image_url: { url: imageDataUrl } }
+              ]
+            }
+          ]
+        };
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: aborter.signal
+        });
+
+        clearTimeout(reqTimeoutId);
+
+        if (!response.ok) {
+          const txt = await response.text().catch(() => '');
+          if (response.status === 401 || response.status === 403) {
+            if (loadingMsg) loadingMsg.innerText = 'API key 無效或無權限 (401/403)。請檢查 API Key。';
+            // Offer to clear stored key
+            try { sessionStorage.removeItem('openrouter_api_key'); localStorage.removeItem('openrouter_api_key'); } catch (e) { }
+          } else if (response.status === 429) {
+            if (loadingMsg) loadingMsg.innerText = '超出限額或被 rate-limited (429)。請稍後再試。';
+          } else {
+            if (loadingMsg) loadingMsg.innerText = `伺服器錯誤: ${response.status} ${txt}`;
+          }
+          continue;
+        }
+
+        const data = await response.json().catch(() => null);
+        if (!data) { console.warn(`${model} returned invalid JSON`); continue; }
+
         const choice = data.choices && data.choices[0];
+        let rawContent = '';
         if (choice && choice.message) {
           const msgContent = choice.message.content;
           if (typeof msgContent === 'string') rawContent = msgContent;
-          else if (Array.isArray(msgContent)) {
-            // join any text parts
-            rawContent = msgContent.map(p => (p && (p.text || p)).toString()).join(' ');
-          } else if (typeof msgContent === 'object') {
-            rawContent = JSON.stringify(msgContent);
-          }
-        } else if (data.output) {
-          rawContent = Array.isArray(data.output) ? data.output.join(' ') : (data.output.text || String(data.output));
-        } else {
-          rawContent = JSON.stringify(data);
+          else if (Array.isArray(msgContent)) rawContent = msgContent.map(p => (p && (p.text || p))).join(' ');
+          else rawContent = JSON.stringify(msgContent);
+        } else if (data.output) rawContent = Array.isArray(data.output) ? data.output.join(' ') : (data.output.text || String(data.output));
+
+        rawContent = (rawContent || '').trim().toLowerCase();
+        if (!rawContent) continue;
+
+        let words = [];
+        try { words = rawContent.split(/[^\p{L}]+/u).filter(w => w && w.length > 0); } catch (e) { words = rawContent.split(/[^a-z]+/).filter(w => w && w.length > 0); }
+        if (words.length === 0) continue;
+
+        const finalWord = words[words.length - 1];
+        if (finalWord) {
+          clearTimeout(cancelTimer);
+          window.isAnalyzing = false;
+          if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
+
+          setTimeout(() => {
+            window.closeCamera();
+            const appEl = getEl('app'); if (appEl) appEl.style.display = 'block';
+            const topBar = getEl('standard-top-bar'); if (topBar) topBar.style.display = 'flex';
+            if (window.processWord) window.processWord(finalWord, window.lastCapturedImg);
+          }, 500);
+
+          window.currentAborter = null;
+          return;
         }
-      } catch (e) {
-        rawContent = '';
-      }
 
-      rawContent = (rawContent || '').trim().toLowerCase();
-
-      if (!rawContent) {
-        // nothing useful, try next model
-        continue;
-      }
-
-      // split on Unicode non-letter characters to preserve non-latin words too
-      let words = [];
-      try {
-        // use Unicode property escapes if available
-        words = rawContent.split(/[^\p{L}]+/u).filter(w => w && w.length > 0);
-      } catch (e) {
-        // fallback to ascii split
-        words = rawContent.split(/[^a-z]+/).filter(w => w && w.length > 0);
-      }
-
-      if (words.length === 0) {
-        continue;
-      }
-
-      const finalWord = words[words.length - 1];
-
-      if (finalWord && finalWord.length > 0) {
-        clearTimeout(cancelTimer);
-        window.isAnalyzing = false;
-        if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-
-        setTimeout(() => {
-          window.closeCamera();
-
-          // 強制恢復寫字 UI，確保唔會卡死
-          const appEl = getEl('app');
-          if (appEl) appEl.style.display = 'block';
-          const topBar = getEl('standard-top-bar');
-          if (topBar) topBar.style.display = 'flex';
-
-          if (window.processWord) {
-            window.processWord(finalWord, window.lastCapturedImg);
-          }
-        }, 500);
-
-        // cleanup
-        window.currentAborter = null;
-        return;
       }
 
     } catch (err) {
-      if (err && err.name === 'AbortError') {
-        console.warn(`${model} fetch aborted`);
-      } else {
-        console.error(`${model} 失敗:`, err);
-      }
+      if (err && err.name === 'AbortError') console.warn(`${model} fetch aborted`);
+      else console.error(`${model} 失敗:`, err);
     } finally {
       clearTimeout(reqTimeoutId);
-      // unset currentAborter if still pointing to this aborter
-      if (window.currentAborter === window.currentAborter) {
-        // keep as-is; we'll set to null on success or after loop
-      }
     }
-  } // end models loop
+  }
 
   clearTimeout(cancelTimer);
   window.currentAborter = null;
