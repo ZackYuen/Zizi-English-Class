@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-kidfun1">
+    <link rel="stylesheet" href="style.css?v=20260715-voice2">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -22,16 +22,18 @@
         <div class="home-stat"><span class="home-stat-emoji">🔥</span><span id="home-streak-count">0</span><span class="home-stat-label">日數</span></div>
     </div>
 
+    <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 讀出選單同指示</button>
+
     <div class="home-menu-actions" style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:300px;">
         <button type="button" class="home-btn-match" onclick="enterMode('match')">🖼️ 睇圖識字 <small>最啱 5 歲 · 唔使 Key</small></button>
         <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字</button>
         <button type="button" class="home-btn-game" onclick="enterMode('game')">🎧 聽音大挑戰</button>
         <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡</button>
         <button type="button" class="home-btn-album" onclick="enterMode('album')">📒 我嘅單詞冊</button>
-        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 設定 API Keys</button>
+        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 聲線同設定</button>
     </div>
 
-    <p class="home-parent-tip">家長提示：每日玩 10–15 分鐘就夠。先玩「睇圖識字」，再練描字同聽音。</p>
+    <p class="home-parent-tip">家長提示：每日玩 10–15 分鐘就夠。開場先撳「讀出選單」。聲線建議用 iPhone 廣東話，或者 Azure「曉曼」Neural（比 Google 自然好多）。</p>
 </div>
 
 <button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
@@ -109,12 +111,50 @@
 <!-- Settings -->
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
-        <h2>⚙️ 設定 API Keys</h2>
-        <p class="settings-note">唔填都可以玩「睇圖識字」同攞星星。Google TTS / OpenRouter 會令發音同魔鏡更清楚。</p>
-        <label for="input-google-tts">Google TTS (語音及發聲):</label>
+        <h2>⚙️ 聲線同設定</h2>
+        <p class="settings-note">所有指示會自動用廣東話讀出。建議：iPhone 用「手機廣東話」；想最自然就用 Azure「曉曼」。Google 粵語 Standard 比較機械。</p>
+
+        <label for="input-voice-provider">廣東話聲線</label>
+        <select id="input-voice-provider" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
+            <option value="iphone">手機廣東話（iPhone Siri，推薦免費）</option>
+            <option value="azure">Azure 曉曼 Neural（最自然，要 Key）</option>
+            <option value="google">Google 粵語 Standard（備用）</option>
+        </select>
+
+        <label class="settings-check" for="input-auto-read">
+            <input type="checkbox" id="input-auto-read" checked>
+            自動讀出畫面上所有指示
+        </label>
+
+        <label for="input-azure-speech">Azure Speech Key（可選）</label>
+        <input type="password" id="input-azure-speech" placeholder="Azure Speech 金鑰" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <label for="input-azure-region">Azure 區域</label>
+        <input type="text" id="input-azure-region" placeholder="例如 eastasia" value="eastasia" autocomplete="off" spellcheck="false">
+
+        <label for="input-azure-voice">Azure 聲線</label>
+        <select id="input-azure-voice" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
+            <option value="zh-HK-HiuMaanNeural">曉曼 HiuMaan（女聲，推薦）</option>
+            <option value="zh-HK-HiuGaaiNeural">曉佳 HiuGaai（女聲）</option>
+            <option value="zh-HK-WanLungNeural">雲龍 WanLung（男聲）</option>
+        </select>
+
+        <label for="input-google-tts">Google TTS Key（英文發音 / 備用粵語）</label>
         <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <label for="input-openrouter">OpenRouter (相機認字):</label>
+
+        <label for="input-google-yue-voice">Google 粵語聲線（若選 Google）</label>
+        <select id="input-google-yue-voice" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
+            <option value="yue-HK-Standard-C">Standard-C（相對自然啲）</option>
+            <option value="yue-HK-Standard-A">Standard-A</option>
+            <option value="yue-HK-Standard-B">Standard-B</option>
+            <option value="yue-HK-Standard-D">Standard-D</option>
+        </select>
+
+        <label for="input-openrouter">OpenRouter（相機認字）</label>
         <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <button type="button" class="settings-test-btn" onclick="testVoice()">🔊 試聽廣東話聲線</button>
+
         <div class="settings-actions">
             <button type="button" class="settings-cancel" onclick="closeSettings()">取消</button>
             <button type="button" class="settings-save" onclick="saveSettings()">💾 儲存</button>

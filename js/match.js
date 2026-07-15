@@ -1,6 +1,6 @@
 // ==========================================
-// 🖼️ 睇圖識字 — offline picture match for ages ~5
-// No API key required (uses Web Speech / beeps)
+// Picture match — offline for ages ~5
+// All Cantonese instructions are spoken aloud
 // ==========================================
 
 window.isMatchPlaying = false;
@@ -23,7 +23,14 @@ function matchPool() {
     return D.filter(function (d) { return d && d.w && d.emoji; });
 }
 
-window.startMatchGame = function () {
+function setMatchMsg(text, color) {
+    const msg = document.getElementById('match-msg');
+    if (!msg) return;
+    msg.innerText = text;
+    if (color) msg.style.color = color;
+}
+
+window.startMatchGame = async function () {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isMatchPlaying = true;
     window.isMatchProcessing = false;
@@ -35,12 +42,12 @@ window.startMatchGame = function () {
         overlay.classList.add('is-open');
     }
 
+    const intro = '睇圖識字開始！聽英文，再撳啱嘅圖案啦！';
+    setMatchMsg(intro, '#1d3557');
     if (window.playCantoneseTTS) {
-        window.playCantoneseTTS('睇圖識字開始！聽英文，再撳啱嘅圖案啦！');
+        await window.playCantoneseTTS(intro, { interrupt: true });
     }
-    setTimeout(function () {
-        if (window.isMatchPlaying) window.nextMatchQuestion();
-    }, 900);
+    if (window.isMatchPlaying) window.nextMatchQuestion();
 };
 
 window.exitMatchGame = function () {
@@ -53,19 +60,18 @@ window.exitMatchGame = function () {
     }
 };
 
-window.nextMatchQuestion = function () {
+window.nextMatchQuestion = async function () {
     if (!window.isMatchPlaying) return;
     const pool = matchPool();
     if (pool.length < 3) {
-        const msg = document.getElementById('match-msg');
-        if (msg) msg.innerText = '詞庫唔夠玩喎！';
+        setMatchMsg('詞庫唔夠玩喎！', '#e63946');
+        if (window.announce) window.announce('詞庫唔夠玩喎！', { force: true });
         return;
     }
 
     window.isMatchProcessing = false;
     window.matchRound += 1;
 
-    // Avoid repeating the same target twice in a row
     let target;
     let tries = 0;
     do {
@@ -75,27 +81,25 @@ window.nextMatchQuestion = function () {
 
     window.matchTarget = target;
 
-    // 2 distractors with different words
     const others = shuffle(pool.filter(function (d) { return d.w !== target.w; })).slice(0, 2);
     window.matchChoices = shuffle([target].concat(others));
 
     const prompt = document.getElementById('match-prompt-emoji');
-    const msg = document.getElementById('match-msg');
     const roundEl = document.getElementById('match-round');
     if (prompt) prompt.innerText = '❓';
-    if (msg) {
-        msg.innerText = '聽吓係咩，再揀啱嘅圖案！';
-        msg.style.color = '#1d3557';
-    }
     if (roundEl) roundEl.innerText = '第 ' + window.matchRound + ' 題';
+
+    const instruct = '第' + window.matchRound + '題。撳藍色喇叭聽英文，再揀啱嘅圖案！';
+    setMatchMsg(instruct, '#1d3557');
 
     const box = document.getElementById('match-choices');
     if (box) {
         box.innerHTML = '';
-        window.matchChoices.forEach(function (item, i) {
+        window.matchChoices.forEach(function (item) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'match-choice-btn';
+            btn.setAttribute('aria-label', item.w);
             btn.innerHTML =
                 '<span class="match-choice-emoji">' + item.emoji + '</span>' +
                 '<span class="match-choice-letter">' + (item.l || '') + '</span>';
@@ -104,15 +108,15 @@ window.nextMatchQuestion = function () {
         });
     }
 
-    setTimeout(function () {
-        if (window.isMatchPlaying) window.playMatchPrompt();
-    }, 350);
+    if (window.playCantoneseTTS) {
+        await window.playCantoneseTTS(instruct, { interrupt: true });
+    }
+    if (window.isMatchPlaying) window.playMatchPrompt();
 };
 
 window.playMatchPrompt = function () {
     if (!window.matchTarget) return;
     const word = window.matchTarget.w;
-    // Bounce the speaker
     const sp = document.getElementById('match-speaker');
     if (sp) {
         sp.style.transform = 'scale(1.08)';
@@ -125,20 +129,17 @@ window.playMatchPrompt = function () {
     }
 };
 
-window.checkMatchAnswer = function (choiceWord) {
+window.checkMatchAnswer = async function (choiceWord) {
     if (!window.isMatchPlaying || window.isMatchProcessing || !window.matchTarget) return;
     window.isMatchProcessing = true;
 
-    const msg = document.getElementById('match-msg');
     const prompt = document.getElementById('match-prompt-emoji');
     const correct = choiceWord === window.matchTarget.w;
 
     if (correct) {
         if (prompt) prompt.innerText = window.matchTarget.emoji;
-        if (msg) {
-            msg.innerText = '啱喇！' + window.matchTarget.w.toUpperCase() + ' ' + window.matchTarget.emoji;
-            msg.style.color = '#06d6a0';
-        }
+        const praise = '啱喇！叻仔！係 ' + window.matchTarget.w + '！';
+        setMatchMsg('啱喇！' + window.matchTarget.w.toUpperCase() + ' ' + window.matchTarget.emoji, '#06d6a0');
         if (window.playSnd) {
             [523, 659, 784].forEach(function (f, i) {
                 setTimeout(function () { window.playSnd(f, 'triangle', 0.25); }, i * 90);
@@ -153,29 +154,24 @@ window.checkMatchAnswer = function (choiceWord) {
             });
         }
         if (window.playCantoneseTTS) {
-            window.playCantoneseTTS('叻仔！係 ' + window.matchTarget.w);
+            await window.playCantoneseTTS(praise, { interrupt: true });
         } else if (window.speakEnglish) {
             window.speakEnglish(window.matchTarget.w);
         }
-        setTimeout(function () {
-            window.isMatchProcessing = false;
-            if (window.isMatchPlaying) window.nextMatchQuestion();
-        }, 1400);
+        window.isMatchProcessing = false;
+        if (window.isMatchPlaying) window.nextMatchQuestion();
     } else {
-        if (msg) {
-            msg.innerText = '再試吓！聽多次啦～';
-            msg.style.color = '#e63946';
-        }
+        setMatchMsg('唔係呢個呀，再試吓！聽多次英文啦～', '#e63946');
         if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
-        // shake wrong buttons lightly
         const box = document.getElementById('match-choices');
         if (box) {
             box.classList.add('shake-anim');
             setTimeout(function () { box.classList.remove('shake-anim'); }, 400);
         }
-        setTimeout(function () {
-            window.isMatchProcessing = false;
-            if (window.isMatchPlaying) window.playMatchPrompt();
-        }, 700);
+        if (window.playCantoneseTTS) {
+            await window.playCantoneseTTS('唔係呢個呀，再試吓！聽多次英文啦！', { interrupt: true });
+        }
+        window.isMatchProcessing = false;
+        if (window.isMatchPlaying) window.playMatchPrompt();
     }
 };

@@ -1,58 +1,32 @@
-# 孜孜學英文 (Zizi English Class)
+# Zizi English Class
 
-Cantonese-friendly English phonics app for young kids (around age 5): play first, learn through stars, pictures, tracing, and listening.
+Cantonese-friendly English app for young kids (~age 5). Instructions are spoken aloud in Cantonese so children do not need to read UI text.
 
-Static site — **no build step, no npm**.
-
-## Run locally
+## Run
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080`. Camera mode needs HTTPS (or `localhost`).
+## Voices (important)
 
-### iPhone Safari
+Google yue-HK-Standard voices sound robotic. Prefer:
 
-1. Hard-refresh after deploys (`style.css?v=…` is cache-busted).
-2. **睇圖識字** works **without API keys** (browser speech).
-3. Google TTS / OpenRouter make pronunciation and camera magic clearer, but are optional for the core play loop.
+1. **iPhone / browser Cantonese (default)** — free on-device Siri-style `zh-HK` voice; usually the most natural option without setup.
+2. **Azure Neural `zh-HK-HiuMaanNeural`（曉曼）** — best cloud quality for kids. Needs Azure Speech key + region (e.g. `eastasia`). If the browser blocks Azure (CORS), the app falls back to iPhone voice.
+3. **Google Yue Standard** — last resort; pick Standard-C if you must use Google.
 
-## Modes (suggested order for a 5-year-old)
+In Settings: choose provider, keep **自動讀出畫面上所有指示** on, tap **試聽廣東話聲線**.
+On home: tap **讀出選單同指示** so the child hears the options before playing.
 
-1. **🖼️ 睇圖識字** — hear English, tap the right emoji (offline-friendly)
-2. **✍️ 基礎描字** — trace letters, earn stars, ✨ 讀出嚟
-3. **🎧 聽音大挑戰** — A/E/I sound game (browser voice if no Google key)
-4. **📸 探索魔鏡** — photo → AI word → write (needs OpenRouter)
-5. **📒 我嘅單詞冊** — collection of learned words; tap to hear again
+## Modes
 
-Progress (**stars / words / streak**) is saved on the device in `localStorage`.
+1. Picture match
+2. Letter tracing
+3. Listening challenge
+4. Camera magic
+5. Word album
 
-## Settings
+## Code
 
-| Key | Used for |
-|-----|----------|
-| `google_tts_key` | Clearer Cantonese + English voices |
-| `openrouter_api_key` | Camera object recognition |
-
-## Project layout
-
-```text
-index.html
-style.css
-js/
-  data.js       vocabulary + stroke paths
-  state.js      shared state + audio/loop helpers
-  speech.js     English/Cantonese speech helpers + fallbacks
-  progress.js   stars, streak, word album
-  ui.js         tabs / keyboard / startApp
-  canvas.js     tracing + magic TTS
-  camera.js     camera / crop / AI
-  game.js       listening challenge
-  match.js      picture match (kid mode)
-  router.js     home / settings / routing
-```
-
-## Parent tip
-
-10–15 minutes a day is enough. Start with 睇圖識字, celebrate stars, then try one tracing letter.
+`js/speech.js` owns Cantonese/English engines, `announce()`, and auto-reading status text.
