@@ -89,7 +89,11 @@ window.updateMsg = function() {
         msg.innerText = `完成度: ${currentPercent}% (第 ${strokeIdx+1} 筆)`;
         msg.style.color = "#1982c4";
     } else {
-        msg.innerText = `完成度: 100% - 好叻！撳 ✨ 變魔術啦！`;
+        if (window.currentMode === 'camera') {
+            msg.innerText = `完成度: 100% - 撳 ✨ 讀出嚟，或者 📸 再影一個！`;
+        } else {
+            msg.innerText = `完成度: 100% - 好叻！撳 ✨ 讀出嚟啦！`;
+        }
         msg.style.color = "#06d6a0";
     }
 };
@@ -235,78 +239,166 @@ window.loop = function() {
     requestAnimationFrame(window.loop);
 };
 
-// 🌟 重新補回綁定畫布手指事件 (Pointer Events)
-const cvs = document.getElementById('cvs');
-if(cvs) {
-    cvs.addEventListener('pointerdown', e => {
-        if(window.stopAllAudio) window.stopAllAudio(); 
-        if(isMagic || typeof D === 'undefined' || !D[idx] || strokeIdx >= D[idx].st.length) return;
-        
-        const r = cvs.getBoundingClientRect();
-        const scaleX = cvs.width / r.width;
-        const scaleY = cvs.height / r.height;
-        const x = (e.clientX - r.left) * scaleX;
-        const y = (e.clientY - r.top) * scaleY;
-        
-        let target = currentWPs[nextWpIdx];
-        if(target && Math.hypot(x-target.x, y-target.y) < 60) {
-            cvs.setPointerCapture(e.pointerId); 
-            isDrawing=true;
-            if(curStroke.length === 0) curStroke.push(target.x, target.y); 
-            curStroke.push(x, y);
-        }
-    });
+// 🌟 畫布手指描寫：線條跟住手指走（唔再強行吸附綠色起點）
+const HIT_START = 72;     // 要靠近綠色點先開始
+const HIT_PROGRESS = 58;  // 跟住路徑推進完成度（可以鬆啲）
 
-    cvs.addEventListener('pointermove', e => {
-        if(!isDrawing || isMagic) return;
-        
-        const r = cvs.getBoundingClientRect();
-        const scaleX = cvs.width / r.width;
-        const scaleY = cvs.height / r.height;
-        const x = (e.clientX - r.left) * scaleX;
-        const y = (e.clientY - r.top) * scaleY;
-        
-        curStroke.push(x, y);
-        while(nextWpIdx < currentWPs.length && Math.hypot(x - currentWPs[nextWpIdx].x, y - currentWPs[nextWpIdx].y) < 60) {
+window.getCanvasPos = function(e, canvas) {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / Math.max(r.width, 1);
+    const scaleY = canvas.height / Math.max(r.height, 1);
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    return {
+        x: (clientX - r.left) * scaleX,
+        y: (clientY - r.top) * scaleY
+    };
+};
+
+function finishLetterComplete(pointerId) {
+    const cvs = document.getElementById('cvs');
+    isDrawing = false;
+    if (cvs && pointerId != null) {
+        try { cvs.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
+    }
+    currentPercent = 100;
+    updateMsg();
+
+    if (window.currentMode === 'camera') {
+        const reCam = document.getElementById('btn-re-cam');
+        if (reCam) reCam.style.display = 'inline-block';
+    }
+
+    setTimeout(() => {
+        [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playSnd(f, 'triangle', 0.3), i * 100));
+    }, 200);
+    if (D[idx] && D[idx].l) {
+        setTimeout(() => {
+            if (window.playCantoneseTTS) window.playCantoneseTTS(D[idx].l);
+        }, 500);
+    }
+}
+
+function onStrokeStart(e) {
+    // Avoid double-firing when both pointer + touch events exist
+    if (e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
+    if (e.type.startsWith('pointer')) window._strokeInput = 'pointer';
+    if (e.type.startsWith('touch')) window._strokeInput = 'touch';
+
+    if (window.stopAllAudio) window.stopAllAudio();
+    if (isMagic || typeof D === 'undefined' || !D[idx] || strokeIdx >= D[idx].st.length) return;
+    if (isDrawing) return;
+    if (e.cancelable) e.preventDefault();
+
+    const cvsEl = document.getElementById('cvs');
+    if (!cvsEl) return;
+    const pos = getCanvasPos(e, cvsEl);
+    const target = currentWPs[nextWpIdx];
+    if (!target || Math.hypot(pos.x - target.x, pos.y - target.y) > HIT_START) return;
+
+    isDrawing = true;
+    // Start at the finger — do NOT snap from the green dot (that felt unnatural)
+    curStroke = [pos.x, pos.y];
+    if (e.pointerId != null && cvsEl.setPointerCapture) {
+        try { cvsEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    }
+}
+
+function onStrokeMove(e) {
+    if (e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
+    if (!isDrawing || isMagic) return;
+    if (e.cancelable) e.preventDefault();
+
+    const cvsEl = document.getElementById('cvs');
+    if (!cvsEl) return;
+    const pos = getCanvasPos(e, cvsEl);
+
+    // Always draw exactly where the finger is
+    curStroke.push(pos.x, pos.y);
+
+    // Advance guide progress near waypoints (with small look-ahead for kids)
+    while (nextWpIdx < currentWPs.length) {
+        const wp = currentWPs[nextWpIdx];
+        if (Math.hypot(pos.x - wp.x, pos.y - wp.y) < HIT_PROGRESS) {
             nextWpIdx++;
+            continue;
         }
-        
-        if(nextWpIdx >= currentWPs.length) {
-            let endWp = currentWPs[currentWPs.length-1];
-            curStroke.push(endWp.x, endWp.y); 
-            playSnd(880, 'sine', 0.2); 
-            doneStrokes.push(curStroke); curStroke=[]; strokeIdx++; 
-
-            initWaypoints(); 
-
-            if(strokeIdx >= D[idx].st.length) { 
-                isDrawing=false;
-                cvs.releasePointerCapture(e.pointerId);
-                currentPercent = 100; updateMsg(); 
-                
-                setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); 
-                
-                if (D[idx] && D[idx].l) {
-                    setTimeout(() => {
-                        if(window.playCantoneseTTS) window.playCantoneseTTS(D[idx].l);
-                    }, 500);
-                }
-            } else {
-                let nextStart = currentWPs[0];
-                if (nextStart && Math.hypot(x - nextStart.x, y - nextStart.y) < 60) {
-                    curStroke.push(x, y);
-                } else {
-                    isDrawing=false;
-                    cvs.releasePointerCapture(e.pointerId);
-                }
+        let jumped = false;
+        for (let k = 1; k <= 3 && nextWpIdx + k < currentWPs.length; k++) {
+            const ahead = currentWPs[nextWpIdx + k];
+            if (Math.hypot(pos.x - ahead.x, pos.y - ahead.y) < HIT_PROGRESS * 0.85) {
+                nextWpIdx += k + 1;
+                jumped = true;
+                break;
             }
         }
-    });
+        if (!jumped) break;
+    }
 
-    cvs.addEventListener('pointerup', e => { 
-        isDrawing=false; 
-        cvs.releasePointerCapture(e.pointerId); 
-    });
+    if (nextWpIdx >= currentWPs.length && currentWPs.length > 0) {
+        playSnd(880, 'sine', 0.2);
+        doneStrokes.push(curStroke);
+        curStroke = [];
+        strokeIdx++;
+        initWaypoints();
+
+        if (typeof D !== 'undefined' && D[idx] && strokeIdx >= D[idx].st.length) {
+            finishLetterComplete(e.pointerId);
+            return;
+        }
+
+        // Multi-stroke letters: continue only if finger is already near next green start
+        const nextStart = currentWPs[0];
+        if (nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START) {
+            isDrawing = true;
+            curStroke = [pos.x, pos.y];
+        } else {
+            isDrawing = false;
+            if (e.pointerId != null) {
+                try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+            }
+        }
+    }
+}
+
+function onStrokeEnd(e) {
+    if (e && e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
+    if (e && e.cancelable) e.preventDefault();
+    isDrawing = false;
+    window._strokeInput = null;
+    const cvsEl = document.getElementById('cvs');
+    if (cvsEl && e && e.pointerId != null) {
+        try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    }
+}
+
+const cvs = document.getElementById('cvs');
+if (cvs) {
+    cvs.style.touchAction = 'none';
+
+    if (window.PointerEvent) {
+        cvs.addEventListener('pointerdown', onStrokeStart);
+        cvs.addEventListener('pointermove', onStrokeMove);
+        cvs.addEventListener('pointerup', onStrokeEnd);
+        cvs.addEventListener('pointercancel', onStrokeEnd);
+    } else {
+        cvs.addEventListener('touchstart', onStrokeStart, { passive: false });
+        cvs.addEventListener('touchmove', onStrokeMove, { passive: false });
+        cvs.addEventListener('touchend', onStrokeEnd, { passive: false });
+        cvs.addEventListener('touchcancel', onStrokeEnd, { passive: false });
+        cvs.addEventListener('mousedown', onStrokeStart);
+        cvs.addEventListener('mousemove', onStrokeMove);
+        cvs.addEventListener('mouseup', onStrokeEnd);
+    }
 }
 
 // 🌟 重新補回魔術功能 (讀字)
@@ -350,7 +442,16 @@ window.magic = async function() {
     setTimeout(() => {
         isMagic=true; fired=false; magicStart=Date.now(); window.mAudio.play();
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
-        document.getElementById('msg').innerText = (typeof window.currentMode !== 'undefined' && window.currentMode === 'camera') ? "魔術成功！再撳下面掣影過啦！" : "成功！";
+        const msgEl = document.getElementById('msg');
+        if (msgEl) {
+            if (window.currentMode === 'camera') {
+                msgEl.innerText = '讀完喇！可以撳 📸 再影一個 繼續玩！';
+                const reCam = document.getElementById('btn-re-cam');
+                if (reCam) reCam.style.display = 'inline-block';
+            } else {
+                msgEl.innerText = '成功！';
+            }
+        }
     }, 600);
 };
 
@@ -387,13 +488,29 @@ window.createPhonicTimeline = function(word, imgUrl = null) {
 };
 
 window.processWord = function(word, imgUrl = null) {
-    if(typeof D === 'undefined') window.D = [];
+    if (typeof D === 'undefined') window.D = [];
+    // Keep window.D in sync (const D is also aliased on window from data.js)
+    if (window.D !== D) window.D = D;
+
     let newD = createPhonicTimeline(word, imgUrl);
     D.push(newD);
     window.idx = D.length - 1;
-    if(window.playCantoneseTTS) window.playCantoneseTTS(`搵到喇！係 ${word}，孜孜，一齊寫 ${newD.l} 啦。`);
+
+    if (window.playCantoneseTTS) {
+        window.playCantoneseTTS(`搵到喇！係 ${word}，孜孜，一齊寫 ${newD.l} 啦。`);
+    }
+
     let wrap = document.getElementById('canvas-wrapper');
     if (wrap) wrap.style.display = 'block';
+
+    // Camera flow: keep "再影一個" visible after recognition / writing
+    if (window.currentMode === 'camera') {
+        const reCam = document.getElementById('btn-re-cam');
+        if (reCam) reCam.style.display = 'inline-block';
+        const stdUi = document.getElementById('standard-ui');
+        if (stdUi) stdUi.style.display = 'none';
+    }
+
     resetCanvas();
 };
 

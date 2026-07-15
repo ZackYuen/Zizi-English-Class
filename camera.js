@@ -32,6 +32,10 @@ window.openCamera = async function() {
     safeDisplay('confirm-crop-btn', 'none');
     safeDisplay('cancel-analyze-btn', 'none');
     safeDisplay('loading-msg', 'none');
+    const cropCtrl = getEl('canvas-controls');
+    if (cropCtrl) cropCtrl.style.display = 'none';
+    // Hide writing UI while camera is open
+    safeDisplay('btn-re-cam', 'none');
 
     // iPhone Safari often needs an explicit play() after getUserMedia
     try {
@@ -109,6 +113,9 @@ window.takePhoto = function() {
         
         setupDrawingEvents(cropCanvas);
         ensureCanvasControls();
+        // Show crop helpers: retake + clear (no duplicate "magic" button)
+        const ctrl = document.getElementById('canvas-controls');
+        if (ctrl) ctrl.style.display = 'flex';
     };
     window.snapImg.src = tempCanvas.toDataURL('image/jpeg', 0.9);
 };
@@ -185,26 +192,27 @@ function setupDrawingEvents(canvas) {
     canvas.addEventListener('touchend', endCrop, {passive: false});
 }
 
-// Create (or ensure) canvas controls: Retake, Clear, Magic
+// Crop helpers only: Retake + Clear. "魔法" was removed — it duplicated ✅ 確定.
 function ensureCanvasControls() {
-    const preview = document.getElementById('preview-container') || document.getElementById('camera-controls') || document.body;
+    const preview = document.getElementById('camera-controls') || document.body;
     if (!preview) return;
 
     let ctrl = document.getElementById('canvas-controls');
-    if (ctrl) return; // already created
+    if (ctrl) {
+        // Remove leftover magic button from older sessions / cached DOM
+        const oldMagic = document.getElementById('magic-btn');
+        if (oldMagic) oldMagic.remove();
+        return;
+    }
 
     ctrl = document.createElement('div');
     ctrl.id = 'canvas-controls';
-    ctrl.style.display = 'flex';
-    ctrl.style.justifyContent = 'center';
-    ctrl.style.gap = '8px';
-    ctrl.style.marginTop = '8px';
 
     const retake = document.createElement('button');
+    retake.type = 'button';
     retake.id = 'retake-btn';
     retake.innerText = '再影一次';
     retake.onclick = () => {
-        // show video, hide canvas, reset points
         const video = document.getElementById('camera-video');
         const cropCanvas = document.getElementById('crop-canvas');
         if (video && cropCanvas) {
@@ -212,51 +220,31 @@ function ensureCanvasControls() {
             video.style.display = 'block';
             safeDisplay('capture-btn', 'inline-block');
             safeDisplay('confirm-crop-btn', 'none');
+            if (ctrl) ctrl.style.display = 'none';
             window.cropPoints = [];
-            // clear drawing
             const ctx = cropCanvas.getContext('2d');
-            ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+            ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
             if (window.playCantoneseTTS) window.playCantoneseTTS('可以再影一次喇！');
         }
     };
 
     const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
     clearBtn.id = 'clear-draw-btn';
     clearBtn.innerText = '清除圈畫';
     clearBtn.onclick = () => {
         const cropCanvas = document.getElementById('crop-canvas');
         if (!cropCanvas || !window.snapImg) return;
         const ctx = cropCanvas.getContext('2d');
-        ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+        ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
         ctx.drawImage(window.snapImg, 0, 0, cropCanvas.width, cropCanvas.height);
         window.cropPoints = [];
         if (window.playCantoneseTTS) window.playCantoneseTTS('已經清除圈畫！');
     };
 
-    const magicBtn = document.createElement('button');
-    magicBtn.id = 'magic-btn';
-    magicBtn.innerText = '魔法';
-    magicBtn.onclick = () => {
-        // trigger same as confirmCrop
-        const confirmBtn = document.getElementById('confirm-crop-btn');
-        if (confirmBtn) confirmBtn.click();
-        else window.confirmCrop();
-    };
-
-    // Basic styles to match existing UI (developers may override in CSS)
-    [retake, clearBtn, magicBtn].forEach(b => {
-        b.style.padding = '8px 12px';
-        b.style.fontSize = '14px';
-        b.style.borderRadius = '6px';
-        b.style.cursor = 'pointer';
-    });
-
     ctrl.appendChild(retake);
     ctrl.appendChild(clearBtn);
-    ctrl.appendChild(magicBtn);
-
-    // append to preview container (or camera-controls), prefer after the canvas
-    if (preview.appendChild) preview.appendChild(ctrl);
+    preview.appendChild(ctrl);
 }
 
 window.confirmCrop = function() {
@@ -302,13 +290,34 @@ function setCameraControlsEnabled(enabled) {
     const confirm = document.getElementById('confirm-crop-btn');
     const retake = document.getElementById('retake-btn');
     const clearBtn = document.getElementById('clear-draw-btn');
-    const magic = document.getElementById('magic-btn');
     if (capture) capture.disabled = !enabled;
     if (confirm) confirm.disabled = !enabled;
     if (retake) retake.disabled = !enabled;
     if (clearBtn) clearBtn.disabled = !enabled;
-    if (magic) magic.disabled = !enabled;
 }
+
+/** After AI recognizes a word: show tracing UI + "影下一個" retake button */
+window.enterCameraWritingFlow = function(word) {
+    window.currentMode = 'camera';
+    safeDisplay('home-menu', 'none');
+    safeDisplay('camera-overlay', 'none');
+    safeDisplay('game-overlay', 'none');
+    safeDisplay('standard-ui', 'none');
+    safeDisplay('start-overlay', 'none');
+    safeDisplay('back-to-home-btn', 'block');
+    safeDisplay('standard-top-bar', 'flex');
+    safeDisplay('app', 'block');
+
+    const reCam = getEl('btn-re-cam');
+    if (reCam) {
+        reCam.style.display = 'inline-block';
+        reCam.onclick = function () { window.openCamera(); };
+    }
+
+    if (window.processWord) {
+        window.processWord(word, window.lastCapturedImg);
+    }
+};
 
 window.closeCamera = function() {
     if (window.cameraStream) {
@@ -485,15 +494,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
                 setTimeout(() => {
                     window.closeCamera();
-
-                    const appEl = getEl('app');
-                    if (appEl) appEl.style.display = 'block';
-                    const topBar = getEl('standard-top-bar');
-                    if (topBar) topBar.style.display = 'flex';
-
-                    if (window.processWord) {
-                        window.processWord(finalWord, window.lastCapturedImg);
-                    }
+                    window.enterCameraWritingFlow(finalWord);
                 }, 500);
 
                 window.currentAborter = null;
