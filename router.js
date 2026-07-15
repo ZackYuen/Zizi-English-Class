@@ -9,6 +9,11 @@ function setDisplay(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
     el.style.display = value;
+    if (id === 'home-menu' && value !== 'none') {
+        el.style.flexDirection = 'column';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+    }
     if (value === 'none') {
         el.classList.remove('is-open');
         el.setAttribute('aria-hidden', 'true');
