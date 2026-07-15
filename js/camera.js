@@ -88,8 +88,8 @@ window.takePhoto = function() {
     const tempCtx = tempCanvas.getContext('2d');
     try { tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height); } catch(e) { console.warn('drawImage failed:', e); }
     
-    let maxW = window.innerWidth * 0.98;
-    let maxH = window.innerHeight * 0.78;
+    let maxW = window.innerWidth;
+    let maxH = Math.max(200, window.innerHeight - 120);
     let ratio = 1;
     if (vW > 0 && vH > 0) ratio = Math.min(maxW / vW, maxH / vH);
     if (!isFinite(ratio) || ratio <= 0) ratio = 1;
