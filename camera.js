@@ -22,28 +22,43 @@ window.openCamera = async function() {
 
     safeDisplay('start-overlay', 'none');
     safeDisplay('app', 'none');
+    safeDisplay('game-overlay', 'none');
     safeDisplay('camera-overlay', 'flex');
+    const cam = getEl('camera-overlay');
+    if (cam) cam.classList.add('is-open');
     safeDisplay('camera-video', 'block');
     safeDisplay('crop-canvas', 'none');
     safeDisplay('capture-btn', 'inline-block');
     safeDisplay('confirm-crop-btn', 'none');
+    safeDisplay('cancel-analyze-btn', 'none');
     safeDisplay('loading-msg', 'none');
 
+    // iPhone Safari often needs an explicit play() after getUserMedia
     try {
         window.cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false
         });
         const video = document.getElementById('camera-video');
-        if (video) video.srcObject = window.cameraStream;
-        
+        if (video) {
+            video.setAttribute('playsinline', 'true');
+            video.setAttribute('webkit-playsinline', 'true');
+            video.muted = true;
+            video.srcObject = window.cameraStream;
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(function (e) { console.warn('video.play failed', e); });
+            }
+        }
+
         if (window.playCantoneseTTS) {
             window.playCantoneseTTS("魔鏡開咗喇！搵下有咩得意嘢，影低佢啦！");
         }
     } catch (err) {
         console.error("相機權限錯誤:", err);
-        alert("開唔到相機，請檢查瀏覽器權限！");
-        window.closeCamera();
+        alert("開唔到相機，請檢查瀏覽器權限！（Safari 要用 HTTPS 或本機網址）");
+        if (typeof window.backToHome === 'function') window.backToHome();
+        else window.closeCamera();
     }
 };
 
@@ -300,7 +315,13 @@ window.closeCamera = function() {
         window.cameraStream.getTracks().forEach(track => track.stop());
         window.cameraStream = null;
     }
+    const video = getEl('camera-video');
+    if (video) {
+        try { video.srcObject = null; } catch (e) { /* ignore */ }
+    }
     safeDisplay('camera-overlay', 'none');
+    const cam = getEl('camera-overlay');
+    if (cam) cam.classList.remove('is-open');
 };
 
 window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
