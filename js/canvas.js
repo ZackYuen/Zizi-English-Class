@@ -94,15 +94,17 @@ window.updateMsg = function() {
     const msg = document.getElementById('msg');
     if(!msg || typeof D === 'undefined' || !D[idx]) return;
     const passAt = window.WRITE_PASS_SCORE || 70;
+    const session = window.WritingSession;
+    const fullMark = (session && session.FULL_MARK) || 100;
     if(strokeIdx < D[idx].st.length) {
-        msg.innerText = '完成度: ' + currentPercent + '% / ' + passAt + '%（第 ' + (strokeIdx+1) + ' 筆）';
+        msg.innerText = session && session.formatProgressMsg
+            ? session.formatProgressMsg(currentPercent, strokeIdx + 1)
+            : ('完成度: ' + currentPercent + '% / ' + fullMark + '%（第 ' + (strokeIdx+1) + ' 筆）');
         msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
     } else {
-        if (window.currentMode === 'camera') {
-            msg.innerText = '完成度: ' + currentPercent + '% - 撳 ✨ 讀出嚟，或者 📸 再影一個！';
-        } else {
-            msg.innerText = '完成度: ' + currentPercent + '% - 好叻！撳 ✨ 讀出嚟啦！';
-        }
+        msg.innerText = session && session.formatSuccessMsg
+            ? session.formatSuccessMsg(currentPercent)
+            : ('完成度: ' + currentPercent + '% - 真叻！撳 ✨ 讀出嚟啦！');
         msg.style.color = '#06d6a0';
     }
 };
@@ -273,13 +275,27 @@ window.loop = function() {
 // - Green ball = follows finger while drawing
 // - Progress = project finger onto the stroke path
 // ==========================================
-// Kid-friendly scoring: 100% still possible; good traces should land ~90%+
+// Kid-friendly scoring: pass gate + full mark 100% on success
 window.WRITE_PASS_SCORE = 70;
 var HIT_START = 78;
 var PATH_CORRIDOR = 70;
 var HIT_END = 52;
 var SCORE_INK_WIDTH = 36;   // fat brush when measuring
 var SCORE_DILATE_R = 14;    // allow small finger offset from the dashed guide
+var STROKE_CONNECT_EPS = 30; // end≈next start → keep drawing without lift
+
+/** True when stroke A's end point matches stroke B's start (consecutive stroke). */
+window.strokesConnect = function (strokeA, strokeB) {
+    if (!strokeA || !strokeB || strokeA.length < 4 || strokeB.length < 2) return false;
+    var ax = strokeA[strokeA.length - 2];
+    var ay = strokeA[strokeA.length - 1];
+    return Math.hypot(ax - strokeB[0], ay - strokeB[1]) <= STROKE_CONNECT_EPS;
+};
+
+window.nextStrokeConnects = function (fromIdx) {
+    if (typeof D === 'undefined' || !D[idx] || !D[idx].st) return false;
+    return window.strokesConnect(D[idx].st[fromIdx], D[idx].st[fromIdx + 1]);
+};
 
 window.getCanvasPos = function(e, canvas) {
     var r = canvas.getBoundingClientRect();
@@ -381,9 +397,14 @@ function finishLetterComplete(pointerId) {
         return;
     }
 
+    // Full mark is 100% once the letter is accepted
+    currentPercent = 100;
+
     updateMsg();
 
-    if (window.currentMode === 'camera') {
+    if (window.WritingSession && window.WritingSession.onLetterPassed) {
+        window.WritingSession.onLetterPassed();
+    } else if (window.currentMode === 'camera') {
         var reCam = document.getElementById('btn-re-cam');
         if (reCam) reCam.style.display = 'inline-block';
     }
@@ -458,6 +479,7 @@ function commitCurrentStroke(pointerId, pos) {
     curStroke = [];
     window._strokeCommitPending = false;
     window.fingerPos = null;
+    var finishedStrokeIdx = strokeIdx;
     strokeIdx++;
     initWaypoints();
 
@@ -467,10 +489,16 @@ function commitCurrentStroke(pointerId, pos) {
     }
 
     var nextStart = currentWPs[0];
-    if (pos && nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START) {
+    var connected = window.nextStrokeConnects
+        ? window.nextStrokeConnects(finishedStrokeIdx)
+        : false;
+    var nearNext = !!(pos && nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START);
+    // Same endpoint as next stroke start → keep finger down and continue
+    if (pos && (connected || nearNext)) {
         isDrawing = true;
         window.fingerPos = { x: pos.x, y: pos.y };
         curStroke = [pos.x, pos.y];
+        advanceStrokeProgress(pos);
     } else {
         isDrawing = false;
         var cvsEl = document.getElementById('cvs');
@@ -529,7 +557,21 @@ function onStrokeMove(e) {
 
     curStroke.push(pos.x, pos.y);
     advanceStrokeProgress(pos);
-    // Keep green on finger every frame via fingerPos; commit on lift
+
+    // Consecutive strokes: if this stroke ends where the next begins, keep going without lift
+    var prog = window.pathT || 0;
+    if (
+        prog >= 0.90 &&
+        typeof D !== 'undefined' &&
+        D[idx] &&
+        strokeIdx + 1 < D[idx].st.length &&
+        window.nextStrokeConnects &&
+        window.nextStrokeConnects(strokeIdx)
+    ) {
+        window.pathT = Math.max(prog, 0.95);
+        nextWpIdx = currentWPs.length;
+        commitCurrentStroke(e.pointerId, pos);
+    }
 }
 
 function onStrokeEnd(e) {
@@ -627,12 +669,18 @@ window.magic = async function() {
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
         const msgEl = document.getElementById('msg');
         if (msgEl) {
-            if (window.currentMode === 'camera') {
+            if (window.WritingSession && window.WritingSession.formatMagicDoneMsg) {
+                msgEl.innerText = window.WritingSession.formatMagicDoneMsg();
+            } else if (window.currentMode === 'camera') {
                 msgEl.innerText = '讀完喇！可以撳 📸 再影一個 繼續玩！';
-                const reCam = document.getElementById('btn-re-cam');
-                if (reCam) reCam.style.display = 'inline-block';
             } else {
                 msgEl.innerText = '成功！';
+            }
+            if (window.WritingSession && window.WritingSession.onLetterPassed) {
+                window.WritingSession.onLetterPassed();
+            } else if (window.currentMode === 'camera') {
+                const reCam = document.getElementById('btn-re-cam');
+                if (reCam) reCam.style.display = 'inline-block';
             }
         }
     }, 600);
@@ -725,7 +773,10 @@ window.processWord = function(word, imgUrl = null) {
     const wrap = document.getElementById('canvas-wrapper');
     if (wrap) wrap.style.display = 'block';
 
-    if (window.currentMode === 'camera') {
+    if (window.WritingSession && window.WritingSession.applyChrome) {
+        window.WritingSession.mode = window.currentMode || window.WritingSession.mode || 'standard';
+        window.WritingSession.applyChrome();
+    } else if (window.currentMode === 'camera') {
         const reCam = document.getElementById('btn-re-cam');
         if (reCam) reCam.style.display = 'inline-block';
         const stdUi = document.getElementById('standard-ui');

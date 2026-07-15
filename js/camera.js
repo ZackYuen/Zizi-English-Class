@@ -301,10 +301,22 @@ function setCameraControlsEnabled(enabled) {
 
 /** After AI recognizes a word: show tracing UI + "影下一個" retake button */
 window.enterCameraWritingFlow = function(word) {
-    window.currentMode = 'camera';
     safeDisplay('home-menu', 'none');
     safeDisplay('camera-overlay', 'none');
     safeDisplay('game-overlay', 'none');
+    safeDisplay('match-overlay', 'none');
+
+    if (window.WritingSession && typeof window.WritingSession.begin === 'function') {
+        window.WritingSession.begin({
+            mode: 'camera',
+            word: word,
+            imgUrl: window.lastCapturedImg || null
+        });
+        return;
+    }
+
+    // Fallback if writing.js failed to load
+    window.currentMode = 'camera';
     safeDisplay('standard-ui', 'none');
     safeDisplay('standard-top-bar', 'flex');
     safeDisplay('back-to-home-btn', 'inline-block');

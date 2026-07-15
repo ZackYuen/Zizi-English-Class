@@ -18,16 +18,21 @@ window.startApp = function (mode) {
 };
 
 window.setMode = function (mode) {
-    const standardUi = document.getElementById('standard-ui');
-    const canvasWrapper = document.getElementById('canvas-wrapper');
     const msg = document.getElementById('msg');
-
-    if (canvasWrapper) canvasWrapper.style.display = 'block';
     if (msg) {
         msg.innerText = '由綠色點出發，畫到尾為止！';
         msg.style.color = '#1982c4';
     }
 
+    if (window.WritingSession && typeof window.WritingSession.begin === 'function') {
+        window.WritingSession.begin({ mode: mode || 'standard' });
+        return;
+    }
+
+    // Fallback if writing.js failed to load
+    const standardUi = document.getElementById('standard-ui');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    if (canvasWrapper) canvasWrapper.style.display = 'block';
     if (mode === 'standard') {
         if (standardUi) standardUi.style.display = 'block';
         if (typeof window.resetCanvas === 'function') window.resetCanvas();
