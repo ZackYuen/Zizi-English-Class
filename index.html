@@ -2,18 +2,20 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-score2">
+    <link rel="stylesheet" href="style.css?v=20260715-home3">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
 <!-- Home menu -->
-<div id="home-menu" class="is-open" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-start; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; padding:24px 20px; overflow-y:auto; background:#f0f4f8; z-index:9000;">
-    <h1 style="width:100%; max-width:320px; margin:8px 0 8px; text-align:center; color:#1d3557; font-size:32px; line-height:1.25;">🌟 孜孜拼音大冒險</h1>
+<div id="home-menu" class="is-open" style="display:block; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; overflow-x:hidden; overflow-y:auto; background:#f0f4f8; z-index:9000; text-align:center;">
+    <h1>🌟 孜孜拼音大冒險</h1>
     <p class="home-tagline">廣東話小朋友學英文 · 好玩先至記得住</p>
 
     <div class="home-progress" id="home-progress">
@@ -24,7 +26,7 @@
 
     <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 讀出選單同指示</button>
 
-    <div class="home-menu-actions" style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:300px;">
+    <div class="home-menu-actions">
         <button type="button" class="home-btn-match" onclick="enterMode('match')">🖼️ 睇圖識字 <small>最啱 5 歲 · 唔使 Key</small></button>
         <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字</button>
         <button type="button" class="home-btn-game" onclick="enterMode('game')">🎧 聽音大挑戰</button>
@@ -175,15 +177,15 @@
 </div>
 
 <!-- Load order: data → state → speech/progress → features → router -->
-<script src="js/data.js?v=20260715-score2"></script>
-<script src="js/state.js?v=20260715-score2"></script>
-<script src="js/speech.js?v=20260715-score2"></script>
-<script src="js/progress.js?v=20260715-score2"></script>
-<script src="js/ui.js?v=20260715-score2"></script>
-<script src="js/canvas.js?v=20260715-score2"></script>
-<script src="js/camera.js?v=20260715-score2"></script>
-<script src="js/game.js?v=20260715-score2"></script>
-<script src="js/match.js?v=20260715-score2"></script>
-<script src="js/router.js?v=20260715-score2"></script>
+<script src="js/data.js?v=20260715-home3"></script>
+<script src="js/state.js?v=20260715-home3"></script>
+<script src="js/speech.js?v=20260715-home3"></script>
+<script src="js/progress.js?v=20260715-home3"></script>
+<script src="js/ui.js?v=20260715-home3"></script>
+<script src="js/canvas.js?v=20260715-home3"></script>
+<script src="js/camera.js?v=20260715-home3"></script>
+<script src="js/game.js?v=20260715-home3"></script>
+<script src="js/match.js?v=20260715-home3"></script>
+<script src="js/router.js?v=20260715-home3"></script>
 </body>
 </html>
