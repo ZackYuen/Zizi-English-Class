@@ -282,6 +282,11 @@ button:disabled {
 
 .btn-clear { background: #ff595e; }
 .btn-magic { background: #8ac926; }
+.btn-recam {
+  background: #ffca3a;
+  color: #1d3557;
+  min-width: 120px;
+}
 
 /* Standard UI (tabs & keyboard) */
 #standard-ui {
@@ -486,9 +491,8 @@ button:disabled {
 #retake-btn::before { content: "🔁 "; }
 #clear-draw-btn { background: #ff595e; }
 #clear-draw-btn::before { content: "🧽 "; }
-#magic-btn { background: #8ac926; }
-#magic-btn::before { content: "✨ "; }
 #canvas-controls button:focus { outline: none; }
+#magic-btn { display: none !important; } /* removed: duplicated confirm */
 
 /* Game overlay */
 #game-overlay {
