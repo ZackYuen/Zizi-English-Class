@@ -15,6 +15,13 @@ Then open `http://localhost:8080`.
 
 Camera mode needs HTTPS (or `localhost`) and browser camera permission.
 
+### iPhone Safari
+
+- Use HTTPS (or open via local network IP from a computer serving the files).
+- Allow camera access when prompted for 探索魔鏡.
+- If buttons feel “dead”, hard-refresh (clear cache) — an older corrupted `style.css` left ghost overlays blocking taps.
+- Set API keys under 設定 before magic TTS / listening game audio.
+
 ## Modes
 
 1. **基礎描字模式** — trace letter strokes, then play Google TTS “magic” animation

@@ -1,54 +1,640 @@
-body { font-family: 'Comic Sans MS', sans-serif; background: #f0f8ff; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: pan-y; }
+/* ==========================================
+   孜孜學英文 — mobile-first (iPhone Safari)
+   ========================================== */
 
-/* 修正：提升 z-index，確保按鈕可以被點擊 */
-#start-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,236,210,.98); z-index: 9999; display: flex; flex-direction: column; justify-content: center; ali[...]
-.mode-btn { padding: 20px; font-size: 24px; border-radius: 20px; color: white; border: none; font-weight: bold; width: 280px; margin-bottom: 20px; box-shadow: 0 6px 0 rgba(0,0,0,0.2); cursor: point[...]
-.mode-btn:active { transform: translateY(6px); box-shadow: none; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-.top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 15px; padding: 0 5px; box-sizing: border-box;}
-.btn-switch { background: #ffca3a; color: #1d3557; padding: 8px 12px; font-size: 16px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; }
+html {
+  -webkit-text-size-adjust: 100%;
+  height: 100%;
+}
 
-#app { background: white; border-radius: 20px; width: 100%; max-width: 400px; padding: 15px; text-align: center; border: 5px solid #8ac926; box-sizing: border-box; }
-#msg { color: #1982c4; font-weight: bold; min-height: 24px; margin-bottom: 10px; }
-#canvas-wrapper { position: relative; width: 300px; height: 300px; margin: 0 auto; background: #fafafa; border: 3px dashed #1982c4; border-radius: 15px; transition: transform 0.6s; }
-canvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; border-radius: 15px; touch-action: none; }
+body {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Marker Felt", sans-serif;
+  background: #f0f8ff;
+  margin: 0;
+  padding: 10px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+  overflow-x: hidden;
+}
 
-.controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-.btn { border: none; padding: 12px 16px; font-size: 18px; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-.btn:active { transform: translateY(4px); box-shadow: none; }
+button,
+.key,
+.tab {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ---------- Full-screen layers ---------- */
+/* Default HIDDEN in CSS so Safari never leaves a ghost overlay from broken rules */
+#start-overlay,
+#camera-overlay,
+#game-overlay,
+#settings-modal,
+#home-menu {
+  display: none;
+}
+
+#home-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
+  background: #f0f4f8;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#home-menu.is-open,
+#home-menu[style*="display: flex"],
+#home-menu[style*="display:flex"] {
+  display: flex !important;
+}
+
+#home-menu h1 {
+  color: #1d3557;
+  font-size: clamp(26px, 7vw, 36px);
+  margin: 0 0 10px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+#home-menu > p {
+  color: #457b9d;
+  font-size: clamp(15px, 4vw, 18px);
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.home-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(300px, 86vw);
+}
+
+.home-menu-actions button {
+  padding: 16px 18px;
+  font-size: clamp(17px, 4.5vw, 20px);
+  border-radius: 15px;
+  border: none;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-height: 52px;
+}
+
+.home-btn-standard { background: #ffca3a; color: #1d3557; }
+.home-btn-camera { background: #8ac926; color: #fff; }
+.home-btn-game { background: #f4a261; color: #fff; }
+.home-btn-settings {
+  margin-top: 18px;
+  padding: 12px 15px;
+  font-size: 16px;
+  border-radius: 10px;
+  background: #d8e2dc;
+  color: #1d3557;
+}
+
+#back-to-home-btn {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  z-index: 10050;
+  font-size: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #ff595e;
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  min-height: 44px;
+}
+
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 236, 210, 0.98);
+  z-index: 8500;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.mode-btn {
+  padding: 20px;
+  font-size: 24px;
+  border-radius: 20px;
+  color: white;
+  border: none;
+  font-weight: bold;
+  width: min(280px, 86vw);
+  margin-bottom: 20px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+.mode-btn:active {
+  transform: translateY(6px);
+  box-shadow: none;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 15px;
+  padding: 0 5px;
+}
+
+.btn-switch {
+  background: #ffca3a;
+  color: #1d3557;
+  padding: 8px 12px;
+  font-size: 16px;
+  border-radius: 12px;
+  font-weight: bold;
+  border: none;
+}
+
+#app {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  padding: 15px;
+  text-align: center;
+  border: 5px solid #8ac926;
+}
+
+#msg {
+  color: #1982c4;
+  font-weight: bold;
+  min-height: 24px;
+  margin-bottom: 10px;
+  font-size: clamp(14px, 3.8vw, 16px);
+}
+
+#canvas-wrapper {
+  position: relative;
+  width: min(300px, 86vw);
+  height: min(300px, 86vw);
+  margin: 0 auto;
+  background: #fafafa;
+  border: 3px dashed #1982c4;
+  border-radius: 15px;
+  transition: transform 0.6s;
+  touch-action: none;
+}
+
+/* Only the tracing canvas is absolutely positioned — not crop-canvas */
+#canvas-wrapper canvas,
+#cvs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  touch-action: none;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn {
+  border: none;
+  padding: 12px 16px;
+  font-size: 18px;
+  border-radius: 15px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  min-height: 48px;
+}
+
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
 .btn-clear { background: #ff595e; }
 .btn-magic { background: #8ac926; }
 
-/* 標準 UI (Tabs & Keyboards) */
-#standard-ui { width: 100%; max-width: 400px; }
-#group-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
-.tab { padding: 10px 15px; font-size: 16px; border-radius: 20px; border: 2px solid #1982c4; background: white; color: #1982c4; font-weight: bold; cursor: pointer; transition: 0.2s; }
-.tab.active { background: #1982c4; color: white; box-shadow: 0 4px 0 #115d8f; transform: translateY(-2px); }
-#kb { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px; padding-bottom: 40px; }
-.key { width: 48px; height: 48px; line-height: 48px; background: white; border: 3px solid #ffca3a; border-radius: 12px; text-align: center; font-size: 26px; font-weight: bold; color: #ff595e; curs[...]
-.key:active { transform: translateY(4px); box-shadow: none; }
+/* Standard UI (tabs & keyboard) */
+#standard-ui {
+  width: 100%;
+  max-width: 400px;
+}
 
-/* 相機 UI (大按鈕) */
-#camera-ui-container { width: 100%; max-width: 400px; margin-top: 25px; text-align: center; }
-.btn-big-camera { background: #457b9d; font-size: 22px; padding: 15px 30px; width: 90%; border-radius: 20px; animation: pulse 2s infinite; color: white; border: none; font-weight: bold; cursor: po[...]
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(69, 123, 157, 0); } 100% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0); } }
+#group-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
 
-/* 相機預覽 Modal */
-#camera-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-[...]
-#camera-video { width: 90%; max-width: 400px; height: auto; border-radius: 15px; border: 4px solid #fff; }
-#camera-controls { display: flex; gap: 15px; margin-top: 20px; }
-#capture-btn { padding: 15px 30px; font-size: 20px; border-radius: 20px; background: #ff595e; color: white; border: none; font-weight: bold; cursor: pointer; }
-#close-camera-btn { padding: 15px 30px; font-size: 20px; border-radius: 20px; background: #6c757d; color: white; border: none; font-weight: bold; cursor: pointer; }
-#loading-msg { color: #06d6a0; font-size: 22px; font-weight: bold; margin-top: 20px; text-align: center; }
+.tab {
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: 20px;
+  border: 2px solid #1982c4;
+  background: white;
+  color: #1982c4;
+  font-weight: bold;
+  transition: 0.2s;
+  min-height: 44px;
+}
+
+.tab.active {
+  background: #1982c4;
+  color: white;
+  box-shadow: 0 4px 0 #115d8f;
+  transform: translateY(-2px);
+}
+
+#kb {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  padding-bottom: 40px;
+}
+
+.key {
+  width: 48px;
+  height: 48px;
+  line-height: 42px;
+  background: white;
+  border: 3px solid #ffca3a;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: bold;
+  color: #ff595e;
+  box-shadow: 0 4px 0 #e0a900;
+}
+
+.key:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+/* Camera */
+#camera-ui-container {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 25px;
+  text-align: center;
+}
+
+.btn-big-camera {
+  background: #457b9d;
+  font-size: 22px;
+  padding: 15px 30px;
+  width: 90%;
+  border-radius: 20px;
+  animation: pulse 2s infinite;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(69, 123, 157, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0); }
+}
+
+#camera-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(16px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#camera-overlay.is-open,
+#camera-overlay[style*="display: flex"],
+#camera-overlay[style*="display:flex"] {
+  display: flex !important;
+}
+
+#camera-video {
+  width: min(400px, 92vw);
+  max-height: 55dvh;
+  height: auto;
+  object-fit: contain;
+  border-radius: 15px;
+  border: 4px solid #fff;
+  background: #000;
+}
+
+#crop-canvas {
+  position: relative !important;
+  display: none;
+  max-width: 95vw;
+  max-height: 55dvh;
+  width: auto !important;
+  height: auto !important;
+  touch-action: none;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  margin: 0 auto 16px;
+}
+
+#camera-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+
+#capture-btn,
+#close-camera-btn,
+#confirm-crop-btn,
+#cancel-analyze-btn {
+  padding: 14px 22px;
+  font-size: 18px;
+  border-radius: 20px;
+  color: white;
+  border: none;
+  font-weight: bold;
+  min-height: 48px;
+}
+
+#capture-btn { background: #ff595e; }
+#close-camera-btn { background: #6c757d; }
+#confirm-crop-btn { background: #06d6a0; border-radius: 50px; font-size: 22px; }
+#cancel-analyze-btn { background: #e63946; border-radius: 50px; }
+
+#loading-msg {
+  color: #06d6a0;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 16px;
+  text-align: center;
+  padding: 0 12px;
+}
 
 /* Canvas controls (Retake / Clear / Magic) */
-#canvas-controls { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
-#canvas-controls button { padding: 10px 14px; font-size: 16px; border-radius: 12px; color: white; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-#canvas-controls button:active { transform: translateY(3px); box-shadow: none; }
+#canvas-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+  max-width: 420px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+#canvas-controls button {
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: 12px;
+  color: white;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  min-height: 44px;
+}
+
+#canvas-controls button:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
 #retake-btn { background: #457b9d; }
-#retake-btn::before { content: '🔁 '; }
+#retake-btn::before { content: "🔁 "; }
 #clear-draw-btn { background: #ff595e; }
-#clear-draw-btn::before { content: '🧽 '; }
+#clear-draw-btn::before { content: "🧽 "; }
 #magic-btn { background: #8ac926; }
-#magic-btn::before { content: '✨ '; }
+#magic-btn::before { content: "✨ "; }
 #canvas-controls button:focus { outline: none; }
+
+/* Game overlay */
+#game-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  background: #f8edeb;
+  z-index: 8000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 12px max(20px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+
+#game-overlay.is-open,
+#game-overlay[style*="display: flex"],
+#game-overlay[style*="display:flex"] {
+  display: flex !important;
+}
+
+#game-overlay h2 {
+  color: #1d3557;
+  font-size: clamp(24px, 6vw, 32px);
+  margin: 0 0 10px;
+}
+
+#game-msg {
+  font-size: clamp(16px, 4.5vw, 22px);
+  color: #e63946;
+  margin-bottom: 10px;
+  font-weight: bold;
+  padding: 0 8px;
+}
+
+#game-speaker {
+  font-size: 64px;
+  width: min(150px, 40vw);
+  height: min(150px, 40vw);
+  border-radius: 20px;
+  border: none;
+  background: #a2d2ff;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  margin-bottom: 24px;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-answers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.game-ans-btn {
+  cursor: pointer;
+  transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  border: 4px solid #fff;
+  border-radius: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  width: min(100px, 28vw);
+  height: min(140px, 38vw);
+  font-size: 40px;
+  background: #fff;
+  min-height: 110px;
+}
+
+.game-ans-btn:active {
+  transform: scale(0.9);
+}
+
+/* Settings modal */
+#settings-modal {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 11000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#settings-modal.is-open,
+#settings-modal[style*="display: flex"],
+#settings-modal[style*="display:flex"] {
+  display: flex !important;
+}
+
+.settings-card {
+  background: #fff;
+  padding: 24px;
+  border-radius: 20px;
+  width: min(400px, 92vw);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.settings-card h2 {
+  color: #1d3557;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.settings-card label {
+  display: block;
+  margin-bottom: 5px;
+  color: #457b9d;
+  font-weight: bold;
+}
+
+.settings-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 18px;
+  border: 2px solid #a2d2ff;
+  border-radius: 10px;
+  font-size: 16px; /* iOS zooms if < 16px */
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-actions button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  min-height: 48px;
+}
+
+.settings-cancel { background: #e0e0e0; color: #333; }
+.settings-save { background: #06d6a0; color: #fff; }
+
+/* Narrow phones */
+@media (max-width: 380px) {
+  .controls .btn {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .key {
+    width: 42px;
+    height: 42px;
+    line-height: 36px;
+    font-size: 22px;
+  }
+
+  #camera-controls button {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+}
