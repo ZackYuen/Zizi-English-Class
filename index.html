@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-home3">
+    <link rel="stylesheet" href="style.css?v=20260715-home4">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -19,9 +19,21 @@
     <p class="home-tagline">廣東話小朋友學英文 · 好玩先至記得住</p>
 
     <div class="home-progress" id="home-progress">
-        <div class="home-stat"><span class="home-stat-emoji">⭐</span><span id="home-stars-count">0</span><span class="home-stat-label">星星</span></div>
-        <div class="home-stat"><span class="home-stat-emoji">📚</span><span id="home-words-count">0</span><span class="home-stat-label">單詞</span></div>
-        <div class="home-stat"><span class="home-stat-emoji">🔥</span><span id="home-streak-count">0</span><span class="home-stat-label">日數</span></div>
+        <div class="home-stat">
+            <span class="home-stat-emoji" aria-hidden="true">⭐</span>
+            <span id="home-stars-count" class="home-stat-num">0</span>
+            <span class="home-stat-label">星星</span>
+        </div>
+        <div class="home-stat">
+            <span class="home-stat-emoji" aria-hidden="true">📚</span>
+            <span id="home-words-count" class="home-stat-num">0</span>
+            <span class="home-stat-label">單詞</span>
+        </div>
+        <div class="home-stat">
+            <span class="home-stat-emoji" aria-hidden="true">🔥</span>
+            <span id="home-streak-count" class="home-stat-num">0</span>
+            <span class="home-stat-label">日數</span>
+        </div>
     </div>
 
     <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 讀出選單同指示</button>
@@ -177,15 +189,15 @@
 </div>
 
 <!-- Load order: data → state → speech/progress → features → router -->
-<script src="js/data.js?v=20260715-home3"></script>
-<script src="js/state.js?v=20260715-home3"></script>
-<script src="js/speech.js?v=20260715-home3"></script>
-<script src="js/progress.js?v=20260715-home3"></script>
-<script src="js/ui.js?v=20260715-home3"></script>
-<script src="js/canvas.js?v=20260715-home3"></script>
-<script src="js/camera.js?v=20260715-home3"></script>
-<script src="js/game.js?v=20260715-home3"></script>
-<script src="js/match.js?v=20260715-home3"></script>
-<script src="js/router.js?v=20260715-home3"></script>
+<script src="js/data.js?v=20260715-home4"></script>
+<script src="js/state.js?v=20260715-home4"></script>
+<script src="js/speech.js?v=20260715-home4"></script>
+<script src="js/progress.js?v=20260715-home4"></script>
+<script src="js/ui.js?v=20260715-home4"></script>
+<script src="js/canvas.js?v=20260715-home4"></script>
+<script src="js/camera.js?v=20260715-home4"></script>
+<script src="js/game.js?v=20260715-home4"></script>
+<script src="js/match.js?v=20260715-home4"></script>
+<script src="js/router.js?v=20260715-home4"></script>
 </body>
 </html>

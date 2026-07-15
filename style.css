@@ -693,33 +693,76 @@ button:disabled {
   line-height: 1.35;
 }
 
+/* Must beat #home-menu > * { display:block } so 3 columns stay side-by-side */
+#home-menu > .home-progress,
 .home-progress {
-  display: table !important;
-  table-layout: fixed;
+  display: -webkit-box !important;
+  display: -webkit-flex !important;
+  display: flex !important;
+  -webkit-box-orient: horizontal !important;
+  -webkit-flex-direction: row !important;
+  flex-direction: row !important;
+  -webkit-flex-wrap: nowrap !important;
+  flex-wrap: nowrap !important;
+  -webkit-box-pack: justify !important;
+  -webkit-justify-content: space-between !important;
+  justify-content: space-between !important;
+  -webkit-box-align: stretch !important;
+  -webkit-align-items: stretch !important;
+  align-items: stretch !important;
   width: 100% !important;
   max-width: 320px !important;
   margin: 0 auto 16px !important;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 6px;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   border: 2px solid #a2d2ff;
   box-sizing: border-box;
 }
 
+#home-menu > .home-progress .home-stat,
 .home-stat {
-  display: table-cell !important;
-  width: 33.33%;
-  vertical-align: middle;
-  text-align: center;
+  display: -webkit-box !important;
+  display: -webkit-flex !important;
+  display: flex !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-flex-direction: column !important;
+  flex-direction: column !important;
+  -webkit-box-align: center !important;
+  -webkit-align-items: center !important;
+  align-items: center !important;
+  -webkit-box-pack: start !important;
+  -webkit-justify-content: flex-start !important;
+  justify-content: flex-start !important;
+  -webkit-box-flex: 1 !important;
+  -webkit-flex: 1 1 0 !important;
+  flex: 1 1 0 !important;
+  width: 33% !important;
+  max-width: 33% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 4px;
+  text-align: center !important;
   color: #1d3557;
   font-weight: bold;
   font-size: 20px;
   line-height: 1.25;
+  box-sizing: border-box;
+  float: none !important;
 }
 
-.home-stat-emoji { display: block; font-size: 22px; line-height: 1.2; }
-.home-stat-label { display: block; font-size: 12px; color: #457b9d; font-weight: bold; }
-.home-stat span { display: block; }
+#home-menu > .home-progress .home-stat span,
+.home-stat span,
+.home-stat-emoji,
+.home-stat-label {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  float: none !important;
+}
+
+.home-stat-emoji { font-size: 22px; line-height: 1.2; margin-bottom: 2px; }
+.home-stat-label { font-size: 12px; color: #457b9d; font-weight: bold; margin-top: 2px; }
 
 .home-btn-match {
   background: #06d6a0 !important;
