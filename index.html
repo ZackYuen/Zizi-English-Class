@@ -2,7 +2,9 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -10,45 +12,34 @@
 <body>
 
 <!-- 統一主選單 (Home Menu) -->
-<div id="home-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100vh; background:#f0f4f8; position:absolute; top:0; left:0; z-index:9000;">
-    <h1 style="color:#1d3557; font-size:36px; margin-bottom:10px;">🌟 孜孜拼音大冒險</h1>
-    <p style="color:#457b9d; font-size:18px; margin-bottom:40px;">請選擇你想玩嘅模式：</p>
-    
-    <div style="display:flex; flex-direction:column; gap:20px; width:80%; max-width:300px;">
-        <button onclick="enterMode('standard')" style="padding:15px 20px; font-size:20px; border-radius:15px; border:none; background:#ffca3a; color:#1d3557; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            ✍️ 基礎描字模式
-        </button>
-        <button onclick="enterMode('camera')" style="padding:15px 20px; font-size:20px; border-radius:15px; border:none; background:#8ac926; color:#fff; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            📸 探索魔鏡模式
-        </button>
-        <button onclick="enterMode('game')" style="padding:15px 20px; font-size:20px; border-radius:15px; border:none; background:#f4a261; color:#fff; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            🎮 聽音大挑戰
-        </button>
-        
-        <button onclick="openSettings()" style="margin-top:30px; padding:10px 15px; font-size:16px; border-radius:10px; border:none; background:#d8e2dc; color:#1d3557; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:pointer;">
-            ⚙️ 設定 API Keys
-        </button>
+<div id="home-menu" class="is-open" style="display:flex;">
+    <h1>🌟 孜孜拼音大冒險</h1>
+    <p>請選擇你想玩嘅模式：</p>
+
+    <div class="home-menu-actions">
+        <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字模式</button>
+        <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡模式</button>
+        <button type="button" class="home-btn-game" onclick="enterMode('game')">🎮 聽音大挑戰</button>
+        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 設定 API Keys</button>
     </div>
 </div>
 
 <!-- 統一返回主頁按鈕 -->
-<button id="back-to-home-btn" onclick="backToHome()" style="display:none; position:fixed; top:20px; right:20px; font-size:18px; padding:10px 15px; border-radius:10px; border:none; background:#ff595e; color:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index:9999; cursor:pointer;">
-    🏠 返回主選單
-</button>
+<button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
     <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
 </div>
 
 <!-- 1. 基礎模式與畫布區域 -->
-<div id="start-overlay" style="display:none;"></div>
+<div id="start-overlay" style="display:none;" aria-hidden="true"></div>
 <div id="app" style="display:none;">
     <div id="msg">由綠色點出發，畫到尾為止！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
-        <button class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
-        <button class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
-        <button class="btn" id="btn-re-cam" style="background:#ffca3a; color:#1d3557; display:none;" onclick="openCamera()">📸 影下一個</button>
+        <button type="button" class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
+        <button type="button" class="btn btn-magic" onclick="magic()">✨ 變魔術</button>
+        <button type="button" class="btn" id="btn-re-cam" style="background:#ffca3a; color:#1d3557; display:none;" onclick="openCamera()">📸 影下一個</button>
     </div>
 </div>
 <div id="standard-ui" style="display:none;">
@@ -56,56 +47,52 @@
     <div id="kb"></div>
 </div>
 
-<!-- 2. 相機模式區域 (🌟 已補回畫圈 Canvas 及按鈕) -->
+<!-- 2. 相機模式區域 -->
 <div id="camera-ui-container" style="display:none;"></div>
 <div id="camera-overlay" style="display:none;">
-    <video id="camera-video" playsinline autoplay></video>
-    
-    <!-- 🌟 補回：呢個就係孜孜用嚟畫圈嗰塊透明板 -->
-    <canvas id="crop-canvas" style="display:none; touch-action:none; border: 2px solid #fff; border-radius: 10px; margin-bottom: 20px;"></canvas>
-    
+    <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
+
+    <canvas id="crop-canvas" width="300" height="300"></canvas>
+
     <div id="camera-controls">
-        <!-- 影相掣 -->
-        <button id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
-        <!-- 🌟 補回：畫完圈之後確定嘅掣 (預設隱藏) -->
-        <button id="confirm-crop-btn" onclick="confirmCrop()" style="display:none; background-color: #06d6a0; border:none; padding:15px 30px; font-size:24px; color:white; border-radius:50px; font-weight:bold;">✅ 確定</button>
-        <!-- 取消掣 -->
-        <button id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
-        <!-- AI 分析超時時可取消 -->
-        <button id="cancel-analyze-btn" style="display:none; background-color:#e63946; border:none; padding:15px 30px; font-size:20px; color:white; border-radius:50px; font-weight:bold; cursor:pointer;">🛑 取消分析</button>
+        <button type="button" id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
+        <button type="button" id="confirm-crop-btn" onclick="confirmCrop()" style="display:none;">✅ 確定</button>
+        <button type="button" id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
+        <button type="button" id="cancel-analyze-btn" style="display:none;">🛑 取消分析</button>
     </div>
-    
+
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
 <!-- 3. 聽音大挑戰遊戲區域 -->
-<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f8edeb; z-index:8000; flex-direction:column; align-items:center; justify-content:center;">
-    <h2 style="color:#1d3557; font-size:32px; margin-bottom:10px;">🎧 聽音大挑戰</h2>
-    <div id="game-msg" style="font-size:22px; color:#e63946; margin-bottom:10px; font-weight:bold;">睇下係咩圖案，聽下係咩音！</div>
-    <button id="game-speaker" onclick="playGameSound()" style="font-size:75px; width:150px; height:150px; border-radius:20px; border:none; background:#a2d2ff; box-shadow: 0 8px 15px rgba(0,0,0,0.2); margin-bottom:30px; cursor:pointer; transition: transform 0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-        <span id="game-emoji-display">🔊</span><span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
+<div id="game-overlay" style="display:none;">
+    <h2>🎧 聽音大挑戰</h2>
+    <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
+    <button type="button" id="game-speaker" onclick="playGameSound()">
+        <span id="game-emoji-display">🔊</span>
+        <span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
     </button>
-    <div style="display:flex; gap:15px;">
-        <button id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
-        <button id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
-        <button id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')"></button>
+    <div class="game-answers">
+        <button type="button" id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
+        <button type="button" id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
+        <button type="button" id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')"></button>
     </div>
 </div>
 
 <!-- 設定彈出視窗 -->
-<div id="settings-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; flex-direction:column; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:30px; border-radius:20px; width:85%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-        <h2 style="color:#1d3557; margin-top:0; margin-bottom:20px; text-align:center;">⚙️ 設定 API Keys</h2>
-        
-        <label style="display:block; margin-bottom:5px; color:#457b9d; font-weight:bold;">Google TTS (語音及發聲):</label>
-        <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" style="width:100%; padding:10px; margin-bottom:20px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px; box-sizing:border-box;">
-        
-        <label style="display:block; margin-bottom:5px; color:#457b9d; font-weight:bold;">OpenRouter (相機認字):</label>
-        <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" style="width:100%; padding:10px; margin-bottom:25px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px; box-sizing:border-box;">
-        
-        <div style="display:flex; justify-content:space-between; gap:15px;">
-            <button onclick="closeSettings()" style="flex:1; padding:12px; background:#e0e0e0; border:none; border-radius:10px; font-size:16px; cursor:pointer; color:#333; font-weight:bold;">取消</button>
-            <button onclick="saveSettings()" style="flex:1; padding:12px; background:#06d6a0; border:none; border-radius:10px; font-size:16px; cursor:pointer; color:#fff; font-weight:bold;">💾 儲存</button>
+<div id="settings-modal" style="display:none;">
+    <div class="settings-card">
+        <h2>⚙️ 設定 API Keys</h2>
+
+        <label for="input-google-tts">Google TTS (語音及發聲):</label>
+        <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <label for="input-openrouter">OpenRouter (相機認字):</label>
+        <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <div class="settings-actions">
+            <button type="button" class="settings-cancel" onclick="closeSettings()">取消</button>
+            <button type="button" class="settings-save" onclick="saveSettings()">💾 儲存</button>
         </div>
     </div>
 </div>

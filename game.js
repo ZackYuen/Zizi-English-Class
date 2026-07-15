@@ -115,14 +115,23 @@ window.playGameMessage = async function(text, callback) {
 };
 
 window.startGame = function() {
-    if(window.stopAllAudio) window.stopAllAudio();
-    
-    document.getElementById('start-overlay').style.display = 'none';
-    document.getElementById('game-overlay').style.display = 'flex';
+    if (window.stopAllAudio) window.stopAllAudio();
+
+    const start = document.getElementById('start-overlay');
+    if (start) {
+        start.style.display = 'none';
+        start.classList.remove('is-open');
+    }
+    const overlay = document.getElementById('game-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.add('is-open');
+    }
+
     window.isGamePlaying = true;
     window.isGameProcessing = false;
-    window.lastWord = ''; 
-    
+    window.lastWord = '';
+
     // 講完開場白自動出題
     window.playGameMessage("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！", () => {
         window.nextGameQuestion();
@@ -132,12 +141,24 @@ window.startGame = function() {
 window.exitGame = function() {
     window.isGamePlaying = false;
     window.isGameProcessing = false;
-    if(window.stopAllAudio) window.stopAllAudio();
-    
-    let overlay = document.getElementById('game-overlay');
-    if(overlay) overlay.style.display = 'none';
-    let start = document.getElementById('start-overlay');
-    if(start) start.style.display = 'flex';
+    if (window.stopAllAudio) window.stopAllAudio();
+
+    const overlay = document.getElementById('game-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.classList.remove('is-open');
+    }
+    // Never show the empty start-overlay (it blocks all taps on iPhone).
+    // Prefer returning to the real home menu.
+    if (typeof window.backToHome === 'function') {
+        window.backToHome();
+        return;
+    }
+    const home = document.getElementById('home-menu');
+    if (home) {
+        home.style.display = 'flex';
+        home.classList.add('is-open');
+    }
 };
 
 window.nextGameQuestion = function() {
