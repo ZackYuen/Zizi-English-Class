@@ -160,3 +160,9 @@ const D = rawD.map(r => {
     
     return { l: r[0], w: r[1], emoji: r[2], ssml: ssml, p: phases, st: letterStrokes[r[0]] };
 });
+
+// Expose on window so modules that read window.D / window.letterStrokes work
+// (top-level const is not attached to window in browsers).
+window.phonicsGroups = phonicsGroups;
+window.letterStrokes = letterStrokes;
+window.D = D;

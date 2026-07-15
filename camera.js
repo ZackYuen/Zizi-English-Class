@@ -303,10 +303,9 @@ window.closeCamera = function() {
     safeDisplay('camera-overlay', 'none');
 };
 
-async function identifyWithAI(croppedBase64) {
+window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
     window.isAnalyzing = true;
-    
-    // 🌟 核心調整：Nvidia 放第一位，確保優先調用
+
     const models = [
         "nvidia/nemotron-nano-12b-v2-vl:free",
         "qwen/qwen-2-vl-7b-instruct:free",
@@ -316,94 +315,193 @@ async function identifyWithAI(croppedBase64) {
     let apiKey = localStorage.getItem('openrouter_api_key');
     if (!apiKey) {
         apiKey = prompt("請輸入 OpenRouter API Key:");
-        if(apiKey) localStorage.setItem('openrouter_api_key', apiKey);
+        if (apiKey) localStorage.setItem('openrouter_api_key', apiKey);
         else { window.closeCamera(); return; }
     }
 
-    const loadingMsg = document.getElementById('loading-msg');
-    if (loadingMsg) { loadingMsg.style.zIndex = "100"; loadingMsg.style.pointerEvents = 'none'; }
-    
-    // 超時提示
+    const loadingMsg = getEl('loading-msg');
+    if (loadingMsg) {
+        loadingMsg.style.zIndex = "100";
+        loadingMsg.style.pointerEvents = 'none';
+    }
+
+    const cancelBtn = getEl('cancel-analyze-btn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+    // 超時提示（顯示取消按鈕）
     let cancelTimer = setTimeout(() => {
         if (window.isAnalyzing) {
-            let btn = document.getElementById('cancel-analyze-btn');
-            if (btn) btn.style.display = 'block';
-            window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+            if (cancelBtn) {
+                cancelBtn.style.display = 'block';
+                cancelBtn.onclick = () => {
+                    if (window.currentAborter) {
+                        try { window.currentAborter.abort(); } catch (e) { /* ignore */ }
+                    }
+                    window.isAnalyzing = false;
+                    if (loadingMsg) loadingMsg.style.display = 'none';
+                    safeDisplay('camera-controls', 'flex');
+                };
+            }
+            if (window.playCantoneseTTS) {
+                window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+            }
         }
-    }, 10000); 
+    }, 10000);
 
-    let vocabList = window.D ? window.D.map(d => d.w).join(', ') : '';
+    let vocabList = '';
+    try {
+        const dict = window.D || (typeof D !== 'undefined' ? D : null);
+        vocabList = dict ? dict.map(d => d.w).join(', ') : '';
+    } catch (e) {
+        vocabList = '';
+    }
+
+    // Normalize input: accept either data URL or base64
+    const imageDataUrl = (typeof croppedBase64OrDataUrl === 'string' && croppedBase64OrDataUrl.startsWith('data:'))
+        ? croppedBase64OrDataUrl
+        : `data:image/jpeg;base64,${croppedBase64OrDataUrl}`;
 
     for (const model of models) {
         if (!window.isAnalyzing) break;
-        
-        if (loadingMsg) loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`;
-        
-        window.currentAborter = new AbortController();
+
+        if (loadingMsg) {
+            try {
+                loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`;
+            } catch (e) { /* ignore */ }
+        }
+
+        const aborter = new AbortController();
+        window.currentAborter = aborter;
+        const REQUEST_TIMEOUT = 30000;
+        const reqTimeoutId = setTimeout(() => {
+            try { aborter.abort(); } catch (e) { /* ignore */ }
+        }, REQUEST_TIMEOUT);
+
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                try { aborter.abort(); } catch (e) { /* ignore */ }
+                window.isAnalyzing = false;
+                if (loadingMsg) loadingMsg.style.display = 'none';
+                safeDisplay('camera-controls', 'flex');
+            };
+        }
+
         try {
+            const payload = {
+                model: model,
+                messages: [{
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the single noun (one word).`
+                        },
+                        {
+                            type: "image_url",
+                            image_url: { url: imageDataUrl }
+                        }
+                    ]
+                }]
+            };
+
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [{
-                        role: "user",
-                        content: [
-                            { type: "text", text: `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the[...]`
-                        ]
-                    }]
-                }),
-                signal: window.currentAborter.signal
+                body: JSON.stringify(payload),
+                signal: aborter.signal
             });
 
-            if (!response.ok) continue;
+            clearTimeout(reqTimeoutId);
 
-            const data = await response.json();
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                // 🌟 強力清洗回應：只保留最後一個詞，移除所有句子結構
-                let rawWord = data.choices[0].message.content.trim().toLowerCase();
-                // 拆解所有文字只留英文單字
-                let words = rawWord.split(/[^a-z]+/).filter(w => w.length > 0);
-                
-                // 簡單邏輯：最後一個出現的單字通常就是目標物
-                let finalWord = words[words.length - 1]; 
+            if (!response.ok) {
+                const txt = await response.text().catch(() => '');
+                console.warn(`${model} returned ${response.status}:`, txt);
+                continue;
+            }
 
-                if (finalWord && finalWord.length > 0) {
-                    clearTimeout(cancelTimer);
-                    window.isAnalyzing = false;
-                    
-                    // 成功認字，即刻切換
-                    if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-                    
-                    setTimeout(() => { 
-                        window.closeCamera(); 
-                        
-                        // 🌟 強制恢復寫字 UI，確保唔會卡死
-                        const appEl = document.getElementById('app'); if (appEl) appEl.style.display = 'block';
-                        const tb = document.getElementById('standard-top-bar'); if (tb) tb.style.display = 'flex';
-                        
-                        if(window.processWord) {
-                            window.processWord(finalWord, window.lastCapturedImg);
-                        }
-                    }, 500);
-                    return; 
+            const data = await response.json().catch(() => null);
+            if (!data) {
+                console.warn(`${model} returned invalid JSON`);
+                continue;
+            }
+
+            let rawContent = '';
+            try {
+                const choice = data.choices && data.choices[0];
+                if (choice && choice.message) {
+                    const msgContent = choice.message.content;
+                    if (typeof msgContent === 'string') rawContent = msgContent;
+                    else if (Array.isArray(msgContent)) {
+                        rawContent = msgContent.map(p => (p && (p.text || p)).toString()).join(' ');
+                    } else if (typeof msgContent === 'object') {
+                        rawContent = JSON.stringify(msgContent);
+                    }
+                } else if (data.output) {
+                    rawContent = Array.isArray(data.output)
+                        ? data.output.join(' ')
+                        : (data.output.text || String(data.output));
                 }
+            } catch (e) {
+                rawContent = '';
+            }
+
+            rawContent = (rawContent || '').trim().toLowerCase();
+            if (!rawContent) continue;
+
+            let words = [];
+            try {
+                words = rawContent.split(/[^\p{L}]+/u).filter(w => w && w.length > 0);
+            } catch (e) {
+                words = rawContent.split(/[^a-z]+/).filter(w => w && w.length > 0);
+            }
+            if (words.length === 0) continue;
+
+            const finalWord = words[words.length - 1];
+            if (finalWord && finalWord.length > 0) {
+                clearTimeout(cancelTimer);
+                window.isAnalyzing = false;
+                if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
+
+                setTimeout(() => {
+                    window.closeCamera();
+
+                    const appEl = getEl('app');
+                    if (appEl) appEl.style.display = 'block';
+                    const topBar = getEl('standard-top-bar');
+                    if (topBar) topBar.style.display = 'flex';
+
+                    if (window.processWord) {
+                        window.processWord(finalWord, window.lastCapturedImg);
+                    }
+                }, 500);
+
+                window.currentAborter = null;
+                return;
             }
         } catch (err) {
-            console.error(`${model} 失敗: ${err.message}`);
+            if (err && err.name === 'AbortError') {
+                console.warn(`${model} fetch aborted`);
+            } else {
+                console.error(`${model} 失敗:`, err);
+            }
+        } finally {
+            clearTimeout(reqTimeoutId);
         }
     }
 
     clearTimeout(cancelTimer);
+    window.currentAborter = null;
+
     if (window.isAnalyzing) {
         window.isAnalyzing = false;
         if (window.playCantoneseTTS) window.playCantoneseTTS("哎呀，認唔到呀，不如影過第二樣啦。");
         if (loadingMsg) loadingMsg.innerText = "❌ 認唔到，請重試。";
         setTimeout(() => {
             if (loadingMsg) loadingMsg.style.display = 'none';
-            const cc = document.getElementById('camera-controls'); if (cc) cc.style.display = 'flex';
-            const pc = document.getElementById('preview-container'); if (pc) pc.style.display = 'none';
-            const vid = document.getElementById('camera-video'); if (vid) vid.style.display = 'block';
+            safeDisplay('camera-controls', 'flex');
+            safeDisplay('preview-container', 'none');
+            const vid = getEl('camera-video');
+            if (vid) vid.style.display = 'block';
         }, 2000);
     }
-}
+};
