@@ -397,8 +397,8 @@ button:disabled {
   z-index: 9999;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(16px, env(safe-area-inset-bottom, 0px));
+  align-items: stretch;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 8px max(12px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -410,26 +410,30 @@ button:disabled {
 }
 
 #camera-video {
-  width: min(400px, 92vw);
-  max-height: 55dvh;
+  /* Was capped at 400px — that made the preview look like a slim strip */
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(78dvh, calc(100dvh - 130px));
   height: auto;
   object-fit: contain;
-  border-radius: 15px;
+  border-radius: 16px;
   border: 4px solid #fff;
   background: #000;
+  margin: 0 auto;
 }
 
 #crop-canvas {
   position: relative !important;
   display: none;
-  max-width: 95vw;
-  max-height: 55dvh;
+  max-width: 100%;
+  max-height: min(78dvh, calc(100dvh - 130px));
   width: auto !important;
   height: auto !important;
   touch-action: none;
   border: 2px solid #fff;
-  border-radius: 10px;
-  margin: 0 auto 16px;
+  border-radius: 12px;
+  margin: 0 auto 12px;
 }
 
 #camera-controls {
@@ -437,9 +441,10 @@ button:disabled {
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 14px;
   width: 100%;
-  max-width: 420px;
+  max-width: none;
+  flex-shrink: 0;
 }
 
 #capture-btn,
