@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-voice2">
+    <link rel="stylesheet" href="style.css?v=20260715-match-stroke1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -88,11 +88,15 @@
 <!-- Picture match (offline kid mode) -->
 <div id="match-overlay" style="display:none;">
     <h2>🖼️ 睇圖識字</h2>
-    <div id="match-round" class="match-round">第 1 題</div>
-    <div id="match-msg">聽英文，再揀啱嘅圖案！</div>
+    <div id="match-round" class="match-round">第 1 / 8 題</div>
+    <div class="match-progress" aria-hidden="true">
+        <div id="match-progress-fill" class="match-progress-fill"></div>
+    </div>
+    <div id="match-progress-label" class="match-progress-label">0 / 8</div>
+    <div id="match-msg">聽英文，揀啱嘅圖！</div>
     <button type="button" id="match-speaker" onclick="playMatchPrompt()">
         <span id="match-prompt-emoji">❓</span>
-        <span class="match-speaker-label">撳我聽英文</span>
+        <span class="match-speaker-label">再聽英文</span>
     </button>
     <div id="match-choices" class="match-choices"></div>
 </div>

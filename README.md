@@ -21,7 +21,7 @@ On home: tap **讀出選單同指示** so the child hears the options before pla
 
 ## Modes
 
-1. Picture match
+1. Picture match (8 questions, progress bar; English words use English voice)
 2. Letter tracing
 3. Listening challenge
 4. Camera magic

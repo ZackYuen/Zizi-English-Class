@@ -741,7 +741,28 @@ button:disabled {
 .match-round {
   color: #457b9d;
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+.match-progress {
+  width: min(280px, 80vw);
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(29, 53, 87, 0.12);
+  overflow: hidden;
+  margin: 0 auto 6px;
+}
+.match-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #06d6a0, #1982c4);
+  transition: width 0.35s ease;
+}
+.match-progress-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #457b9d;
+  margin-bottom: 10px;
 }
 #match-msg {
   font-size: clamp(16px, 4.5vw, 20px);

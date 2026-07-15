@@ -1,13 +1,15 @@
 // ==========================================
-// Picture match — offline for ages ~5
-// All Cantonese instructions are spoken aloud
+// Picture match — 8 questions + progress bar
+// Short Cantonese cues; English words use English voice
 // ==========================================
 
+window.MATCH_TOTAL = 8;
 window.isMatchPlaying = false;
 window.isMatchProcessing = false;
 window.matchTarget = null;
 window.matchChoices = [];
 window.matchRound = 0;
+window.matchScore = 0;
 
 function shuffle(arr) {
     const a = arr.slice();
@@ -20,7 +22,8 @@ function shuffle(arr) {
 
 function matchPool() {
     if (typeof D === 'undefined' || !D.length) return [];
-    return D.filter(function (d) { return d && d.w && d.emoji; });
+    const baseLen = window._baseVocabLen != null ? window._baseVocabLen : D.length;
+    return D.slice(0, baseLen).filter(function (d) { return d && d.w && d.emoji; });
 }
 
 function setMatchMsg(text, color) {
@@ -30,11 +33,23 @@ function setMatchMsg(text, color) {
     if (color) msg.style.color = color;
 }
 
+function updateMatchProgress() {
+    const total = window.MATCH_TOTAL;
+    const current = Math.min(window.matchRound, total);
+    const roundEl = document.getElementById('match-round');
+    const fill = document.getElementById('match-progress-fill');
+    const label = document.getElementById('match-progress-label');
+    if (roundEl) roundEl.innerText = '第 ' + current + ' / ' + total + ' 題';
+    if (fill) fill.style.width = Math.round((current / total) * 100) + '%';
+    if (label) label.innerText = current + ' / ' + total;
+}
+
 window.startMatchGame = async function () {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isMatchPlaying = true;
     window.isMatchProcessing = false;
     window.matchRound = 0;
+    window.matchScore = 0;
 
     const overlay = document.getElementById('match-overlay');
     if (overlay) {
@@ -42,10 +57,10 @@ window.startMatchGame = async function () {
         overlay.classList.add('is-open');
     }
 
-    const intro = '睇圖識字開始！聽英文，再撳啱嘅圖案啦！';
-    setMatchMsg(intro, '#1d3557');
+    updateMatchProgress();
+    setMatchMsg('聽英文，揀啱嘅圖！', '#1d3557');
     if (window.playCantoneseTTS) {
-        await window.playCantoneseTTS(intro, { interrupt: true });
+        await window.playCantoneseTTS('聽英文，揀啱嘅圖！', { interrupt: true });
     }
     if (window.isMatchPlaying) window.nextMatchQuestion();
 };
@@ -62,15 +77,24 @@ window.exitMatchGame = function () {
 
 window.nextMatchQuestion = async function () {
     if (!window.isMatchPlaying) return;
+
+    if (window.matchRound >= window.MATCH_TOTAL) {
+        await window.finishMatchGame();
+        return;
+    }
+
     const pool = matchPool();
     if (pool.length < 3) {
         setMatchMsg('詞庫唔夠玩喎！', '#e63946');
-        if (window.announce) window.announce('詞庫唔夠玩喎！', { force: true });
+        if (window.playCantoneseTTS) {
+            await window.playCantoneseTTS('詞庫唔夠玩喎！', { interrupt: true });
+        }
         return;
     }
 
     window.isMatchProcessing = false;
     window.matchRound += 1;
+    updateMatchProgress();
 
     let target;
     let tries = 0;
@@ -85,12 +109,8 @@ window.nextMatchQuestion = async function () {
     window.matchChoices = shuffle([target].concat(others));
 
     const prompt = document.getElementById('match-prompt-emoji');
-    const roundEl = document.getElementById('match-round');
     if (prompt) prompt.innerText = '❓';
-    if (roundEl) roundEl.innerText = '第 ' + window.matchRound + ' 題';
-
-    const instruct = '第' + window.matchRound + '題。撳藍色喇叭聽英文，再揀啱嘅圖案！';
-    setMatchMsg(instruct, '#1d3557');
+    setMatchMsg('聽吓，揀圖！', '#1d3557');
 
     const box = document.getElementById('match-choices');
     if (box) {
@@ -108,13 +128,10 @@ window.nextMatchQuestion = async function () {
         });
     }
 
-    if (window.playCantoneseTTS) {
-        await window.playCantoneseTTS(instruct, { interrupt: true });
-    }
-    if (window.isMatchPlaying) window.playMatchPrompt();
+    if (window.isMatchPlaying) await window.playMatchPrompt();
 };
 
-window.playMatchPrompt = function () {
+window.playMatchPrompt = async function () {
     if (!window.matchTarget) return;
     const word = window.matchTarget.w;
     const sp = document.getElementById('match-speaker');
@@ -123,7 +140,7 @@ window.playMatchPrompt = function () {
         setTimeout(function () { sp.style.transform = 'scale(1)'; }, 220);
     }
     if (window.speakEnglish) {
-        window.speakEnglish(word, { rate: 0.85 });
+        await window.speakEnglish(word, { rate: 0.85 });
     } else if (window.playSnd) {
         window.playSnd(660, 'sine', 0.2);
     }
@@ -137,8 +154,8 @@ window.checkMatchAnswer = async function (choiceWord) {
     const correct = choiceWord === window.matchTarget.w;
 
     if (correct) {
+        window.matchScore += 1;
         if (prompt) prompt.innerText = window.matchTarget.emoji;
-        const praise = '啱喇！叻仔！係 ' + window.matchTarget.w + '！';
         setMatchMsg('啱喇！' + window.matchTarget.w.toUpperCase() + ' ' + window.matchTarget.emoji, '#06d6a0');
         if (window.playSnd) {
             [523, 659, 784].forEach(function (f, i) {
@@ -154,14 +171,15 @@ window.checkMatchAnswer = async function (choiceWord) {
             });
         }
         if (window.playCantoneseTTS) {
-            await window.playCantoneseTTS(praise, { interrupt: true });
-        } else if (window.speakEnglish) {
-            window.speakEnglish(window.matchTarget.w);
+            await window.playCantoneseTTS('啱喇！', { interrupt: true });
+        }
+        if (window.speakEnglish) {
+            await window.speakEnglish(window.matchTarget.w, { rate: 0.88 });
         }
         window.isMatchProcessing = false;
         if (window.isMatchPlaying) window.nextMatchQuestion();
     } else {
-        setMatchMsg('唔係呢個呀，再試吓！聽多次英文啦～', '#e63946');
+        setMatchMsg('再試吓！', '#e63946');
         if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
         const box = document.getElementById('match-choices');
         if (box) {
@@ -169,9 +187,28 @@ window.checkMatchAnswer = async function (choiceWord) {
             setTimeout(function () { box.classList.remove('shake-anim'); }, 400);
         }
         if (window.playCantoneseTTS) {
-            await window.playCantoneseTTS('唔係呢個呀，再試吓！聽多次英文啦！', { interrupt: true });
+            await window.playCantoneseTTS('再試吓！', { interrupt: true });
         }
         window.isMatchProcessing = false;
-        if (window.isMatchPlaying) window.playMatchPrompt();
+        if (window.isMatchPlaying) await window.playMatchPrompt();
     }
+};
+
+window.finishMatchGame = async function () {
+    const total = window.MATCH_TOTAL;
+    const score = window.matchScore;
+    updateMatchProgress();
+    const box = document.getElementById('match-choices');
+    if (box) box.innerHTML = '';
+    const prompt = document.getElementById('match-prompt-emoji');
+    if (prompt) prompt.innerText = score >= total ? '🌟' : '👏';
+
+    setMatchMsg('完成！答啱 ' + score + ' / ' + total + ' 題', '#06d6a0');
+    if (window.playCantoneseTTS) {
+        await window.playCantoneseTTS('完成！答啱 ' + score + ' 題，共 ' + total + ' 題！', { interrupt: true });
+    }
+    if (score >= total && window.awardStars) {
+        window.awardStars(2, { reason: '全部答啱' });
+    }
+    if (window.refreshHomeProgress) window.refreshHomeProgress();
 };
