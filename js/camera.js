@@ -22,6 +22,10 @@ window.openCamera = async function() {
 
     safeDisplay('app', 'none');
     safeDisplay('game-overlay', 'none');
+    safeDisplay('match-overlay', 'none');
+    safeDisplay('standard-top-bar', 'none');
+    safeDisplay('back-to-home-btn', 'none');
+    safeDisplay('standard-ui', 'none');
     safeDisplay('camera-overlay', 'flex');
     const cam = getEl('camera-overlay');
     if (cam) cam.classList.add('is-open');
@@ -302,8 +306,8 @@ window.enterCameraWritingFlow = function(word) {
     safeDisplay('camera-overlay', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('standard-ui', 'none');
-    safeDisplay('back-to-home-btn', 'block');
     safeDisplay('standard-top-bar', 'flex');
+    safeDisplay('back-to-home-btn', 'inline-block');
     safeDisplay('app', 'block');
 
     const reCam = getEl('btn-re-cam');

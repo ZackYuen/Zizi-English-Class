@@ -264,35 +264,62 @@ window._drainSpeechQueue = async function () {
     window._speechBusy = false;
 };
 
+function pickEnglishVoice() {
+    if (!window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices() || [];
+    const preferred = [
+        /samantha/i, /karen/i, /moira/i, /serena/i, /martha/i,
+        /en[-_]?us/i, /en[-_]?gb/i, /english/i
+    ];
+    for (let i = 0; i < preferred.length; i++) {
+        const re = preferred[i];
+        const hit = voices.find(function (v) {
+            return re.test(v.name) || re.test(v.lang);
+        });
+        if (hit) return hit;
+    }
+    return voices.find(function (v) {
+        return (v.lang || '').toLowerCase().indexOf('en') === 0;
+    }) || null;
+}
+
+/** Speak English words/sounds with an English voice (never Cantonese TTS). */
 window.speakEnglish = function (text, opts) {
     const options = opts || {};
     const utter = String(text || '').trim();
-    if (!utter) return;
+    if (!utter) return Promise.resolve();
 
     const key = localStorage.getItem('google_tts_key');
     if (key && !options.forceBrowser) {
-        window._speakGoogleEnglish(utter, options);
-        return;
+        return window._speakGoogleEnglish(utter, options);
     }
 
-    if (!window.speechSynthesis) return;
-    try {
-        // Don't cancel Cantonese if we can help it — cancel only English chain
-        const u = new SpeechSynthesisUtterance(utter);
-        u.lang = options.lang || 'en-US';
-        u.rate = options.rate != null ? options.rate : 0.88;
-        u.pitch = 1.05;
-        window.speechSynthesis.speak(u);
-    } catch (e) {
-        console.warn('speakEnglish failed', e);
-    }
+    if (!window.speechSynthesis) return Promise.resolve();
+    return new Promise(function (resolve) {
+        try {
+            if (options.cancel !== false) {
+                try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+            }
+            const u = new SpeechSynthesisUtterance(utter);
+            u.lang = options.lang || 'en-US';
+            u.rate = options.rate != null ? options.rate : 0.88;
+            u.pitch = 1.05;
+            const voice = pickEnglishVoice();
+            if (voice) u.voice = voice;
+            u.onend = function () { resolve(); };
+            u.onerror = function () { resolve(); };
+            window.speechSynthesis.speak(u);
+        } catch (e) {
+            console.warn('speakEnglish failed', e);
+            resolve();
+        }
+    });
 };
 
 window._speakGoogleEnglish = async function (text, opts) {
     const key = localStorage.getItem('google_tts_key');
     if (!key) {
-        window.speakEnglish(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
-        return;
+        return window.speakEnglish(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
     }
     try {
         const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
@@ -305,21 +332,25 @@ window._speakGoogleEnglish = async function (text, opts) {
         });
         const data = await res.json();
         if (data.audioContent) {
-            // Use a separate audio element so English prompts don't kill Cantonese queue awkwardly
             window.enAudio = window.enAudio || new Audio();
-            window.enAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-            window.enAudio.play().catch(function () { /* ignore */ });
-        } else {
-            window.speakEnglish(text, { forceBrowser: true });
+            const a = window.enAudio;
+            a.src = 'data:audio/mp3;base64,' + data.audioContent;
+            await new Promise(function (resolve) {
+                a.onended = function () { a.onended = null; resolve(); };
+                a.onerror = function () { a.onended = null; resolve(); };
+                a.play().catch(function () { resolve(); });
+            });
+            return;
         }
+        return window.speakEnglish(text, { forceBrowser: true });
     } catch (e) {
-        window.speakEnglish(text, { forceBrowser: true });
+        return window.speakEnglish(text, { forceBrowser: true });
     }
 };
 
 /** Watch text nodes / status messages and read them aloud */
 window.startInstructionReader = function () {
-    const ids = ['msg', 'game-msg', 'match-msg', 'loading-msg'];
+    const ids = ['msg', 'game-msg', 'loading-msg'];
     ids.forEach(function (id) {
         const el = document.getElementById(id);
         if (!el || el._announceBound) return;

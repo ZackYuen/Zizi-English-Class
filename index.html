@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-voice2">
+    <link rel="stylesheet" href="style.css?v=20260715-backbtn1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -36,10 +36,10 @@
     <p class="home-parent-tip">家長提示：每日玩 10–15 分鐘就夠。開場先撳「讀出選單」。聲線建議用 iPhone 廣東話，或者 Azure「曉曼」Neural（比 Google 自然好多）。</p>
 </div>
 
-<button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
-
 <div class="top-bar" id="standard-top-bar" style="display:none;">
-    <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
+    <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+    <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">🌟 孜孜學英文</h2>
+    <span class="top-bar-spacer" aria-hidden="true"></span>
 </div>
 
 <!-- Tracing app -->
@@ -72,7 +72,11 @@
 
 <!-- Listening game -->
 <div id="game-overlay" style="display:none;">
-    <h2>🎧 聽音大挑戰</h2>
+    <div class="mode-header">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+        <h2>🎧 聽音大挑戰</h2>
+        <span class="top-bar-spacer" aria-hidden="true"></span>
+    </div>
     <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
     <button type="button" id="game-speaker" onclick="playGameSound()">
         <span id="game-emoji-display">🔊</span>
@@ -87,12 +91,20 @@
 
 <!-- Picture match (offline kid mode) -->
 <div id="match-overlay" style="display:none;">
-    <h2>🖼️ 睇圖識字</h2>
-    <div id="match-round" class="match-round">第 1 題</div>
-    <div id="match-msg">聽英文，再揀啱嘅圖案！</div>
+    <div class="mode-header">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+        <h2>🖼️ 睇圖識字</h2>
+        <span class="top-bar-spacer" aria-hidden="true"></span>
+    </div>
+    <div id="match-round" class="match-round">第 1 / 8 題</div>
+    <div class="match-progress" aria-hidden="true">
+        <div id="match-progress-fill" class="match-progress-fill"></div>
+    </div>
+    <div id="match-progress-label" class="match-progress-label">0 / 8</div>
+    <div id="match-msg">聽英文，揀啱嘅圖！</div>
     <button type="button" id="match-speaker" onclick="playMatchPrompt()">
         <span id="match-prompt-emoji">❓</span>
-        <span class="match-speaker-label">撳我聽英文</span>
+        <span class="match-speaker-label">再聽英文</span>
     </button>
     <div id="match-choices" class="match-choices"></div>
 </div>

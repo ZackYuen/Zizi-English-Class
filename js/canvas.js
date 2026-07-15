@@ -25,13 +25,14 @@ window.resetCanvas = function() {
     window.offCtx.canvas.height = 300;
     window.offCtx.clearRect(0,0,300,300);
     
-    currentData.st.forEach(st => drawLineToCtx(window.offCtx, st, '#000', false, 25));
+    currentData.st.forEach(st => drawLineToCtx(window.offCtx, st, '#000', false, 22));
     window.guideData = window.offCtx.getImageData(0, 0, 300, 300).data;
     
     window.totalGuide = 0;
     for(let i=3; i<window.guideData.length; i+=4) {
         if(window.guideData[i] > 50) window.totalGuide++;
     }
+    window.strokeAttempts = [];
     
     // 準備用嚟計分嘅 User Canvas
     window.userCtx = window.userCtx || document.createElement('canvas').getContext('2d', { willReadFrequently: true });
@@ -61,16 +62,17 @@ window.initWaypoints = function() {
 window.updateMsg = function() {
     const msg = document.getElementById('msg');
     if(!msg || typeof D === 'undefined' || !D[idx]) return;
+    const passAt = window.WRITE_PASS_SCORE || 80;
     if(strokeIdx < D[idx].st.length) {
-        msg.innerText = `完成度: ${currentPercent}% (第 ${strokeIdx+1} 筆)`;
-        msg.style.color = "#1982c4";
+        msg.innerText = '完成度: ' + currentPercent + '% / ' + passAt + '%（第 ' + (strokeIdx+1) + ' 筆）';
+        msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
     } else {
         if (window.currentMode === 'camera') {
-            msg.innerText = `完成度: 100% - 撳 ✨ 讀出嚟，或者 📸 再影一個！`;
+            msg.innerText = '完成度: ' + currentPercent + '% - 撳 ✨ 讀出嚟，或者 📸 再影一個！';
         } else {
-            msg.innerText = `完成度: 100% - 好叻！撳 ✨ 讀出嚟啦！`;
+            msg.innerText = '完成度: ' + currentPercent + '% - 好叻！撳 ✨ 讀出嚟啦！';
         }
-        msg.style.color = "#06d6a0";
+        msg.style.color = '#06d6a0';
     }
 };
 
@@ -119,8 +121,11 @@ window.loop = function() {
     ctx.clearRect(0,0,300,300);
     if(!isMagic) {
         if(typeof D !== 'undefined' && D[idx]) {
-            D[idx].st.forEach(st => drawLineToCtx(ctx, st, '#e0e0e0', true, 25)); 
-            doneStrokes.forEach(st => drawLineToCtx(ctx, st, '#ff9f1c', false, 25)); 
+            D[idx].st.forEach(st => drawLineToCtx(ctx, st, '#e0e0e0', true, 25));
+            if (window.strokeAttempts && window.strokeAttempts.length) {
+                window.strokeAttempts.forEach(st => drawLineToCtx(ctx, st, 'rgba(255,159,28,0.35)', false, 22));
+            }
+            doneStrokes.forEach(st => drawLineToCtx(ctx, st, '#ff9f1c', false, 25));
             drawLineToCtx(ctx, curStroke, '#ffca3a', false, 25); 
             
             // 畫引導點同進度球
@@ -131,16 +136,10 @@ window.loop = function() {
                 ctx.beginPath(); ctx.arc(pt.x, pt.y, 10, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
             }
             
-            // 計分邏輯
+            // 計分邏輯（較嚴格）
             if(Date.now() - lastCalc > 150 && window.totalGuide > 0 && strokeIdx < D[idx].st.length && window.userCtx) {
                 lastCalc = Date.now();
-                window.userCtx.clearRect(0,0,300,300);
-                doneStrokes.forEach(st => drawLineToCtx(window.userCtx, st, '#000', false, 25));
-                drawLineToCtx(window.userCtx, curStroke, '#000', false, 25);
-                let drawData = window.userCtx.getImageData(0,0,300,300).data;
-                let covered = 0;
-                for(let i=3; i<window.guideData.length; i+=4) if(window.guideData[i] > 50 && drawData[i] > 50) covered++;
-                currentPercent = Math.round((covered / window.totalGuide) * 100);
+                currentPercent = window.computeWriteCoverage();
                 updateMsg();
             }
         }
@@ -216,9 +215,11 @@ window.loop = function() {
     requestAnimationFrame(window.loop);
 };
 
-// 🌟 畫布手指描寫：線條跟住手指走（唔再強行吸附綠色起點）
-const HIT_START = 72;     // 要靠近綠色點先開始
-const HIT_PROGRESS = 58;  // 跟住路徑推進完成度（可以鬆啲）
+// 🌟 畫布手指描寫：墨水跟手指；要畫到該筆終點；覆蓋要夠先算完成
+window.WRITE_PASS_SCORE = 80;
+const HIT_START = 64;
+const HIT_PROGRESS = 40;
+const HIT_END = 48;
 
 window.getCanvasPos = function(e, canvas) {
     const r = canvas.getBoundingClientRect();
@@ -241,21 +242,57 @@ window.getCanvasPos = function(e, canvas) {
     };
 };
 
-function finishLetterComplete(pointerId) {
-    const cvs = document.getElementById('cvs');
-    isDrawing = false;
-    if (cvs && pointerId != null) {
-        try { cvs.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
+window.computeWriteCoverage = function () {
+    if (!window.userCtx || !window.guideData || !window.totalGuide) return 0;
+    window.userCtx.clearRect(0, 0, 300, 300);
+    var scoreW = 14;
+    if (window.strokeAttempts) {
+        window.strokeAttempts.forEach(function (st) {
+            drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
+        });
     }
-    currentPercent = 100;
+    doneStrokes.forEach(function (st) {
+        drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
+    });
+    drawLineToCtx(window.userCtx, curStroke, '#000', false, scoreW);
+    var drawData = window.userCtx.getImageData(0, 0, 300, 300).data;
+    var covered = 0;
+    for (var i = 3; i < window.guideData.length; i += 4) {
+        if (window.guideData[i] > 50 && drawData[i] > 50) covered++;
+    }
+    return Math.min(100, Math.round((covered / window.totalGuide) * 100));
+};
+
+function finishLetterComplete(pointerId) {
+    var cvsEl = document.getElementById('cvs');
+    isDrawing = false;
+    if (cvsEl && pointerId != null) {
+        try { cvsEl.releasePointerCapture(pointerId); } catch (err) {}
+    }
+
+    currentPercent = window.computeWriteCoverage();
+    var passAt = window.WRITE_PASS_SCORE || 80;
+
+    if (currentPercent < passAt) {
+        var msg = document.getElementById('msg');
+        if (msg) {
+            msg.innerText = '仲差啲！而家 ' + currentPercent + '%，要 ' + passAt + '% 先得。再跟實虛線畫過！';
+            msg.style.color = '#e63946';
+        }
+        if (window.playCantoneseTTS) {
+            window.playCantoneseTTS('仲差啲！要跟實虛線再畫過！');
+        }
+        setTimeout(function () { resetCanvas(); }, 900);
+        return;
+    }
+
     updateMsg();
 
     if (window.currentMode === 'camera') {
-        const reCam = document.getElementById('btn-re-cam');
+        var reCam = document.getElementById('btn-re-cam');
         if (reCam) reCam.style.display = 'inline-block';
     }
 
-    // ⭐ Reward: finishing a letter earns a star + album stamp
     if (typeof D !== 'undefined' && D[idx] && window.awardStars) {
         window.awardStars(1, {
             word: D[idx].w,
@@ -265,18 +302,20 @@ function finishLetterComplete(pointerId) {
         });
     }
 
-    setTimeout(() => {
-        [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playSnd(f, 'triangle', 0.3), i * 100));
+    setTimeout(function () {
+        [523, 659, 783, 1046].forEach(function (f, i) {
+            setTimeout(function () { playSnd(f, 'triangle', 0.3); }, i * 100);
+        });
     }, 200);
     if (D[idx] && D[idx].l) {
-        setTimeout(() => {
+        setTimeout(function () {
             if (window.playCantoneseTTS) window.playCantoneseTTS('叻仔！寫好咗 ' + D[idx].l);
+            if (window.speakEnglish) window.speakEnglish(D[idx].l, { rate: 0.9 });
         }, 500);
     }
 }
 
 function onStrokeStart(e) {
-    // Avoid double-firing when both pointer + touch events exist
     if (e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
     if (e.type.startsWith('pointer')) window._strokeInput = 'pointer';
     if (e.type.startsWith('touch')) window._strokeInput = 'touch';
@@ -286,17 +325,47 @@ function onStrokeStart(e) {
     if (isDrawing) return;
     if (e.cancelable) e.preventDefault();
 
-    const cvsEl = document.getElementById('cvs');
+    var cvsEl = document.getElementById('cvs');
     if (!cvsEl) return;
-    const pos = getCanvasPos(e, cvsEl);
-    const target = currentWPs[nextWpIdx];
+    var pos = getCanvasPos(e, cvsEl);
+    var target = currentWPs[nextWpIdx] || currentWPs[0];
     if (!target || Math.hypot(pos.x - target.x, pos.y - target.y) > HIT_START) return;
 
     isDrawing = true;
-    // Start at the finger — do NOT snap from the green dot (that felt unnatural)
+    if (curStroke && curStroke.length >= 4) {
+        window.strokeAttempts = window.strokeAttempts || [];
+        window.strokeAttempts.push(curStroke);
+    }
     curStroke = [pos.x, pos.y];
     if (e.pointerId != null && cvsEl.setPointerCapture) {
-        try { cvsEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        try { cvsEl.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+}
+
+function advanceStrokeProgress(pos) {
+    if (!currentWPs.length) return;
+
+    var bestIdx = -1;
+    var bestDist = Infinity;
+    var from = Math.max(0, nextWpIdx - 1);
+    for (var i = from; i < currentWPs.length; i++) {
+        var d = Math.hypot(pos.x - currentWPs[i].x, pos.y - currentWPs[i].y);
+        if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+        }
+        if (i > nextWpIdx + 8 && bestDist < HIT_PROGRESS) break;
+    }
+
+    if (bestIdx >= nextWpIdx && bestDist <= HIT_PROGRESS) {
+        nextWpIdx = Math.min(bestIdx + 1, currentWPs.length - 1);
+    }
+
+    var end = currentWPs[currentWPs.length - 1];
+    var nearEnd = Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END;
+    var progressRatio = nextWpIdx / Math.max(1, currentWPs.length - 1);
+    if (nearEnd && progressRatio >= 0.78) {
+        nextWpIdx = currentWPs.length;
     }
 }
 
@@ -305,31 +374,12 @@ function onStrokeMove(e) {
     if (!isDrawing || isMagic) return;
     if (e.cancelable) e.preventDefault();
 
-    const cvsEl = document.getElementById('cvs');
+    var cvsEl = document.getElementById('cvs');
     if (!cvsEl) return;
-    const pos = getCanvasPos(e, cvsEl);
+    var pos = getCanvasPos(e, cvsEl);
 
-    // Always draw exactly where the finger is
     curStroke.push(pos.x, pos.y);
-
-    // Advance guide progress near waypoints (with small look-ahead for kids)
-    while (nextWpIdx < currentWPs.length) {
-        const wp = currentWPs[nextWpIdx];
-        if (Math.hypot(pos.x - wp.x, pos.y - wp.y) < HIT_PROGRESS) {
-            nextWpIdx++;
-            continue;
-        }
-        let jumped = false;
-        for (let k = 1; k <= 3 && nextWpIdx + k < currentWPs.length; k++) {
-            const ahead = currentWPs[nextWpIdx + k];
-            if (Math.hypot(pos.x - ahead.x, pos.y - ahead.y) < HIT_PROGRESS * 0.85) {
-                nextWpIdx += k + 1;
-                jumped = true;
-                break;
-            }
-        }
-        if (!jumped) break;
-    }
+    advanceStrokeProgress(pos);
 
     if (nextWpIdx >= currentWPs.length && currentWPs.length > 0) {
         playSnd(880, 'sine', 0.2);
@@ -343,15 +393,14 @@ function onStrokeMove(e) {
             return;
         }
 
-        // Multi-stroke letters: continue only if finger is already near next green start
-        const nextStart = currentWPs[0];
+        var nextStart = currentWPs[0];
         if (nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START) {
             isDrawing = true;
             curStroke = [pos.x, pos.y];
         } else {
             isDrawing = false;
             if (e.pointerId != null) {
-                try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+                try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) {}
             }
         }
     }
@@ -362,9 +411,9 @@ function onStrokeEnd(e) {
     if (e && e.cancelable) e.preventDefault();
     isDrawing = false;
     window._strokeInput = null;
-    const cvsEl = document.getElementById('cvs');
+    var cvsEl = document.getElementById('cvs');
     if (cvsEl && e && e.pointerId != null) {
-        try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) {}
     }
 }
 
@@ -512,7 +561,10 @@ window.processWord = function(word, imgUrl = null) {
     const letter = D[matchIdx] ? D[matchIdx].l : normalized.charAt(0).toUpperCase();
 
     if (window.playCantoneseTTS) {
-        window.playCantoneseTTS('搵到喇！係 ' + normalized + '，孜孜，一齊寫 ' + letter + ' 啦。');
+        window.playCantoneseTTS('搵到喇！係呢個字，孜孜，一齊寫 ' + letter + ' 啦。');
+    }
+    if (window.speakEnglish) {
+        setTimeout(function () { window.speakEnglish(normalized, { rate: 0.88 }); }, 650);
     }
     if (window.awardStars) {
         const entry = D[matchIdx] || {};

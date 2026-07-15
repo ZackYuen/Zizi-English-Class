@@ -263,7 +263,10 @@ window.checkAnswer = function(choice) {
             });
         }
 
-        window.playGameMessage(randomPhrase, () => {
+        window.playGameMessage(randomPhrase, async () => {
+            if (window.speakEnglish) {
+                await window.speakEnglish(window.currentWord, { rate: 0.88 });
+            }
             window.isGameProcessing = false;
             window.nextGameQuestion();
         });
@@ -276,10 +279,11 @@ window.checkAnswer = function(choice) {
         document.getElementById('game-msg').innerText = `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
         
-        let txt = `呢個係 ${clickedWord}，係 ${letterMap[choice]} 嘅音。聽多次啦！`;
-        
-        // 播完即時糾正之後，先重新播英文
-        window.playGameMessage(txt, () => {
+        // Cantonese cue, then English word with English voice
+        window.playGameMessage('唔係呢個，聽多次啦！', async () => {
+            if (window.speakEnglish) {
+                await window.speakEnglish(clickedWord, { rate: 0.88 });
+            }
             if(window.isGamePlaying && !window.isGameProcessing) {
                 setTimeout(() => {
                     if(window.isGamePlaying && !window.isGameProcessing) window.playGameSound();
