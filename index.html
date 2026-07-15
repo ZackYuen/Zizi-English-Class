@@ -2,21 +2,21 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260715-ios3">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 統一主選單 (Home Menu) -->
-<div id="home-menu" class="is-open" style="display:flex;">
-    <h1>🌟 孜孜拼音大冒險</h1>
-    <p>請選擇你想玩嘅模式：</p>
+<!-- 統一主選單：critical flex layout inlined so Safari never falls back to row -->
+<div id="home-menu" class="is-open" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; padding:24px 20px; overflow-y:auto; background:#f0f4f8; z-index:9000;">
+    <h1 style="width:100%; max-width:320px; margin:0 0 12px; text-align:center; color:#1d3557; font-size:32px; line-height:1.25;">🌟 孜孜拼音大冒險</h1>
+    <p style="width:100%; max-width:320px; margin:0 0 28px; text-align:center; color:#457b9d; font-size:18px; line-height:1.4;">請選擇你想玩嘅模式：</p>
 
-    <div class="home-menu-actions">
+    <div class="home-menu-actions" style="display:flex; flex-direction:column; gap:16px; width:100%; max-width:300px;">
         <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字模式</button>
         <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡模式</button>
         <button type="button" class="home-btn-game" onclick="enterMode('game')">🎮 聽音大挑戰</button>

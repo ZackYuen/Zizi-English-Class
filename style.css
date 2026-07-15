@@ -48,25 +48,37 @@ button:disabled {
 #start-overlay,
 #camera-overlay,
 #game-overlay,
-#settings-modal,
-#home-menu {
+#settings-modal {
   display: none;
 }
 
 #home-menu {
-  position: fixed;
+  display: none;
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
   inset: 0;
   z-index: 9000;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 100%;
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 100vh;
   min-height: 100dvh;
-  padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
+  margin: 0 !important;
+  padding: max(24px, env(safe-area-inset-top, 0px)) 20px max(28px, env(safe-area-inset-bottom, 0px)) !important;
   background: #f0f4f8;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Force column even if another rule fights it (iPhone Safari row bug) */
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0;
 }
 
 #home-menu.is-open,
@@ -75,29 +87,44 @@ button:disabled {
   display: flex !important;
 }
 
+/* Each direct child takes full content width so a stray row still stacks */
+#home-menu > * {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: 320px !important;
+  box-sizing: border-box;
+}
+
 #home-menu h1 {
   color: #1d3557;
-  font-size: clamp(26px, 7vw, 36px);
-  margin: 0 0 10px;
-  text-align: center;
-  line-height: 1.2;
+  font-size: clamp(28px, 8vw, 36px);
+  margin: 0 0 12px !important;
+  text-align: center !important;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: keep-all;
 }
 
 #home-menu > p {
   color: #457b9d;
-  font-size: clamp(15px, 4vw, 18px);
-  margin: 0 0 32px;
-  text-align: center;
+  font-size: clamp(16px, 4.5vw, 18px);
+  margin: 0 0 28px !important;
+  text-align: center !important;
+  line-height: 1.4;
 }
 
 .home-menu-actions {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
   gap: 16px;
-  width: min(300px, 86vw);
+  width: 100% !important;
+  max-width: 300px !important;
 }
 
 .home-menu-actions button {
+  display: block;
+  width: 100%;
   padding: 16px 18px;
   font-size: clamp(17px, 4.5vw, 20px);
   border-radius: 15px;
