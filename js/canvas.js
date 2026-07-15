@@ -93,7 +93,7 @@ window.initWaypoints = function() {
 window.updateMsg = function() {
     const msg = document.getElementById('msg');
     if(!msg || typeof D === 'undefined' || !D[idx]) return;
-    const passAt = window.WRITE_PASS_SCORE || 65;
+    const passAt = window.WRITE_PASS_SCORE || 70;
     if(strokeIdx < D[idx].st.length) {
         msg.innerText = '完成度: ' + currentPercent + '% / ' + passAt + '%（第 ' + (strokeIdx+1) + ' 筆）';
         msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
@@ -273,10 +273,13 @@ window.loop = function() {
 // - Green ball = follows finger while drawing
 // - Progress = project finger onto the stroke path
 // ==========================================
-window.WRITE_PASS_SCORE = 65;
+// Kid-friendly scoring: 100% still possible; good traces should land ~90%+
+window.WRITE_PASS_SCORE = 70;
 var HIT_START = 78;
 var PATH_CORRIDOR = 70;
 var HIT_END = 52;
+var SCORE_INK_WIDTH = 36;   // fat brush when measuring
+var SCORE_DILATE_R = 14;    // allow small finger offset from the dashed guide
 
 window.getCanvasPos = function(e, canvas) {
     var r = canvas.getBoundingClientRect();
@@ -302,7 +305,7 @@ window.getCanvasPos = function(e, canvas) {
 window.computeWriteCoverage = function () {
     if (!window.userCtx || !window.guideData || !window.totalGuide) return 0;
     window.userCtx.clearRect(0, 0, 300, 300);
-    var scoreW = 22; // looser scoring brush for age ~5
+    var scoreW = SCORE_INK_WIDTH;
     if (window.strokeAttempts) {
         window.strokeAttempts.forEach(function (st) {
             drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
@@ -312,12 +315,46 @@ window.computeWriteCoverage = function () {
         drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
     });
     drawLineToCtx(window.userCtx, curStroke, '#000', false, scoreW);
+
     var drawData = window.userCtx.getImageData(0, 0, 300, 300).data;
-    var covered = 0;
-    for (var i = 3; i < window.guideData.length; i += 4) {
-        if (window.guideData[i] > 50 && drawData[i] > 50) covered++;
+    var W = 300, H = 300;
+    var ink = new Uint8Array(W * H);
+    var i, x, y, p;
+    for (y = 0; y < H; y++) {
+        for (x = 0; x < W; x++) {
+            if (drawData[(y * W + x) * 4 + 3] > 40) ink[y * W + x] = 1;
+        }
     }
-    return Math.min(100, Math.round((covered / window.totalGuide) * 100));
+
+    // Dilate ink so a slightly-offset but correct shape still scores high
+    var R = SCORE_DILATE_R;
+    var dil = new Uint8Array(W * H);
+    for (y = 0; y < H; y++) {
+        for (x = 0; x < W; x++) {
+            if (!ink[y * W + x]) continue;
+            var y0 = Math.max(0, y - R), y1 = Math.min(H - 1, y + R);
+            var x0 = Math.max(0, x - R), x1 = Math.min(W - 1, x + R);
+            for (var yy = y0; yy <= y1; yy++) {
+                var dy = yy - y;
+                for (var xx = x0; xx <= x1; xx++) {
+                    var dx = xx - x;
+                    if (dx * dx + dy * dy <= R * R) dil[yy * W + xx] = 1;
+                }
+            }
+        }
+    }
+
+    var covered = 0;
+    for (i = 3; i < window.guideData.length; i += 4) {
+        if (window.guideData[i] <= 50) continue;
+        p = (i - 3) / 4;
+        if (dil[p]) covered++;
+    }
+
+    var raw = covered / window.totalGuide;
+    // Mild kid boost in the mid range; still caps at 100
+    var boosted = Math.min(1, Math.pow(raw, 0.82) * 1.06);
+    return Math.min(100, Math.round(boosted * 100));
 };
 
 function finishLetterComplete(pointerId) {
@@ -329,7 +366,7 @@ function finishLetterComplete(pointerId) {
     }
 
     currentPercent = window.computeWriteCoverage();
-    var passAt = window.WRITE_PASS_SCORE || 65;
+    var passAt = window.WRITE_PASS_SCORE || 70;
 
     if (currentPercent < passAt) {
         var msg = document.getElementById('msg');
