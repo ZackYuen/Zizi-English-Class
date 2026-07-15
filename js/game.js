@@ -121,7 +121,7 @@ window.exitGame = function() {
     }
     const home = document.getElementById('home-menu');
     if (home) {
-        home.style.display = 'flex';
+        home.style.display = 'block';
         home.classList.add('is-open');
     }
 };

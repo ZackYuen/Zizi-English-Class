@@ -8,11 +8,24 @@ window.currentMode = 'none';
 function setDisplay(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.style.display = value;
+    // Home menu must stay block-stacked (flex row bug on some iOS Safari)
     if (id === 'home-menu' && value !== 'none') {
-        el.style.flexDirection = 'column';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'flex-start';
+        el.style.display = 'block';
+        el.style.position = 'fixed';
+        el.style.top = '0';
+        el.style.right = '0';
+        el.style.bottom = '0';
+        el.style.left = '0';
+        el.style.width = '100%';
+        el.style.zIndex = '9000';
+        el.style.overflowX = 'hidden';
+        el.style.overflowY = 'auto';
+        el.style.textAlign = 'center';
+        el.style.flexDirection = '';
+        el.style.alignItems = '';
+        el.style.justifyContent = '';
+    } else {
+        el.style.display = value;
     }
     if (value === 'none') {
         el.classList.remove('is-open');
@@ -163,7 +176,7 @@ window.enterMode = function (mode) {
         setDisplay('game-overlay', 'none');
         if (window.startMatchGame) window.startMatchGame();
     } else if (mode === 'album') {
-        setDisplay('home-menu', 'flex');
+        setDisplay('home-menu', 'block');
         window.currentMode = 'none';
         if (window.openWordAlbum) window.openWordAlbum();
         if (window.announce) {
@@ -195,7 +208,7 @@ window.backToHome = function () {
 
     hideAllOverlays();
     window.currentMode = 'none';
-    setDisplay('home-menu', 'flex');
+    setDisplay('home-menu', 'block');
     if (window.refreshHomeProgress) window.refreshHomeProgress();
     if (window.announce) {
         window.announce('返到主選單喇。想聽選單可以撳黃色喇叭掣。', { force: true });
@@ -209,7 +222,7 @@ window.addEventListener('pageshow', function () {
         setDisplay('match-overlay', 'none');
         setDisplay('album-overlay', 'none');
         setDisplay('settings-modal', 'none');
-        setDisplay('home-menu', 'flex');
+        setDisplay('home-menu', 'block');
         setDisplay('back-to-home-btn', 'none');
         if (window.refreshHomeProgress) window.refreshHomeProgress();
     }
