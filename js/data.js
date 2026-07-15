@@ -166,3 +166,5 @@ const D = rawD.map(r => {
 window.phonicsGroups = phonicsGroups;
 window.letterStrokes = letterStrokes;
 window.D = D;
+
+window._baseVocabLen = window.D.length;

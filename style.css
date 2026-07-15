@@ -45,7 +45,6 @@ button:disabled {
 
 /* ---------- Full-screen layers ---------- */
 /* Default HIDDEN in CSS so Safari never leaves a ghost overlay from broken rules */
-#start-overlay,
 #camera-overlay,
 #game-overlay,
 #settings-modal {
@@ -161,18 +160,6 @@ button:disabled {
   min-height: 44px;
 }
 
-#start-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 236, 210, 0.98);
-  z-index: 8500;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-}
 
 .mode-btn {
   padding: 20px;
@@ -350,30 +337,6 @@ button:disabled {
 }
 
 /* Camera */
-#camera-ui-container {
-  width: 100%;
-  max-width: 400px;
-  margin-top: 25px;
-  text-align: center;
-}
-
-.btn-big-camera {
-  background: #457b9d;
-  font-size: 22px;
-  padding: 15px 30px;
-  width: 90%;
-  border-radius: 20px;
-  animation: pulse 2s infinite;
-  color: white;
-  border: none;
-  font-weight: bold;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(69, 123, 157, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(69, 123, 157, 0); }
-}
 
 #camera-overlay {
   position: fixed;

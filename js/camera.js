@@ -20,7 +20,6 @@ window.openCamera = async function() {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isAnalyzing = false;
 
-    safeDisplay('start-overlay', 'none');
     safeDisplay('app', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('camera-overlay', 'flex');
@@ -303,7 +302,6 @@ window.enterCameraWritingFlow = function(word) {
     safeDisplay('camera-overlay', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('standard-ui', 'none');
-    safeDisplay('start-overlay', 'none');
     safeDisplay('back-to-home-btn', 'block');
     safeDisplay('standard-top-bar', 'flex');
     safeDisplay('app', 'block');
@@ -521,7 +519,12 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
         setTimeout(() => {
             if (loadingMsg) loadingMsg.style.display = 'none';
             safeDisplay('camera-controls', 'flex');
-            safeDisplay('preview-container', 'none');
+            safeDisplay('confirm-crop-btn', 'none');
+            safeDisplay('capture-btn', 'inline-block');
+            const crop = getEl('crop-canvas');
+            if (crop) crop.style.display = 'none';
+            const ctrl = getEl('canvas-controls');
+            if (ctrl) ctrl.style.display = 'none';
             const vid = getEl('camera-video');
             if (vid) vid.style.display = 'block';
         }, 2000);
