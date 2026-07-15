@@ -124,13 +124,16 @@ window.enterMode = function (mode) {
     setDisplay('home-menu', 'none');
     setDisplay('settings-modal', 'none');
     setDisplay('album-overlay', 'none');
-    setDisplay('back-to-home-btn', 'block');
+    // Back control sits inside each mode header — never as a floating overlay
+    setDisplay('back-to-home-btn', 'none');
+    setDisplay('standard-top-bar', 'none');
 
     if (mode === 'standard') {
         setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
         setDisplay('match-overlay', 'none');
         setDisplay('standard-top-bar', 'flex');
+        setDisplay('back-to-home-btn', 'inline-block');
         setDisplay('app', 'block');
         setDisplay('standard-ui', 'block');
         const reCam = document.getElementById('btn-re-cam');
@@ -141,31 +144,25 @@ window.enterMode = function (mode) {
             window.announce('基礎描字模式。由綠色點出發，用手指跟住虛線畫字母。畫完可以撳讀出嚟。', { force: true });
         }
     } else if (mode === 'camera') {
-        setDisplay('standard-top-bar', 'none');
+        // Camera has its own ❌ 取消 — do not show a second back button on top
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('game-overlay', 'none');
         setDisplay('match-overlay', 'none');
-        // openCamera() already speaks the Cantonese intro
         if (window.openCamera) window.openCamera();
     } else if (mode === 'game') {
-        setDisplay('standard-top-bar', 'none');
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
         setDisplay('match-overlay', 'none');
-        // startGame() already speaks the Cantonese intro
         if (window.startGame) window.startGame();
     } else if (mode === 'match') {
-        setDisplay('standard-top-bar', 'none');
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
-        // startMatchGame() already speaks the Cantonese intro
         if (window.startMatchGame) window.startMatchGame();
     } else if (mode === 'album') {
-        setDisplay('back-to-home-btn', 'none');
         setDisplay('home-menu', 'flex');
         window.currentMode = 'none';
         if (window.openWordAlbum) window.openWordAlbum();
