@@ -32,19 +32,25 @@ const gameWordBank = {
 
 // 🌟 全局強行停止所有音效 (並清除事件監聽)
 window.stopAllAudio = function() {
-    if (window.gameAudio) { 
-        window.gameAudio.pause(); 
-        window.gameAudio.currentTime = 0; 
+    if (window.gameAudio) {
+        window.gameAudio.pause();
+        window.gameAudio.currentTime = 0;
         window.gameAudio.onended = null;
     }
-    if (window.uiAudio) { 
-        window.uiAudio.pause(); 
-        window.uiAudio.currentTime = 0; 
-        window.uiAudio.onended = null; 
+    if (window.uiAudio) {
+        window.uiAudio.pause();
+        window.uiAudio.currentTime = 0;
+        window.uiAudio.onended = null;
+    }
+    if (window.enAudio) {
+        try { window.enAudio.pause(); window.enAudio.currentTime = 0; } catch (e) {}
     }
     if (window.mAudio) {
         window.mAudio.pause();
         window.mAudio.currentTime = 0;
+    }
+    if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
     }
     window.gameAudioToken = 0;
     window.uiAudioToken = 0;
@@ -64,55 +70,19 @@ document.head.appendChild(gameStyle);
 
 // 🌟 核心升級：精準等待廣東話讀完先執行 Callback
 window.playGameMessage = async function(text, callback) {
-    if(window.stopAllAudio) window.stopAllAudio();
-    
+    if (window.stopAllAudio) window.stopAllAudio();
+
     let token = Date.now();
     window.uiAudioToken = token;
-    
-    let key = localStorage.getItem('google_tts_key');
-    if (!key) {
-        // Browser Cantonese/Chinese fallback so the game still flows without API keys
-        if (window.speakCantoneseBrowser) window.speakCantoneseBrowser(text);
-        setTimeout(function () {
-            if (window.uiAudioToken === token && window.isGamePlaying && callback) callback();
-        }, 1200);
-        return;
+
+    if (window.playCantoneseTTS) {
+        await window.playCantoneseTTS(text, { interrupt: true });
+    } else if (window.speakCantoneseBrowser) {
+        await window.speakCantoneseBrowser(text);
     }
-    
-    try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method: 'POST',
-            body: JSON.stringify({
-                input: { text: text },
-                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, 
-                audioConfig: { audioEncoding: 'MP3' }
-            })
-        });
-        let data = await res.json();
-        
-        // 確保無被中途打斷先繼續
-        if (window.uiAudioToken !== token || !window.isGamePlaying) return;
-        
-        if (data.audioContent) {
-            window.uiAudio = window.uiAudio || new Audio();
-            window.uiAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-            
-            // 真正監聽「播完」嗰一刻
-            window.uiAudio.onended = () => {
-                window.uiAudio.onended = null;
-                if (window.uiAudioToken === token && window.isGamePlaying) {
-                    setTimeout(() => {
-                        if (window.uiAudioToken === token && window.isGamePlaying) callback();
-                    }, 300); // 播完畀 0.3 秒呼吸位
-                }
-            };
-            window.uiAudio.play();
-        } else {
-            setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500);
-        }
-    } catch(e) { 
-        console.error(e);
-        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
+
+    if (window.uiAudioToken === token && window.isGamePlaying && callback) {
+        setTimeout(callback, 300);
     }
 };
 
