@@ -8,6 +8,18 @@ Cantonese-friendly English app for young kids (~age 5). Instructions are spoken 
 python3 -m http.server 8080
 ```
 
+
+
+## Why JavaScript (not Python)
+
+This app runs on the child's **iPhone browser** (GitHub Pages / static files):
+
+- Touch drawing, canvas, camera, and speech must run **in the browser**
+- Python cannot receive iPhone touch events or draw to a web canvas from the server
+- `python3 -m http.server` is only used to **serve** the files locally
+
+So the interactive app stays HTML/CSS/JS. Python is fine for tooling/data scripts, but not for replacing the tracing game itself.
+
 ## Voices (important)
 
 Google yue-HK-Standard voices sound robotic. Prefer:
