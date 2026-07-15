@@ -70,9 +70,13 @@ window.playGameMessage = async function(text, callback) {
     window.uiAudioToken = token;
     
     let key = localStorage.getItem('google_tts_key');
-    if (!key) { 
-        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
-        return; 
+    if (!key) {
+        // Browser Cantonese/Chinese fallback so the game still flows without API keys
+        if (window.speakCantoneseBrowser) window.speakCantoneseBrowser(text);
+        setTimeout(function () {
+            if (window.uiAudioToken === token && window.isGamePlaying && callback) callback();
+        }, 1200);
+        return;
     }
     
     try {
@@ -203,51 +207,57 @@ window.nextGameQuestion = function() {
 };
 
 window.playGameSound = async function() {
-    if(window.stopAllAudio) window.stopAllAudio();
-    
+    if (window.stopAllAudio) window.stopAllAudio();
+
     let token = Date.now();
     window.gameAudioToken = token;
-    
-    let key = localStorage.getItem('google_tts_key');
-    if(!key) { 
-        alert("請先設定 Google TTS API Key"); 
-        window.exitGame();
-        return; 
-    }
-    
-    const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
+
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
-    
-    const targetIPA = ipaMap[window.currentGameTarget];
     const targetLetter = letterMap[window.currentGameTarget];
-    
-    let ssml = `<speak><prosody rate="0.8">
-        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
-        <break time="0.5s"/> 
-        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
-        <break time="0.5s"/> 
+    const key = localStorage.getItem('google_tts_key');
+
+    // Offline-friendly: browser English voice when no Google key
+    if (!key) {
+        if (window.speakEnglish) {
+            window.speakEnglish(targetLetter + '. ' + window.currentWord, { rate: 0.8 });
+        }
+        return;
+    }
+
+    const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
+    const targetIPA = ipaMap[window.currentGameTarget];
+
+    const ssml = `<speak><prosody rate="0.8">
+        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme>
+        <break time="0.5s"/>
+        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme>
+        <break time="0.5s"/>
         ${window.currentWord}
     </prosody></speak>`;
 
     try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method:'POST', body:JSON.stringify({
+        const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
+            method: 'POST',
+            body: JSON.stringify({
                 input: { ssml: ssml },
                 voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
                 audioConfig: { audioEncoding: 'MP3' }
             })
         });
-        let data = await res.json();
-        if(data.error) throw data.error;
-        
-        // 如果 Fetch 緊嗰陣佢撳咗掣，就放棄播放
+        const data = await res.json();
+        if (data.error) throw data.error;
+
         if (window.gameAudioToken !== token || !window.isGamePlaying) return;
-        
+
         window.gameAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
         window.gameAudio.play();
-    } catch(e) { 
-        console.error("Game Audio Error", e); 
-        document.getElementById('game-msg').innerText = "❌ 語音系統錯誤";
+    } catch (e) {
+        console.error('Game Audio Error', e);
+        if (window.speakEnglish) {
+            window.speakEnglish(targetLetter + '. ' + window.currentWord, { rate: 0.8 });
+        } else {
+            document.getElementById('game-msg').innerText = '❌ 語音系統錯誤';
+        }
     }
 };
 
@@ -262,23 +272,32 @@ window.checkAnswer = function(choice) {
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
     
     if (choice === window.currentGameTarget) {
-        window.isGameProcessing = true; 
-        
-        if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
-        
-        const correctPhrases = ["啱喇！", "無錯！", "正確！", "對喇！", "搵到喇！"];
+        window.isGameProcessing = true;
+
+        if (typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+
+        const correctPhrases = ['啱喇！', '無錯！', '正確！', '對喇！', '搵到喇！'];
         const randomPhrase = correctPhrases[Math.floor(Math.random() * correctPhrases.length)];
-        
+
         document.getElementById('game-emoji-display').innerText = window.currentEmoji;
         document.getElementById('game-msg').innerText = `✨ ${randomPhrase}${window.currentWord} 係 ${ipaSymbolMap[choice]} 音！`;
-        document.getElementById('game-msg').style.color = "#06d6a0";
-        
-        // 播完讚賞之後，自動出下一題
+        document.getElementById('game-msg').style.color = '#06d6a0';
+
+        if (window.awardStars) {
+            const choiceItem = window.currentChoices[choice] || {};
+            window.awardStars(1, {
+                word: window.currentWord,
+                emoji: window.currentEmoji || choiceItem.e,
+                letter: choice,
+                reason: '聽音挑戰'
+            });
+        }
+
         window.playGameMessage(randomPhrase, () => {
             window.isGameProcessing = false;
             window.nextGameQuestion();
         });
-        
+
     } else {
         btn.classList.add('shake-anim');
         setTimeout(() => btn.classList.remove('shake-anim'), 400);

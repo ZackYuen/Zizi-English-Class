@@ -1,6 +1,6 @@
 # 孜孜學英文 (Zizi English Class)
 
-Cantonese-friendly phonics app for kids: letter tracing, camera object recognition, and listening games.
+Cantonese-friendly English phonics app for young kids (around age 5): play first, learn through stars, pictures, tracing, and listening.
 
 Static site — **no build step, no npm**.
 
@@ -10,60 +10,49 @@ Static site — **no build step, no npm**.
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080`. Camera mode needs HTTPS (or `localhost`) and camera permission.
+Open `http://localhost:8080`. Camera mode needs HTTPS (or `localhost`).
 
 ### iPhone Safari
 
-1. Use HTTPS (or a local network IP serving these files).
-2. Hard-refresh after deploys (`style.css?v=…` is cache-busted).
-3. Set API keys under 設定 before TTS / listening game / camera AI.
+1. Hard-refresh after deploys (`style.css?v=…` is cache-busted).
+2. **睇圖識字** works **without API keys** (browser speech).
+3. Google TTS / OpenRouter make pronunciation and camera magic clearer, but are optional for the core play loop.
 
-## Modes
+## Modes (suggested order for a 5-year-old)
 
-| Mode | What it does |
-|------|----------------|
-| 基礎描字 | Trace letter strokes, then ✨ 讀出嚟 (Google TTS) |
-| 探索魔鏡 | Photo → circle object → OpenRouter vision → trace + 📸 再影一個 |
-| 聽音大挑戰 | Listen for /æ/ /ɛ/ /ɪ/ and pick the matching word |
+1. **🖼️ 睇圖識字** — hear English, tap the right emoji (offline-friendly)
+2. **✍️ 基礎描字** — trace letters, earn stars, ✨ 讀出嚟
+3. **🎧 聽音大挑戰** — A/E/I sound game (browser voice if no Google key)
+4. **📸 探索魔鏡** — photo → AI word → write (needs OpenRouter)
+5. **📒 我嘅單詞冊** — collection of learned words; tap to hear again
 
-## Settings (API keys)
+Progress (**stars / words / streak**) is saved on the device in `localStorage`.
 
-Stored in `localStorage` on the device only:
+## Settings
 
-- `google_tts_key` — Google Cloud Text-to-Speech
-- `openrouter_api_key` — OpenRouter vision models
-
-Keys are sent from the browser (fine for a personal/demo app; use a proxy for production).
+| Key | Used for |
+|-----|----------|
+| `google_tts_key` | Clearer Cantonese + English voices |
+| `openrouter_api_key` | Camera object recognition |
 
 ## Project layout
 
 ```text
-index.html          # UI shell
-style.css           # Mobile-first styles (iPhone Safari)
+index.html
+style.css
 js/
-  data.js           # Phonics groups, stroke paths, vocabulary (D)
-  state.js          # Shared globals + audio/loop helpers
-  ui.js             # Tabs, letter keyboard, startApp
-  canvas.js         # Tracing, magic TTS animation, processWord
-  camera.js         # Camera, crop, AI identify
-  game.js           # Listening challenge
-  router.js         # Home menu, settings, mode routing
+  data.js       vocabulary + stroke paths
+  state.js      shared state + audio/loop helpers
+  speech.js     English/Cantonese speech helpers + fallbacks
+  progress.js   stars, streak, word album
+  ui.js         tabs / keyboard / startApp
+  canvas.js     tracing + magic TTS
+  camera.js     camera / crop / AI
+  game.js       listening challenge
+  match.js      picture match (kid mode)
+  router.js     home / settings / routing
 ```
 
-### Script load order
+## Parent tip
 
-`data → state → ui → canvas → camera → game → router`
-
-### Architecture notes
-
-- Vanilla JS on `window` (no bundler). Keep globals intentional and owned by `state.js`.
-- One render loop only (`startRenderLoop` guard).
-- Overlays default hidden in CSS; router clears them on home / `pageshow`.
-- Camera writing flow reuses the tracing canvas and shows「再影一個」.
-
-## Review checklist (maintainer)
-
-- [ ] Standard mode shows letter keyboard immediately (group 1 active)
-- [ ] No stacked animation loops (check DevTools Performance)
-- [ ] Camera → recognize → write →「再影一個」
-- [ ] Game + back-to-home leave home menu tappable on iPhone
+10–15 minutes a day is enough. Start with 睇圖識字, celebrate stars, then try one tracing letter.

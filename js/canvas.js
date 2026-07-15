@@ -255,12 +255,22 @@ function finishLetterComplete(pointerId) {
         if (reCam) reCam.style.display = 'inline-block';
     }
 
+    // ⭐ Reward: finishing a letter earns a star + album stamp
+    if (typeof D !== 'undefined' && D[idx] && window.awardStars) {
+        window.awardStars(1, {
+            word: D[idx].w,
+            emoji: D[idx].emoji,
+            letter: D[idx].l,
+            reason: '寫完字母'
+        });
+    }
+
     setTimeout(() => {
         [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playSnd(f, 'triangle', 0.3), i * 100));
     }, 200);
     if (D[idx] && D[idx].l) {
         setTimeout(() => {
-            if (window.playCantoneseTTS) window.playCantoneseTTS(D[idx].l);
+            if (window.playCantoneseTTS) window.playCantoneseTTS('叻仔！寫好咗 ' + D[idx].l);
         }, 500);
     }
 }
@@ -503,6 +513,15 @@ window.processWord = function(word, imgUrl = null) {
 
     if (window.playCantoneseTTS) {
         window.playCantoneseTTS('搵到喇！係 ' + normalized + '，孜孜，一齊寫 ' + letter + ' 啦。');
+    }
+    if (window.awardStars) {
+        const entry = D[matchIdx] || {};
+        window.awardStars(1, {
+            word: normalized,
+            emoji: entry.emoji || '📷',
+            letter: letter,
+            reason: '魔鏡搵到'
+        });
     }
 
     const wrap = document.getElementById('canvas-wrapper');
