@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-home4">
+    <link rel="stylesheet" href="style.css?v=20260715-matchfin1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -121,7 +121,12 @@
         <span class="match-speaker-label">再聽英文</span>
     </button>
     <div id="match-choices" class="match-choices"></div>
-</div>
+    <div id="match-finish" class="match-finish" style="display:none;" aria-live="polite">
+        <div id="match-finish-emoji" class="match-finish-emoji" aria-hidden="true">🎉</div>
+        <p id="match-finish-title" class="match-finish-title">做得好！</p>
+        <button type="button" id="match-home-btn" class="match-home-btn" onclick="backToHome()">🏠 返主選單</button>
+    </div>
+    </div>
 
 <!-- Word album -->
 <div id="album-overlay" style="display:none;">
@@ -189,15 +194,15 @@
 </div>
 
 <!-- Load order: data → state → speech/progress → features → router -->
-<script src="js/data.js?v=20260715-home4"></script>
-<script src="js/state.js?v=20260715-home4"></script>
-<script src="js/speech.js?v=20260715-home4"></script>
-<script src="js/progress.js?v=20260715-home4"></script>
-<script src="js/ui.js?v=20260715-home4"></script>
-<script src="js/canvas.js?v=20260715-home4"></script>
-<script src="js/camera.js?v=20260715-home4"></script>
-<script src="js/game.js?v=20260715-home4"></script>
-<script src="js/match.js?v=20260715-home4"></script>
-<script src="js/router.js?v=20260715-home4"></script>
+<script src="js/data.js?v=20260715-matchfin1"></script>
+<script src="js/state.js?v=20260715-matchfin1"></script>
+<script src="js/speech.js?v=20260715-matchfin1"></script>
+<script src="js/progress.js?v=20260715-matchfin1"></script>
+<script src="js/ui.js?v=20260715-matchfin1"></script>
+<script src="js/canvas.js?v=20260715-matchfin1"></script>
+<script src="js/camera.js?v=20260715-matchfin1"></script>
+<script src="js/game.js?v=20260715-matchfin1"></script>
+<script src="js/match.js?v=20260715-matchfin1"></script>
+<script src="js/router.js?v=20260715-matchfin1"></script>
 </body>
 </html>

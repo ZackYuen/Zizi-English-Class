@@ -44,6 +44,70 @@ function updateMatchProgress() {
     if (label) label.innerText = current + ' / ' + total;
 }
 
+
+function setMatchPlayUi() {
+    var speaker = document.getElementById('match-speaker');
+    var finish = document.getElementById('match-finish');
+    var choices = document.getElementById('match-choices');
+    if (speaker) {
+        speaker.classList.remove('is-hidden');
+        speaker.style.display = '';
+    }
+    if (finish) {
+        finish.style.display = 'none';
+        finish.classList.remove('is-open');
+    }
+    if (choices) choices.style.display = '';
+}
+
+function setMatchFinishUi(score, total) {
+    var speaker = document.getElementById('match-speaker');
+    var finish = document.getElementById('match-finish');
+    var choices = document.getElementById('match-choices');
+    var emoji = document.getElementById('match-finish-emoji');
+    var title = document.getElementById('match-finish-title');
+
+    if (speaker) {
+        speaker.classList.add('is-hidden');
+        speaker.style.display = 'none';
+    }
+    if (choices) {
+        choices.innerHTML = '';
+        choices.style.display = 'none';
+    }
+    if (emoji) emoji.textContent = score >= total ? '🌟' : '🎉';
+    if (title) {
+        title.textContent = score >= total ? '全部答啱！超級叻仔！' : '做得好！繼續加油！';
+    }
+    if (finish) {
+        finish.style.display = 'block';
+        finish.classList.add('is-open');
+    }
+}
+
+function celebrateMatchFinish(score, total) {
+    if (typeof confetti === 'function') {
+        confetti({ particleCount: 140, spread: 75, origin: { y: 0.65 } });
+        setTimeout(function () {
+            confetti({ particleCount: 90, spread: 60, origin: { y: 0.35 }, angle: 60 });
+            confetti({ particleCount: 90, spread: 60, origin: { y: 0.35 }, angle: 120 });
+        }, 220);
+        if (score >= total) {
+            setTimeout(function () {
+                confetti({ particleCount: 120, startVelocity: 45, spread: 70, origin: { y: 0.7 } });
+            }, 500);
+        }
+    }
+    if (window.playSnd) {
+        var notes = score >= total
+            ? [523, 659, 784, 1046, 784, 1046]
+            : [523, 659, 784, 988];
+        notes.forEach(function (f, i) {
+            setTimeout(function () { window.playSnd(f, 'triangle', 0.28); }, i * 110);
+        });
+    }
+}
+
 window.startMatchGame = async function () {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isMatchPlaying = true;
@@ -57,6 +121,7 @@ window.startMatchGame = async function () {
         overlay.classList.add('is-open');
     }
 
+    setMatchPlayUi();
     updateMatchProgress();
     setMatchMsg('聽英文，揀啱嘅圖！', '#1d3557');
     if (window.playCantoneseTTS) {
@@ -68,6 +133,7 @@ window.startMatchGame = async function () {
 window.exitMatchGame = function () {
     window.isMatchPlaying = false;
     window.isMatchProcessing = false;
+    setMatchPlayUi();
     const overlay = document.getElementById('match-overlay');
     if (overlay) {
         overlay.style.display = 'none';
@@ -132,7 +198,9 @@ window.nextMatchQuestion = async function () {
 };
 
 window.playMatchPrompt = async function () {
-    if (!window.matchTarget) return;
+    if (!window.isMatchPlaying || !window.matchTarget) return;
+    var speakerEl = document.getElementById('match-speaker');
+    if (speakerEl && speakerEl.classList.contains('is-hidden')) return;
     const word = window.matchTarget.w;
     const sp = document.getElementById('match-speaker');
     if (sp) {
@@ -197,16 +265,23 @@ window.checkMatchAnswer = async function (choiceWord) {
 window.finishMatchGame = async function () {
     const total = window.MATCH_TOTAL;
     const score = window.matchScore;
-    updateMatchProgress();
-    const box = document.getElementById('match-choices');
-    if (box) box.innerHTML = '';
-    const prompt = document.getElementById('match-prompt-emoji');
-    if (prompt) prompt.innerText = score >= total ? '🌟' : '👏';
+    window.isMatchPlaying = false;
+    window.isMatchProcessing = false;
+    window.matchTarget = null;
 
+    updateMatchProgress();
+    setMatchFinishUi(score, total);
     setMatchMsg('完成！答啱 ' + score + ' / ' + total + ' 題', '#06d6a0');
+
+    celebrateMatchFinish(score, total);
+
+    var praise = score >= total
+        ? '全部答啱！超級叻仔！'
+        : '做得好！答啱 ' + score + ' 題，共 ' + total + ' 題！';
     if (window.playCantoneseTTS) {
-        await window.playCantoneseTTS('完成！答啱 ' + score + ' 題，共 ' + total + ' 題！', { interrupt: true });
+        await window.playCantoneseTTS(praise, { interrupt: true });
     }
+
     if (score >= total && window.awardStars) {
         window.awardStars(2, { reason: '全部答啱' });
     }

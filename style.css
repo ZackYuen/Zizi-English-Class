@@ -1077,3 +1077,54 @@ button:disabled {
   box-sizing: border-box;
   background: #fff;
 }
+
+
+/* Match finish celebration */
+.match-finish {
+  display: none;
+  width: 100%;
+  max-width: 320px;
+  margin: 8px auto 0;
+  text-align: center;
+  padding: 8px 0 16px;
+}
+.match-finish.is-open {
+  display: block !important;
+}
+.match-finish-emoji {
+  font-size: 72px;
+  line-height: 1;
+  margin: 8px 0 10px;
+  animation: match-pop 0.55s ease-out;
+}
+.match-finish-title {
+  margin: 0 0 18px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #1d3557;
+}
+.match-home-btn {
+  display: inline-block;
+  min-width: 200px;
+  min-height: 52px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 16px;
+  background: #ff595e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+}
+.match-home-btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+@keyframes match-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+#match-speaker.is-hidden {
+  display: none !important;
+}
