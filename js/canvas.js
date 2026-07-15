@@ -52,7 +52,7 @@ window.initWaypoints = function() {
     for(let i=0; i<st.length-2; i+=2) {
         let x1=st[i], y1=st[i+1], x2=st[i+2], y2=st[i+3];
         let dist = Math.hypot(x2-x1, y2-y1);
-        let steps = Math.max(1, Math.ceil(dist / 15)); 
+        let steps = Math.max(1, Math.ceil(dist / 12)); 
         for(let j=0; j<steps; j++) currentWPs.push({x: x1+(x2-x1)*(j/steps), y: y1+(y2-y1)*(j/steps)});
     }
     currentWPs.push({x: st[st.length-2], y: st[st.length-1]});
@@ -130,7 +130,8 @@ window.loop = function() {
             
             // 畫引導點同進度球
             if(strokeIdx < D[idx].st.length && currentWPs.length > 0) {
-                let targetWP = currentWPs[nextWpIdx];
+                let gi = Math.min(nextWpIdx, currentWPs.length - 1);
+                let targetWP = currentWPs[gi];
                 if(targetWP) { ctx.beginPath(); ctx.arc(targetWP.x, targetWP.y, 16, 0, 7); ctx.fillStyle='#06d6a0'; ctx.fill(); }
                 let pt = getPointOnPath(D[idx].st[strokeIdx], (Date.now()%2000)/2000);
                 ctx.beginPath(); ctx.arc(pt.x, pt.y, 10, 0, 7); ctx.fillStyle='#1982c4'; ctx.fill();
@@ -215,17 +216,17 @@ window.loop = function() {
     requestAnimationFrame(window.loop);
 };
 
-// 🌟 畫布手指描寫：墨水跟手指；要畫到該筆終點；覆蓋要夠先算完成
+// Drawing: ink follows finger to the end; commit only at stroke end
 window.WRITE_PASS_SCORE = 80;
-const HIT_START = 64;
-const HIT_PROGRESS = 40;
-const HIT_END = 48;
+var HIT_START = 70;
+var HIT_PROGRESS = 56;
+var HIT_END = 40;
 
 window.getCanvasPos = function(e, canvas) {
-    const r = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / Math.max(r.width, 1);
-    const scaleY = canvas.height / Math.max(r.height, 1);
-    let clientX, clientY;
+    var r = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / Math.max(r.width, 1);
+    var scaleY = canvas.height / Math.max(r.height, 1);
+    var clientX, clientY;
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -266,6 +267,7 @@ window.computeWriteCoverage = function () {
 function finishLetterComplete(pointerId) {
     var cvsEl = document.getElementById('cvs');
     isDrawing = false;
+    window._strokeCommitPending = false;
     if (cvsEl && pointerId != null) {
         try { cvsEl.releasePointerCapture(pointerId); } catch (err) {}
     }
@@ -315,6 +317,72 @@ function finishLetterComplete(pointerId) {
     }
 }
 
+function advanceStrokeProgress(pos) {
+    if (!currentWPs.length) return;
+
+    // Advance along path while finger stays in corridor (monotonic)
+    var i = Math.max(0, nextWpIdx - 1);
+    while (i < currentWPs.length) {
+        var d = Math.hypot(pos.x - currentWPs[i].x, pos.y - currentWPs[i].y);
+        if (d <= HIT_PROGRESS) {
+            nextWpIdx = Math.max(nextWpIdx, i + 1);
+            i++;
+            continue;
+        }
+        // small look-ahead (1 step) for fast fingers
+        if (i + 1 < currentWPs.length) {
+            var d2 = Math.hypot(pos.x - currentWPs[i + 1].x, pos.y - currentWPs[i + 1].y);
+            if (d2 <= HIT_PROGRESS) {
+                nextWpIdx = Math.max(nextWpIdx, i + 2);
+                i += 2;
+                continue;
+            }
+        }
+        break;
+    }
+
+    // Never mark complete until finger is close to the REAL end
+    // and almost all waypoints were visited (prevents cutting off at ~78%)
+    var end = currentWPs[currentWPs.length - 1];
+    var distEnd = Math.hypot(pos.x - end.x, pos.y - end.y);
+    var prog = nextWpIdx / Math.max(1, currentWPs.length);
+    if (distEnd <= HIT_END && prog >= 0.94) {
+        nextWpIdx = currentWPs.length;
+        window._strokeCommitPending = true;
+    } else {
+        window._strokeCommitPending = false;
+    }
+}
+
+function commitCurrentStroke(pointerId, pos) {
+    if (!currentWPs.length || nextWpIdx < currentWPs.length) return false;
+
+    playSnd(880, 'sine', 0.2);
+    if (curStroke && curStroke.length >= 2) doneStrokes.push(curStroke);
+    curStroke = [];
+    window._strokeCommitPending = false;
+    strokeIdx++;
+    initWaypoints();
+
+    if (typeof D !== 'undefined' && D[idx] && strokeIdx >= D[idx].st.length) {
+        finishLetterComplete(pointerId);
+        return true;
+    }
+
+    var nextStart = currentWPs[0];
+    if (pos && nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START) {
+        isDrawing = true;
+        curStroke = [pos.x, pos.y];
+    } else {
+        isDrawing = false;
+        var cvsEl = document.getElementById('cvs');
+        if (cvsEl && pointerId != null) {
+            try { cvsEl.releasePointerCapture(pointerId); } catch (err) {}
+        }
+    }
+    return true;
+}
+
 function onStrokeStart(e) {
     if (e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
     if (e.type.startsWith('pointer')) window._strokeInput = 'pointer';
@@ -329,9 +397,13 @@ function onStrokeStart(e) {
     if (!cvsEl) return;
     var pos = getCanvasPos(e, cvsEl);
     var target = currentWPs[nextWpIdx] || currentWPs[0];
-    if (!target || Math.hypot(pos.x - target.x, pos.y - target.y) > HIT_START) return;
+    var startPt = currentWPs[0];
+    var nearTarget = target && Math.hypot(pos.x - target.x, pos.y - target.y) <= HIT_START;
+    var nearStart = startPt && nextWpIdx <= 2 && Math.hypot(pos.x - startPt.x, pos.y - startPt.y) <= HIT_START;
+    if (!nearTarget && !nearStart) return;
 
     isDrawing = true;
+    window._strokeCommitPending = false;
     if (curStroke && curStroke.length >= 4) {
         window.strokeAttempts = window.strokeAttempts || [];
         window.strokeAttempts.push(curStroke);
@@ -339,33 +411,6 @@ function onStrokeStart(e) {
     curStroke = [pos.x, pos.y];
     if (e.pointerId != null && cvsEl.setPointerCapture) {
         try { cvsEl.setPointerCapture(e.pointerId); } catch (err) {}
-    }
-}
-
-function advanceStrokeProgress(pos) {
-    if (!currentWPs.length) return;
-
-    var bestIdx = -1;
-    var bestDist = Infinity;
-    var from = Math.max(0, nextWpIdx - 1);
-    for (var i = from; i < currentWPs.length; i++) {
-        var d = Math.hypot(pos.x - currentWPs[i].x, pos.y - currentWPs[i].y);
-        if (d < bestDist) {
-            bestDist = d;
-            bestIdx = i;
-        }
-        if (i > nextWpIdx + 8 && bestDist < HIT_PROGRESS) break;
-    }
-
-    if (bestIdx >= nextWpIdx && bestDist <= HIT_PROGRESS) {
-        nextWpIdx = Math.min(bestIdx + 1, currentWPs.length - 1);
-    }
-
-    var end = currentWPs[currentWPs.length - 1];
-    var nearEnd = Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END;
-    var progressRatio = nextWpIdx / Math.max(1, currentWPs.length - 1);
-    if (nearEnd && progressRatio >= 0.78) {
-        nextWpIdx = currentWPs.length;
     }
 }
 
@@ -378,30 +423,15 @@ function onStrokeMove(e) {
     if (!cvsEl) return;
     var pos = getCanvasPos(e, cvsEl);
 
+    // Always keep painting with the finger — do not cut ink mid-stroke
     curStroke.push(pos.x, pos.y);
     advanceStrokeProgress(pos);
 
-    if (nextWpIdx >= currentWPs.length && currentWPs.length > 0) {
-        playSnd(880, 'sine', 0.2);
-        doneStrokes.push(curStroke);
-        curStroke = [];
-        strokeIdx++;
-        initWaypoints();
-
-        if (typeof D !== 'undefined' && D[idx] && strokeIdx >= D[idx].st.length) {
-            finishLetterComplete(e.pointerId);
-            return;
-        }
-
-        var nextStart = currentWPs[0];
-        if (nextStart && Math.hypot(pos.x - nextStart.x, pos.y - nextStart.y) < HIT_START) {
-            isDrawing = true;
-            curStroke = [pos.x, pos.y];
-        } else {
-            isDrawing = false;
-            if (e.pointerId != null) {
-                try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) {}
-            }
+    // Only commit after the finger has actually arrived at the end point
+    if (window._strokeCommitPending && currentWPs.length) {
+        var end = currentWPs[currentWPs.length - 1];
+        if (Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END * 0.6) {
+            commitCurrentStroke(e.pointerId, pos);
         }
     }
 }
@@ -409,9 +439,27 @@ function onStrokeMove(e) {
 function onStrokeEnd(e) {
     if (e && e.type.startsWith('touch') && window._strokeInput === 'pointer') return;
     if (e && e.cancelable) e.preventDefault();
+
+    var cvsEl = document.getElementById('cvs');
+    var pos = null;
+    if (cvsEl && e) {
+        try { pos = getCanvasPos(e, cvsEl); } catch (err) { pos = null; }
+    }
+
+    if (isDrawing && currentWPs && currentWPs.length) {
+        if (pos) advanceStrokeProgress(pos);
+        var end = currentWPs[currentWPs.length - 1];
+        var prog = nextWpIdx / Math.max(1, currentWPs.length);
+        var nearEnd = !!(end && pos && Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END * 1.5);
+        if (nextWpIdx >= currentWPs.length || (nearEnd && prog >= 0.9)) {
+            nextWpIdx = currentWPs.length;
+            commitCurrentStroke(e && e.pointerId, pos);
+        }
+    }
+
     isDrawing = false;
     window._strokeInput = null;
-    var cvsEl = document.getElementById('cvs');
+    window._strokeCommitPending = false;
     if (cvsEl && e && e.pointerId != null) {
         try { cvsEl.releasePointerCapture(e.pointerId); } catch (err) {}
     }
