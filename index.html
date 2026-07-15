@@ -6,22 +6,32 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-restructure1">
+    <link rel="stylesheet" href="style.css?v=20260715-kidfun1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
 <!-- Home menu -->
-<div id="home-menu" class="is-open" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; padding:24px 20px; overflow-y:auto; background:#f0f4f8; z-index:9000;">
-    <h1 style="width:100%; max-width:320px; margin:0 0 12px; text-align:center; color:#1d3557; font-size:32px; line-height:1.25;">🌟 孜孜拼音大冒險</h1>
-    <p style="width:100%; max-width:320px; margin:0 0 28px; text-align:center; color:#457b9d; font-size:18px; line-height:1.4;">請選擇你想玩嘅模式：</p>
+<div id="home-menu" class="is-open" style="display:flex; flex-direction:column; align-items:center; justify-content:flex-start; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; padding:24px 20px; overflow-y:auto; background:#f0f4f8; z-index:9000;">
+    <h1 style="width:100%; max-width:320px; margin:8px 0 8px; text-align:center; color:#1d3557; font-size:32px; line-height:1.25;">🌟 孜孜拼音大冒險</h1>
+    <p class="home-tagline">廣東話小朋友學英文 · 好玩先至記得住</p>
 
-    <div class="home-menu-actions" style="display:flex; flex-direction:column; gap:16px; width:100%; max-width:300px;">
-        <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字模式</button>
-        <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡模式</button>
-        <button type="button" class="home-btn-game" onclick="enterMode('game')">🎮 聽音大挑戰</button>
+    <div class="home-progress" id="home-progress">
+        <div class="home-stat"><span class="home-stat-emoji">⭐</span><span id="home-stars-count">0</span><span class="home-stat-label">星星</span></div>
+        <div class="home-stat"><span class="home-stat-emoji">📚</span><span id="home-words-count">0</span><span class="home-stat-label">單詞</span></div>
+        <div class="home-stat"><span class="home-stat-emoji">🔥</span><span id="home-streak-count">0</span><span class="home-stat-label">日數</span></div>
+    </div>
+
+    <div class="home-menu-actions" style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:300px;">
+        <button type="button" class="home-btn-match" onclick="enterMode('match')">🖼️ 睇圖識字 <small>最啱 5 歲 · 唔使 Key</small></button>
+        <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字</button>
+        <button type="button" class="home-btn-game" onclick="enterMode('game')">🎧 聽音大挑戰</button>
+        <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡</button>
+        <button type="button" class="home-btn-album" onclick="enterMode('album')">📒 我嘅單詞冊</button>
         <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 設定 API Keys</button>
     </div>
+
+    <p class="home-parent-tip">家長提示：每日玩 10–15 分鐘就夠。先玩「睇圖識字」，再練描字同聽音。</p>
 </div>
 
 <button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
@@ -73,10 +83,34 @@
     </div>
 </div>
 
+<!-- Picture match (offline kid mode) -->
+<div id="match-overlay" style="display:none;">
+    <h2>🖼️ 睇圖識字</h2>
+    <div id="match-round" class="match-round">第 1 題</div>
+    <div id="match-msg">聽英文，再揀啱嘅圖案！</div>
+    <button type="button" id="match-speaker" onclick="playMatchPrompt()">
+        <span id="match-prompt-emoji">❓</span>
+        <span class="match-speaker-label">撳我聽英文</span>
+    </button>
+    <div id="match-choices" class="match-choices"></div>
+</div>
+
+<!-- Word album -->
+<div id="album-overlay" style="display:none;">
+    <div class="album-card-wrap">
+        <h2>📒 我嘅單詞冊</h2>
+        <p class="album-hint">撳吓卡片可以再聽英文讀音～</p>
+        <div id="album-empty" class="album-empty">仲未有單詞呀！去玩「睇圖識字」或者寫字攞星星啦！</div>
+        <div id="album-grid" class="album-grid"></div>
+        <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
+    </div>
+</div>
+
 <!-- Settings -->
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
         <h2>⚙️ 設定 API Keys</h2>
+        <p class="settings-note">唔填都可以玩「睇圖識字」同攞星星。Google TTS / OpenRouter 會令發音同魔鏡更清楚。</p>
         <label for="input-google-tts">Google TTS (語音及發聲):</label>
         <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
         <label for="input-openrouter">OpenRouter (相機認字):</label>
@@ -88,13 +122,16 @@
     </div>
 </div>
 
-<!-- Load order matters: data → state → features → router -->
+<!-- Load order: data → state → speech/progress → features → router -->
 <script src="js/data.js"></script>
 <script src="js/state.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/progress.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/canvas.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/game.js"></script>
+<script src="js/match.js"></script>
 <script src="js/router.js"></script>
 </body>
 </html>

@@ -47,6 +47,8 @@ button:disabled {
 /* Default HIDDEN in CSS so Safari never leaves a ghost overlay from broken rules */
 #camera-overlay,
 #game-overlay,
+#match-overlay,
+#album-overlay,
 #settings-modal {
   display: none;
 }
@@ -76,7 +78,7 @@ button:disabled {
   flex-direction: column !important;
   flex-wrap: nowrap !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-start !important;
   gap: 0;
 }
 
@@ -90,7 +92,7 @@ button:disabled {
 #home-menu > * {
   flex: 0 0 auto !important;
   width: 100% !important;
-  max-width: 320px !important;
+  max-width: 340px !important;
   box-sizing: border-box;
 }
 
@@ -631,4 +633,282 @@ button:disabled {
     font-size: 16px;
     padding: 12px 16px;
   }
+}
+
+
+/* ---------- Kid fun: home progress / match / album ---------- */
+.home-tagline {
+  color: #457b9d;
+  font-size: 15px;
+  text-align: center;
+  margin: 0 0 14px !important;
+  line-height: 1.35;
+}
+
+.home-progress {
+  display: flex !important;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100% !important;
+  max-width: 340px !important;
+  margin: 0 0 18px !important;
+  padding: 12px 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  border: 2px solid #a2d2ff;
+}
+
+.home-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #1d3557;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.home-stat-emoji { font-size: 22px; }
+.home-stat-label { font-size: 12px; color: #457b9d; font-weight: bold; }
+
+.home-btn-match {
+  background: #06d6a0;
+  color: #fff;
+  padding: 16px 18px;
+  font-size: 18px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  min-height: 56px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: left;
+}
+.home-btn-match small {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0.95;
+  margin-top: 4px;
+}
+.home-btn-album {
+  background: #bde0fe;
+  color: #1d3557;
+  padding: 14px 18px;
+  font-size: 17px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  min-height: 48px;
+}
+.home-parent-tip {
+  margin: 18px 0 10px !important;
+  padding: 12px 14px;
+  background: #fff3cd;
+  color: #6c584c;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left !important;
+  max-width: 340px !important;
+}
+
+#match-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  background: #e8f5e9;
+  z-index: 8000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 14px max(20px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  text-align: center;
+}
+#match-overlay.is-open,
+#match-overlay[style*="display: flex"],
+#match-overlay[style*="display:flex"] {
+  display: flex !important;
+}
+#match-overlay h2 {
+  color: #1d3557;
+  font-size: clamp(24px, 6vw, 32px);
+  margin: 8px 0 6px;
+}
+.match-round {
+  color: #457b9d;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+#match-msg {
+  font-size: clamp(16px, 4.5vw, 20px);
+  color: #1d3557;
+  font-weight: bold;
+  margin-bottom: 14px;
+  min-height: 28px;
+  padding: 0 8px;
+}
+#match-speaker {
+  width: min(160px, 42vw);
+  height: min(160px, 42vw);
+  border: none;
+  border-radius: 24px;
+  background: #a2d2ff;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  transition: transform 0.2s;
+}
+#match-prompt-emoji { font-size: 64px; line-height: 1; }
+.match-speaker-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1d3557;
+  margin-top: 6px;
+}
+.match-choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+}
+.match-choice-btn {
+  width: min(104px, 28vw);
+  height: min(130px, 34vw);
+  border: 4px solid #fff;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.match-choice-emoji { font-size: 48px; line-height: 1; }
+.match-choice-letter {
+  font-size: 22px;
+  font-weight: bold;
+  color: #e63946;
+}
+.match-choice-btn:active { transform: scale(0.92); }
+
+#album-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(0,0,0,0.55);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+#album-overlay.is-open,
+#album-overlay[style*="display: flex"],
+#album-overlay[style*="display:flex"] {
+  display: flex !important;
+}
+.album-card-wrap {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px 16px;
+  width: min(400px, 94vw);
+  max-height: 85dvh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.album-card-wrap h2 {
+  margin: 0 0 6px;
+  color: #1d3557;
+}
+.album-hint {
+  color: #457b9d;
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.album-empty {
+  color: #6c757d;
+  font-size: 15px;
+  line-height: 1.45;
+  padding: 20px 10px;
+}
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.album-card {
+  border: 2px solid #a2d2ff;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 96px;
+}
+.album-emoji { font-size: 32px; }
+.album-word {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1d3557;
+  text-transform: lowercase;
+}
+.album-count {
+  font-size: 11px;
+  color: #457b9d;
+  font-weight: bold;
+}
+.album-close-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #ff595e;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  min-height: 48px;
+}
+
+#star-toast {
+  position: fixed;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, -10px) scale(0.9);
+  background: #ffca3a;
+  color: #1d3557;
+  font-weight: bold;
+  font-size: 22px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  z-index: 12000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+#star-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.settings-note {
+  color: #457b9d;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 14px;
+  text-align: left;
 }
