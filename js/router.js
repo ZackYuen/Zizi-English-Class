@@ -24,14 +24,12 @@ function setDisplay(id, value) {
 }
 
 function hideAllOverlays() {
-    setDisplay('start-overlay', 'none');
-    setDisplay('camera-overlay', 'none');
+        setDisplay('camera-overlay', 'none');
     setDisplay('game-overlay', 'none');
     setDisplay('settings-modal', 'none');
     setDisplay('app', 'none');
     setDisplay('standard-ui', 'none');
     setDisplay('standard-top-bar', 'none');
-    setDisplay('camera-ui-container', 'none');
     setDisplay('back-to-home-btn', 'none');
 }
 
@@ -104,8 +102,7 @@ window.enterMode = function(mode) {
     window.currentMode = mode;
     setDisplay('home-menu', 'none');
     setDisplay('settings-modal', 'none');
-    setDisplay('start-overlay', 'none');
-    setDisplay('back-to-home-btn', 'block');
+        setDisplay('back-to-home-btn', 'block');
 
     if (mode === 'standard') {
         setDisplay('camera-overlay', 'none');
@@ -157,8 +154,7 @@ window.backToHome = function() {
 // Ensure home is tappable after first paint (Safari bfcache / restored tabs)
 window.addEventListener('pageshow', function () {
     if (window.currentMode === 'none') {
-        setDisplay('start-overlay', 'none');
-        setDisplay('camera-overlay', 'none');
+                setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
         setDisplay('settings-modal', 'none');
         setDisplay('home-menu', 'flex');

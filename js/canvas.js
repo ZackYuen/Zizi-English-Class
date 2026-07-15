@@ -1,37 +1,13 @@
 // ==========================================
-// 🎨 畫布渲染、描寫演算法與字詞處理模組 (終極完整修復版)
+// Canvas: tracing, magic TTS animation, processWord
+// State lives in state.js — do not redeclare it here
 // ==========================================
 
-window.aCtx = window.aCtx || (window.AudioContext ? new AudioContext() : null);
-window.lastCalc = 0;
-window.isMagic = false;
-window.strokeIdx = 0;
-window.doneStrokes = [];
-window.curStroke = [];
-window.isDrawing = false;
-window.currentPercent = 0;
-window.currentWPs = [];
-window.nextWpIdx = 0;
-window.magicStart = 0;
-window.fired = false;
-window.imgCache = {};
-window.guideData = null;
-window.totalGuide = 0;
-
 window.preloadImage = function(url) {
-    if(!url || window.imgCache[url]) return;
-    let img = new Image();
+    if (!url || window.imgCache[url]) return;
+    const img = new Image();
     img.src = url;
     window.imgCache[url] = img;
-};
-
-// 🌟 延遲啟動機制：確保 D 同 idx 準備好先 Reset
-window.safeReset = function() {
-    if (typeof D !== 'undefined' && typeof idx !== 'undefined' && D[idx]) {
-        window.resetCanvas();
-    } else {
-        setTimeout(window.safeReset, 500);
-    }
 };
 
 window.resetCanvas = function() {
@@ -99,14 +75,15 @@ window.updateMsg = function() {
 };
 
 window.playSnd = function(f, t, dur=0.3) {
-    if(!window.aCtx) return;
+    const ctx = window.ensureAudioContext ? window.ensureAudioContext() : window.aCtx;
+    if (!ctx) return;
     try {
-        let o = aCtx.createOscillator(), g = aCtx.createGain();
-        o.connect(g); g.connect(aCtx.destination); o.type = t; o.frequency.value = f;
-        g.gain.setValueAtTime(0.3, aCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, aCtx.currentTime+dur);
-        o.start(); o.stop(aCtx.currentTime+dur);
-    } catch(e) {}
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination); o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(0.3, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur);
+        o.start(); o.stop(ctx.currentTime + dur);
+    } catch (e) {}
 };
 
 window.drawLineToCtx = function(c, pts, col, dash, width=25) {
@@ -403,6 +380,7 @@ if (cvs) {
 
 // 🌟 重新補回魔術功能 (讀字)
 window.magic = async function() {
+    if (window.ensureAudioContext) window.ensureAudioContext();
     if(typeof D === 'undefined' || !D[idx]) return;
     if(strokeIdx < D[idx].st.length) { 
         let msgBox = document.getElementById('msg');
@@ -488,22 +466,48 @@ window.createPhonicTimeline = function(word, imgUrl = null) {
 };
 
 window.processWord = function(word, imgUrl = null) {
-    if (typeof D === 'undefined') window.D = [];
-    // Keep window.D in sync (const D is also aliased on window from data.js)
-    if (window.D !== D) window.D = D;
-
-    let newD = createPhonicTimeline(word, imgUrl);
-    D.push(newD);
-    window.idx = D.length - 1;
-
-    if (window.playCantoneseTTS) {
-        window.playCantoneseTTS(`搵到喇！係 ${word}，孜孜，一齊寫 ${newD.l} 啦。`);
+    if (typeof D === 'undefined') {
+        window.D = [];
+    } else if (window.D !== D) {
+        window.D = D;
     }
 
-    let wrap = document.getElementById('canvas-wrapper');
+    const normalized = String(word || '').trim().toLowerCase();
+    if (!normalized) return;
+
+    // Prefer an existing vocabulary entry when possible
+    let matchIdx = D.findIndex(function (d) { return d.w === normalized; });
+    if (matchIdx === -1) {
+        // Cap dynamic camera words to avoid unbounded growth
+        const baseLen = (window._baseVocabLen != null)
+            ? window._baseVocabLen
+            : D.length;
+        window._baseVocabLen = baseLen;
+        while (D.length > baseLen + 20) {
+            D.pop();
+        }
+        const newD = createPhonicTimeline(normalized, imgUrl);
+        D.push(newD);
+        matchIdx = D.length - 1;
+    } else if (imgUrl && D[matchIdx]) {
+        // Attach captured image to the last phase when matching known word
+        const phases = D[matchIdx].p;
+        if (phases && phases.length) {
+            const last = phases[phases.length - 1];
+            if (last && last.type === 'word') last.img = imgUrl;
+        }
+    }
+
+    window.idx = matchIdx;
+    const letter = D[matchIdx] ? D[matchIdx].l : normalized.charAt(0).toUpperCase();
+
+    if (window.playCantoneseTTS) {
+        window.playCantoneseTTS('搵到喇！係 ' + normalized + '，孜孜，一齊寫 ' + letter + ' 啦。');
+    }
+
+    const wrap = document.getElementById('canvas-wrapper');
     if (wrap) wrap.style.display = 'block';
 
-    // Camera flow: keep "再影一個" visible after recognition / writing
     if (window.currentMode === 'camera') {
         const reCam = document.getElementById('btn-re-cam');
         if (reCam) reCam.style.display = 'inline-block';
@@ -511,13 +515,11 @@ window.processWord = function(word, imgUrl = null) {
         if (stdUi) stdUi.style.display = 'none';
     }
 
+    window.startRenderLoop();
     resetCanvas();
 };
 
-// 啟動 Loop
-requestAnimationFrame(window.loop);
-
-// 🌟 等待頁面載入後，先執行初始化，防止變數未準備好
-window.addEventListener('load', () => {
-    window.safeReset();
+// Start the single render loop once DOM/scripts are ready
+window.addEventListener('load', function () {
+    window.startRenderLoop();
 });

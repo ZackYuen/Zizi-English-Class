@@ -6,12 +6,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-ios4">
+    <link rel="stylesheet" href="style.css?v=20260715-restructure1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 統一主選單：critical flex layout inlined so Safari never falls back to row -->
+<!-- Home menu -->
 <div id="home-menu" class="is-open" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; padding:24px 20px; overflow-y:auto; background:#f0f4f8; z-index:9000;">
     <h1 style="width:100%; max-width:320px; margin:0 0 12px; text-align:center; color:#1d3557; font-size:32px; line-height:1.25;">🌟 孜孜拼音大冒險</h1>
     <p style="width:100%; max-width:320px; margin:0 0 28px; text-align:center; color:#457b9d; font-size:18px; line-height:1.4;">請選擇你想玩嘅模式：</p>
@@ -24,15 +24,13 @@
     </div>
 </div>
 
-<!-- 統一返回主頁按鈕 -->
 <button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
     <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
 </div>
 
-<!-- 1. 基礎模式與畫布區域 -->
-<div id="start-overlay" style="display:none;" aria-hidden="true"></div>
+<!-- Tracing app -->
 <div id="app" style="display:none;">
     <div id="msg">由綠色點出發，畫到尾為止！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
@@ -47,24 +45,20 @@
     <div id="kb"></div>
 </div>
 
-<!-- 2. 相機模式區域 -->
-<div id="camera-ui-container" style="display:none;"></div>
+<!-- Camera mode -->
 <div id="camera-overlay" style="display:none;">
     <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
-
     <canvas id="crop-canvas" width="300" height="300"></canvas>
-
     <div id="camera-controls">
         <button type="button" id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
         <button type="button" id="confirm-crop-btn" onclick="confirmCrop()" style="display:none;">✅ 認呢樣</button>
         <button type="button" id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
         <button type="button" id="cancel-analyze-btn" style="display:none;">🛑 取消分析</button>
     </div>
-
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
-<!-- 3. 聽音大挑戰遊戲區域 -->
+<!-- Listening game -->
 <div id="game-overlay" style="display:none;">
     <h2>🎧 聽音大挑戰</h2>
     <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
@@ -79,17 +73,14 @@
     </div>
 </div>
 
-<!-- 設定彈出視窗 -->
+<!-- Settings -->
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
         <h2>⚙️ 設定 API Keys</h2>
-
         <label for="input-google-tts">Google TTS (語音及發聲):</label>
         <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-
         <label for="input-openrouter">OpenRouter (相機認字):</label>
         <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-
         <div class="settings-actions">
             <button type="button" class="settings-cancel" onclick="closeSettings()">取消</button>
             <button type="button" class="settings-save" onclick="saveSettings()">💾 儲存</button>
@@ -97,12 +88,13 @@
     </div>
 </div>
 
-<script src="data.js"></script>
-<script src="state.js"></script>
-<script src="ui.js"></script>
-<script src="canvas.js"></script>
-<script src="camera.js"></script>
-<script src="game.js"></script>
-<script src="router.js"></script>
+<!-- Load order matters: data → state → features → router -->
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/game.js"></script>
+<script src="js/router.js"></script>
 </body>
 </html>

@@ -59,8 +59,6 @@ gameStyle.innerHTML = `
         75% { transform: translateX(-10px); }
     }
     .shake-anim { animation: shake-wrong 0.4s ease-in-out; }
-    .game-ans-btn { cursor: pointer; transition: transform 0.1s; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; border:4px solid #fff; border-radius:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width:100px; height:140px; font-size:40px; }
-    .game-ans-btn:active { transform: scale(0.9); }
 `;
 document.head.appendChild(gameStyle);
 
@@ -117,11 +115,6 @@ window.playGameMessage = async function(text, callback) {
 window.startGame = function() {
     if (window.stopAllAudio) window.stopAllAudio();
 
-    const start = document.getElementById('start-overlay');
-    if (start) {
-        start.style.display = 'none';
-        start.classList.remove('is-open');
-    }
     const overlay = document.getElementById('game-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
@@ -148,8 +141,6 @@ window.exitGame = function() {
         overlay.style.display = 'none';
         overlay.classList.remove('is-open');
     }
-    // Never show the empty start-overlay (it blocks all taps on iPhone).
-    // Prefer returning to the real home menu.
     if (typeof window.backToHome === 'function') {
         window.backToHome();
         return;
