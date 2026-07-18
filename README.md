@@ -49,3 +49,27 @@ On home: tap **讀出選單同指示** so the child hears the options before pla
 ## Code
 
 `js/speech.js` owns Cantonese/English engines, `announce()`, and auto-reading status text.
+
+
+## GitHub Pages API secrets
+
+You can inject API keys at deploy time so the iPhone never needs Settings filled in.
+
+1. Repo → **Settings → Secrets and variables → Actions** → New repository secret:
+
+| Secret | Used for |
+|--------|----------|
+| `GOOGLE_TTS_KEY` | English TTS (magic / listening game) + Google Yue fallback |
+| `OPENROUTER_API_KEY` | Camera 探索魔鏡 vision |
+| `AZURE_SPEECH_KEY` | Natural Cantonese Neural (曉曼) |
+| `AZURE_SPEECH_REGION` | Optional, default `eastasia` |
+| `ZIZI_VOICE_PROVIDER` | Optional default: `azure` / `iphone` / `google` |
+
+2. Repo → **Settings → Pages** → Build and deployment → Source: **GitHub Actions**
+3. Push to `main` (or run **Deploy GitHub Pages** workflow manually)
+
+The workflow writes keys into `js/config.js` **only in the Pages artifact** — they are not committed to git.
+
+**Security note:** This is a static site. Keys in the browser can still be extracted by anyone who can open the page. Fine for a private family app; do not use high-quota production keys on a public site.
+
+Local overrides in **聲線同設定** still win over injected keys when filled.

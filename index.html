@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260718-kidrevamp1">
+    <link rel="stylesheet" href="style.css?v=20260718-merge1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -230,6 +230,7 @@
     <div class="settings-card">
         <h2>⚙️ 聲線同設定</h2>
         <p class="settings-note">所有指示會自動用廣東話讀出。建議：iPhone 用「手機廣東話」；想最自然就用 Azure「曉曼」。Google 粵語 Standard 比較機械。</p>
+        <p id="secrets-status" class="secrets-status">檢查緊 GitHub Pages Key…</p>
 
         <label for="input-voice-provider">廣東話聲線</label>
         <select id="input-voice-provider" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
@@ -244,7 +245,7 @@
         </label>
 
         <label for="input-azure-speech">Azure Speech Key（可選）</label>
-        <input type="password" id="input-azure-speech" placeholder="Azure Speech 金鑰" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <input type="password" id="input-azure-speech" placeholder="可留空（用 GitHub Secret）" autocomplete="off" autocapitalize="off" spellcheck="false">
 
         <label for="input-azure-region">Azure 區域</label>
         <input type="text" id="input-azure-region" placeholder="例如 eastasia" value="eastasia" autocomplete="off" spellcheck="false">
@@ -257,7 +258,7 @@
         </select>
 
         <label for="input-google-tts">Google TTS Key（英文發音 / 備用粵語）</label>
-        <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <input type="password" id="input-google-tts" placeholder="可留空（用 GitHub Secret）" autocomplete="off" autocapitalize="off" spellcheck="false">
 
         <label for="input-google-yue-voice">Google 粵語聲線（若選 Google）</label>
         <select id="input-google-yue-voice" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
@@ -268,7 +269,7 @@
         </select>
 
         <label for="input-openrouter">OpenRouter（相機認字）</label>
-        <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <input type="password" id="input-openrouter" placeholder="可留空（用 GitHub Secret）" autocomplete="off" autocapitalize="off" spellcheck="false">
 
         <button type="button" class="settings-test-btn" onclick="testVoice()">🔊 試聽廣東話聲線</button>
 
@@ -279,18 +280,20 @@
     </div>
 </div>
 
-<!-- Load order: data → state → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260718-kidrevamp1"></script>
-<script src="js/state.js?v=20260718-kidrevamp1"></script>
-<script src="js/speech.js?v=20260718-kidrevamp1"></script>
-<script src="js/progress.js?v=20260718-kidrevamp1"></script>
-<script src="js/fx.js?v=20260718-kidrevamp1"></script>
-<script src="js/writing.js?v=20260718-kidrevamp1"></script>
-<script src="js/ui.js?v=20260718-kidrevamp1"></script>
-<script src="js/canvas.js?v=20260718-kidrevamp1"></script>
-<script src="js/camera.js?v=20260718-kidrevamp1"></script>
-<script src="js/game.js?v=20260718-kidrevamp1"></script>
-<script src="js/match.js?v=20260718-kidrevamp1"></script>
-<script src="js/router.js?v=20260718-kidrevamp1"></script>
+<!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
+<script src="js/data.js?v=20260718-merge1"></script>
+<script src="js/state.js?v=20260718-merge1"></script>
+<script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
+<script src="js/secrets.js?v=20260718-merge1"></script>
+<script src="js/speech.js?v=20260718-merge1"></script>
+<script src="js/progress.js?v=20260718-merge1"></script>
+<script src="js/fx.js?v=20260718-merge1"></script>
+<script src="js/writing.js?v=20260718-merge1"></script>
+<script src="js/ui.js?v=20260718-merge1"></script>
+<script src="js/canvas.js?v=20260718-merge1"></script>
+<script src="js/camera.js?v=20260718-merge1"></script>
+<script src="js/game.js?v=20260718-merge1"></script>
+<script src="js/match.js?v=20260718-merge1"></script>
+<script src="js/router.js?v=20260718-merge1"></script>
 </body>
 </html>

@@ -13,13 +13,25 @@ window._speechToken = 0;
 window._audioUnlocked = false;
 
 window.getVoiceSettings = function () {
+    var deployedProvider = (window.ZIZI_SECRETS && window.ZIZI_SECRETS.voiceProvider) || '';
+    var azureKey = window.getApiKey
+        ? window.getApiKey('azure_speech_key')
+        : (localStorage.getItem('azure_speech_key') || '');
+    // If Pages injected Azure and no local provider choice, prefer azure
+    var defaultProvider = localStorage.getItem('zizi_voice_provider')
+        || deployedProvider
+        || (azureKey ? 'azure' : 'iphone');
     return {
         // azure | iphone | google
-        provider: localStorage.getItem('zizi_voice_provider') || 'iphone',
-        azureKey: localStorage.getItem('azure_speech_key') || '',
-        azureRegion: localStorage.getItem('azure_speech_region') || 'eastasia',
+        provider: defaultProvider || 'iphone',
+        azureKey: azureKey,
+        azureRegion: window.getApiKey
+            ? window.getApiKey('azure_speech_region')
+            : (localStorage.getItem('azure_speech_region') || 'eastasia'),
         azureVoice: localStorage.getItem('azure_voice_name') || 'zh-HK-HiuMaanNeural',
-        googleKey: localStorage.getItem('google_tts_key') || '',
+        googleKey: window.getApiKey
+            ? window.getApiKey('google_tts_key')
+            : (localStorage.getItem('google_tts_key') || ''),
         googleYueVoice: localStorage.getItem('google_yue_voice') || 'yue-HK-Standard-C',
         autoRead: localStorage.getItem('zizi_auto_read') !== '0' // default ON
     };
@@ -290,7 +302,7 @@ window.speakEnglish = function (text, opts) {
     const utter = String(text || '').trim();
     if (!utter) return Promise.resolve();
 
-    const key = localStorage.getItem('google_tts_key');
+    const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
     if (key && !options.forceBrowser) {
         return window._speakGoogleEnglish(utter, options);
     }
@@ -318,7 +330,7 @@ window.speakEnglish = function (text, opts) {
 };
 
 window._speakGoogleEnglish = async function (text, opts) {
-    const key = localStorage.getItem('google_tts_key');
+    const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
     if (!key) {
         return window.speakEnglish(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
     }

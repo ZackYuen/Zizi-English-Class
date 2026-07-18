@@ -1656,3 +1656,24 @@ button:disabled {
   font-family: inherit;
   border-radius: 18px !important;
 }
+
+
+/* GitHub Pages secrets badge in settings */
+.secrets-status {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  background: #e8f4ff;
+  color: #1d3557;
+}
+.secrets-status.is-ready {
+  background: #d8f3dc;
+  color: #1b4332;
+}
+.secrets-status.is-empty {
+  background: #fff3cd;
+  color: #6c584c;
+}

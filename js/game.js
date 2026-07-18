@@ -198,7 +198,7 @@ window.playGameSound = async function() {
 
     const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
     const targetLetter = letterMap[window.currentGameTarget];
-    const key = localStorage.getItem('google_tts_key');
+    const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
 
     // Offline-friendly: browser English voice when no Google key
     if (!key) {

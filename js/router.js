@@ -65,9 +65,11 @@ window.openSettings = function () {
     if (azureRegion) azureRegion.value = vs.azureRegion || 'eastasia';
     if (azureVoice) azureVoice.value = vs.azureVoice || 'zh-HK-HiuMaanNeural';
     if (googleYue) googleYue.value = vs.googleYueVoice || 'yue-HK-Standard-C';
+    // Show local overrides only (not deploy secrets) so Pages keys stay out of the form
     if (tts) tts.value = localStorage.getItem('google_tts_key') || '';
     if (or) or.value = localStorage.getItem('openrouter_api_key') || '';
     if (autoRead) autoRead.checked = vs.autoRead !== false;
+    if (window.refreshSecretsStatus) window.refreshSecretsStatus();
 
     setDisplay('settings-modal', 'flex');
     if (window.announce) {
