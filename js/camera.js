@@ -356,7 +356,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
         "google/gemini-1.5-flash:free"
     ];
 
-    let apiKey = localStorage.getItem('openrouter_api_key');
+    let apiKey = window.getApiKey ? window.getApiKey('openrouter_api_key') : localStorage.getItem('openrouter_api_key');
     if (!apiKey) {
         apiKey = prompt("請輸入 OpenRouter API Key:");
         if (apiKey) localStorage.setItem('openrouter_api_key', apiKey);

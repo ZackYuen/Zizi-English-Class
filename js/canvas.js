@@ -637,7 +637,7 @@ window.magic = async function() {
     
     if(window.stopAllAudio) window.stopAllAudio(); 
     
-    let key = localStorage.getItem('google_tts_key');
+    let key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
     if(!key) { 
         if(window.openSettings) window.openSettings(); 
         else alert("請先設定 Google TTS API Key");
