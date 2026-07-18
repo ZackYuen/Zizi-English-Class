@@ -225,7 +225,8 @@ window.checkMatchAnswer = async function (choiceWord) {
         window.matchScore += 1;
         if (prompt) prompt.innerText = window.matchTarget.emoji;
         setMatchMsg('啱喇！' + window.matchTarget.w.toUpperCase() + ' ' + window.matchTarget.emoji, '#06d6a0');
-        if (window.playSnd) {
+        if (window.ZiziFX) window.ZiziFX.play('correct');
+        else if (window.playSnd) {
             [523, 659, 784].forEach(function (f, i) {
                 setTimeout(function () { window.playSnd(f, 'triangle', 0.25); }, i * 90);
             });
@@ -248,7 +249,8 @@ window.checkMatchAnswer = async function (choiceWord) {
         if (window.isMatchPlaying) window.nextMatchQuestion();
     } else {
         setMatchMsg('再試吓！', '#e63946');
-        if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
+        if (window.ZiziFX) window.ZiziFX.play('wrong');
+        else if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
         const box = document.getElementById('match-choices');
         if (box) {
             box.classList.add('shake-anim');
@@ -274,16 +276,31 @@ window.finishMatchGame = async function () {
     setMatchMsg('完成！答啱 ' + score + ' / ' + total + ' 題', '#06d6a0');
 
     celebrateMatchFinish(score, total);
+    if (window.markQuest) window.markQuest('match');
+    if (window.ZiziFX) window.ZiziFX.play('fanfare');
 
     var praise = score >= total
         ? '全部答啱！超級叻仔！'
         : '做得好！答啱 ' + score + ' 題，共 ' + total + ' 題！';
+
+    if (window.ZiziFX && window.ZiziFX.celebrate) {
+        window.ZiziFX.celebrate({
+            emoji: score >= total ? '🏆' : '🎉',
+            title: score >= total ? '全部答啱！' : '做得好！',
+            sub: '答啱 ' + score + ' / ' + total + ' 題',
+            stars: score >= total ? 2 : 0
+        });
+    }
+
     if (window.playCantoneseTTS) {
         await window.playCantoneseTTS(praise, { interrupt: true });
     }
 
     if (score >= total && window.awardStars) {
-        window.awardStars(2, { reason: '全部答啱' });
+        window.awardStars(2, { reason: '全部答啱', quest: 'match' });
+    } else if (window.awardStars) {
+        window.awardStars(0, { quest: 'match' });
     }
     if (window.refreshHomeProgress) window.refreshHomeProgress();
 };
+

@@ -2,6 +2,13 @@
 
 Cantonese-friendly English app for young kids (~age 5). Instructions are spoken aloud in Cantonese so children do not need to read UI text.
 
+## Sky Island adventure (kid UX)
+
+- Big picture home with mascot **孜孜**, levels, daily quests, stars / streak
+- Soft background music + tap/correct/wrong SFX (Web Audio, toggle on home)
+- Modes: 睇圖識字 · 手指描字 · 聽音大挑戰 · 探索魔鏡 · 單詞冊
+- Progress saved in `localStorage` (offline-friendly)
+
 ## Run
 
 ```bash

@@ -409,12 +409,25 @@ function finishLetterComplete(pointerId) {
         if (reCam) reCam.style.display = 'inline-block';
     }
 
+    if (window.ZiziFX) window.ZiziFX.play('fanfare');
+    if (window.markQuest) window.markQuest('write');
+
     if (typeof D !== 'undefined' && D[idx] && window.awardStars) {
         window.awardStars(1, {
             word: D[idx].w,
             emoji: D[idx].emoji,
             letter: D[idx].l,
-            reason: '\u5beb\u5b8c\u5b57\u6bcd'
+            reason: '寫完字母',
+            quest: 'write'
+        });
+    }
+
+    if (window.ZiziFX && window.ZiziFX.celebrate && D[idx]) {
+        window.ZiziFX.celebrate({
+            emoji: D[idx].emoji || '✍️',
+            title: '寫好咗 ' + D[idx].l + '！',
+            sub: D[idx].w ? ('單詞：' + D[idx].w) : '真叻！',
+            stars: 1
         });
     }
 
