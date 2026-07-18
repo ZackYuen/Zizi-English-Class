@@ -1018,6 +1018,36 @@ button:disabled {
 .settings-cancel { background: #e0e0e0; color: #333; }
 .settings-save { background: #06d6a0; color: #fff; }
 
+.settings-parent-zone {
+  margin: 16px 0 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff5f5;
+  border: 1px dashed #ff8a8a;
+  text-align: left;
+}
+.settings-parent-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9b2226;
+}
+.settings-reset-btn {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  min-height: 48px;
+  background: #e63946;
+  color: #fff;
+}
+.settings-reset-btn:active {
+  transform: translateY(2px);
+  opacity: 0.92;
+}
+
 /* Narrow phones */
 @media (max-width: 380px) {
   .controls .btn {

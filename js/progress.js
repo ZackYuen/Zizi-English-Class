@@ -45,6 +45,33 @@ window.getProgress = function () {
     return loadProgress();
 };
 
+/** Parent-only: wipe stars, album, streak, and daily quests (keeps API keys / voice settings). */
+window.resetProgress = function () {
+    var ok = window.confirm(
+        '確定要重設孜孜嘅進度？\n\n' +
+        '會清走：星星、等級、單詞冊、連續日數、今日任務。\n' +
+        '唔會清：聲線同 API Key 設定。'
+    );
+    if (!ok) return false;
+
+    try {
+        localStorage.removeItem(PROGRESS_KEY);
+    } catch (e) {
+        console.warn('progress reset failed', e);
+    }
+
+    if (window.refreshHomeProgress) window.refreshHomeProgress();
+    if (window.closeWordAlbum) {
+        try { window.closeWordAlbum(); } catch (err) { /* ignore */ }
+    }
+    if (window.ZiziFX) window.ZiziFX.play('whoosh');
+    if (window.playCantoneseTTS) {
+        window.playCantoneseTTS('進度已經重設喇。可以重新開始玩！', { interrupt: true });
+    }
+    if (window.closeSettings) window.closeSettings();
+    return true;
+};
+
 window.getLevelInfo = function (stars) {
     const total = Math.max(0, Number(stars) || 0);
     const level = Math.floor(total / STARS_PER_LEVEL) + 1;
