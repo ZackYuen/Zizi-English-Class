@@ -170,6 +170,7 @@ function escapeXml(s) {
 
 /** Core Cantonese speak — picks best available voice */
 window.playCantoneseTTS = async function (text, opts) {
+    if (window.ZiziFX) window.ZiziFX.duckMusic(2.5);
     const options = opts || {};
     const utter = String(text || '').trim();
     if (!utter) return;
@@ -368,10 +369,21 @@ window.startInstructionReader = function () {
 
 window.announceHomeMenu = function () {
     window.unlockAudio();
+    if (window.ZiziFX) {
+        window.ZiziFX.play('tap');
+        window.ZiziFX.duckMusic(4);
+    }
+    var info = window.getLevelInfo && window.getProgress
+        ? window.getLevelInfo(window.getProgress().stars)
+        : null;
+    var levelBit = info
+        ? ('你而家係第 ' + info.level + ' 級，' + info.title + '。')
+        : '';
     window.announce(
-        '歡迎嚟到孜孜拼音大冒險！' +
-        '下面有幾個遊戲：睇圖識字、基礎描字、聽音大挑戰、探索魔鏡、同我嘅單詞冊。' +
-        '撳綠色嗰個睇圖識字最啱開始玩。'
+        '歡迎嚟到孜孜學英文天空島！' + levelBit +
+        '今日想玩咩？綠色嘅睇圖識字最啱開始。' +
+        '仲有手指描字、聽音大挑戰、探索魔鏡、同單詞冊。' +
+        '做完今日任務會升得更快！'
     , { force: true });
 };
 

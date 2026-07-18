@@ -7,16 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>孜孜學英文 - 統一選單版</title>
-    <link rel="stylesheet" href="style.css?v=20260715-camwide2">
+    <title>孜孜學英文 · 天空島冒險</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260718-kidrevamp1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- Home menu -->
-<div id="home-menu" class="is-open" style="display:block; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; overflow-x:hidden; overflow-y:auto; background:#f0f4f8; z-index:9000; text-align:center;">
-    <h1>🌟 孜孜拼音大冒險</h1>
-    <p class="home-tagline">廣東話小朋友學英文 · 好玩先至記得住</p>
+<!-- Home menu — sky island adventure for age ~5 -->
+<div id="home-menu" class="is-open" style="display:block; position:fixed; top:0; right:0; bottom:0; left:0; width:100%; box-sizing:border-box; overflow-x:hidden; overflow-y:auto; z-index:9000; text-align:center;">
+    <div class="home-sky" aria-hidden="true">
+        <span class="cloud c1"></span>
+        <span class="cloud c2"></span>
+        <span class="cloud c3"></span>
+        <span class="home-balloon"></span>
+    </div>
+
+    <div class="home-hero">
+        <div class="zizi-mascot" aria-hidden="true">
+            <div class="zizi-face">
+                <span class="zizi-eye left"></span>
+                <span class="zizi-eye right"></span>
+                <span class="zizi-smile"></span>
+            </div>
+            <div class="zizi-cap">Z</div>
+        </div>
+        <h1>孜孜學英文</h1>
+        <p class="home-tagline">跟住孜孜去天空島學英文！</p>
+        <div class="home-level" id="home-level">
+            <div class="home-level-top">
+                <span class="home-level-badge">Lv.<span id="home-level-num">1</span></span>
+                <span id="home-level-title" class="home-level-title">新手探險家</span>
+            </div>
+            <div class="home-level-bar" aria-hidden="true">
+                <div id="home-level-fill" class="home-level-fill"></div>
+            </div>
+            <div id="home-level-label" class="home-level-label">0 / 10 升下一級</div>
+        </div>
+    </div>
 
     <div class="home-progress" id="home-progress">
         <div class="home-stat">
@@ -36,18 +66,58 @@
         </div>
     </div>
 
-    <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 讀出選單同指示</button>
-
-    <div class="home-menu-actions">
-        <button type="button" class="home-btn-match" onclick="enterMode('match')">🖼️ 睇圖識字 <small>最啱 5 歲 · 唔使 Key</small></button>
-        <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字</button>
-        <button type="button" class="home-btn-game" onclick="enterMode('game')">🎧 聽音大挑戰</button>
-        <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡</button>
-        <button type="button" class="home-btn-album" onclick="enterMode('album')">📒 我嘅單詞冊</button>
-        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 聲線同設定</button>
+    <div class="home-quest" id="home-quest">
+        <div class="home-quest-head">
+            <span class="home-quest-title">今日任務</span>
+            <span id="home-quest-meta" class="home-quest-meta">0 / 4</span>
+        </div>
+        <ul id="home-quest-list" class="home-quest-list"></ul>
     </div>
 
-    <p class="home-parent-tip">家長提示：每日玩 10–15 分鐘就夠。開場先撳「讀出選單」。聲線建議用 iPhone 廣東話，或者 Azure「曉曼」Neural（比 Google 自然好多）。</p>
+    <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 聽孜孜講</button>
+
+    <div class="home-menu-actions">
+        <button type="button" class="home-btn home-btn-match" onclick="enterMode('match')">
+            <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">睇圖識字</span>
+                <span class="home-btn-sub">最啱開始 · 唔使上網 Key</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-standard" onclick="enterMode('standard')">
+            <span class="home-btn-emoji" aria-hidden="true">✍️</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">手指描字</span>
+                <span class="home-btn-sub">跟住綠點畫字母</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
+            <span class="home-btn-emoji" aria-hidden="true">🎧</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">聽音大挑戰</span>
+                <span class="home-btn-sub">聽音揀 A · E · I</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-camera" onclick="enterMode('camera')">
+            <span class="home-btn-emoji" aria-hidden="true">📸</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">探索魔鏡</span>
+                <span class="home-btn-sub">影真嘢學單詞</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-album" onclick="enterMode('album')">
+            <span class="home-btn-emoji" aria-hidden="true">📒</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">我嘅單詞冊</span>
+                <span class="home-btn-sub">收藏過嘅英文詞</span>
+            </span>
+        </button>
+    </div>
+
+    <div class="home-footer">
+        <button type="button" id="btn-music-toggle" class="home-btn-music" onclick="toggleZiziMusic()" aria-pressed="true">🎵 音樂開</button>
+        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 家長設定</button>
+    </div>
 </div>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
@@ -90,6 +160,10 @@
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
         <h2>🎧 聽音大挑戰</h2>
         <span class="top-bar-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="game-hud" aria-label="分數">
+        <div class="game-hud-chip">⭐ <span id="game-score">0</span></div>
+        <div class="game-hud-chip">🔥 <span id="game-streak">0</span></div>
     </div>
     <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
     <button type="button" id="game-speaker" onclick="playGameSound()">
@@ -136,6 +210,18 @@
         <div id="album-empty" class="album-empty">仲未有單詞呀！去玩「睇圖識字」或者寫字攞星星啦！</div>
         <div id="album-grid" class="album-grid"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
+    </div>
+</div>
+
+
+<!-- Big celebration -->
+<div id="celebrate-overlay" style="display:none;" aria-live="polite">
+    <div class="celebrate-card">
+        <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">🌟</div>
+        <p id="celebrate-title" class="celebrate-title">叻仔！</p>
+        <p id="celebrate-sub" class="celebrate-sub"></p>
+        <p id="celebrate-stars" class="celebrate-stars"></p>
+        <button type="button" class="celebrate-btn" onclick="closeCelebrate()">繼續玩！</button>
     </div>
 </div>
 
@@ -193,17 +279,18 @@
     </div>
 </div>
 
-<!-- Load order: data → state → speech/progress → writing → features → router -->
-<script src="js/data.js?v=20260715-camwide2"></script>
-<script src="js/state.js?v=20260715-camwide2"></script>
-<script src="js/speech.js?v=20260715-camwide2"></script>
-<script src="js/progress.js?v=20260715-camwide2"></script>
-<script src="js/writing.js?v=20260715-camwide2"></script>
-<script src="js/ui.js?v=20260715-camwide2"></script>
-<script src="js/canvas.js?v=20260715-camwide2"></script>
-<script src="js/camera.js?v=20260715-camwide2"></script>
-<script src="js/game.js?v=20260715-camwide2"></script>
-<script src="js/match.js?v=20260715-camwide2"></script>
-<script src="js/router.js?v=20260715-camwide2"></script>
+<!-- Load order: data → state → speech/progress → fx → writing → features → router -->
+<script src="js/data.js?v=20260718-kidrevamp1"></script>
+<script src="js/state.js?v=20260718-kidrevamp1"></script>
+<script src="js/speech.js?v=20260718-kidrevamp1"></script>
+<script src="js/progress.js?v=20260718-kidrevamp1"></script>
+<script src="js/fx.js?v=20260718-kidrevamp1"></script>
+<script src="js/writing.js?v=20260718-kidrevamp1"></script>
+<script src="js/ui.js?v=20260718-kidrevamp1"></script>
+<script src="js/canvas.js?v=20260718-kidrevamp1"></script>
+<script src="js/camera.js?v=20260718-kidrevamp1"></script>
+<script src="js/game.js?v=20260718-kidrevamp1"></script>
+<script src="js/match.js?v=20260718-kidrevamp1"></script>
+<script src="js/router.js?v=20260718-kidrevamp1"></script>
 </body>
 </html>

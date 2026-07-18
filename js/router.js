@@ -37,6 +37,7 @@ function setDisplay(id, value) {
 }
 
 function hideAllOverlays() {
+    setDisplay('celebrate-overlay', 'none');
     setDisplay('camera-overlay', 'none');
     setDisplay('game-overlay', 'none');
     setDisplay('match-overlay', 'none');
@@ -132,6 +133,10 @@ window.testVoice = function () {
 window.enterMode = function (mode) {
     if (window.unlockAudio) window.unlockAudio();
     if (window.stopSpeech) window.stopSpeech();
+    if (window.ZiziFX) {
+        window.ZiziFX.play('tap');
+        if (window.ZiziFX.isMusicOn() && !window.ZiziFX._bgmTimer) window.ZiziFX.startMusic();
+    }
 
     window.currentMode = mode;
     setDisplay('home-menu', 'none');

@@ -9,7 +9,9 @@ window.lastWord = '';
 window.currentChoices = {}; 
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
-window.isGameProcessing = false; 
+window.isGameProcessing = false;
+window.gameScore = 0;
+window.gameStreak = 0;
 
 // 🌟 異步音效防重疊 Token
 window.gameAudioToken = 0;
@@ -86,6 +88,14 @@ window.playGameMessage = async function(text, callback) {
     }
 };
 
+
+function updateGameHud() {
+    var s = document.getElementById('game-score');
+    var st = document.getElementById('game-streak');
+    if (s) s.textContent = String(window.gameScore || 0);
+    if (st) st.textContent = String(window.gameStreak || 0);
+}
+
 window.startGame = function() {
     if (window.stopAllAudio) window.stopAllAudio();
 
@@ -98,6 +108,10 @@ window.startGame = function() {
     window.isGamePlaying = true;
     window.isGameProcessing = false;
     window.lastWord = '';
+    window.gameScore = 0;
+    window.gameStreak = 0;
+    updateGameHud();
+    if (window.ZiziFX) window.ZiziFX.play('whoosh');
 
     // 講完開場白自動出題
     window.playGameMessage("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！", () => {
@@ -243,7 +257,10 @@ window.checkAnswer = function(choice) {
     
     if (choice === window.currentGameTarget) {
         window.isGameProcessing = true;
-
+        window.gameScore = (window.gameScore || 0) + 1;
+        window.gameStreak = (window.gameStreak || 0) + 1;
+        updateGameHud();
+        if (window.ZiziFX) window.ZiziFX.play('correct');
         if (typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
 
         const correctPhrases = ['啱喇！', '無錯！', '正確！', '對喇！', '搵到喇！'];
@@ -259,9 +276,11 @@ window.checkAnswer = function(choice) {
                 word: window.currentWord,
                 emoji: window.currentEmoji || choiceItem.e,
                 letter: choice,
-                reason: '聽音挑戰'
+                reason: '聽音挑戰',
+                quest: 'listen'
             });
         }
+        if (window.markQuest) window.markQuest('listen');
 
         window.playGameMessage(randomPhrase, async () => {
             if (window.speakEnglish) {
@@ -272,6 +291,9 @@ window.checkAnswer = function(choice) {
         });
 
     } else {
+        window.gameStreak = 0;
+        updateGameHud();
+        if (window.ZiziFX) window.ZiziFX.play('wrong');
         btn.classList.add('shake-anim');
         setTimeout(() => btn.classList.remove('shake-anim'), 400);
         
