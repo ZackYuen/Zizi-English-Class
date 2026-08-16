@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260718-reset1">
+    <link rel="stylesheet" href="style.css?v=20260816-vo1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -128,7 +128,7 @@
 
 <!-- Tracing app -->
 <div id="app" style="display:none;">
-    <div id="msg">由綠色點出發，畫到尾為止！</div>
+    <div id="msg" aria-live="off">由綠色點出發，跟住虛線畫到尾！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button type="button" class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
@@ -286,19 +286,19 @@
 </div>
 
 <!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260718-reset1"></script>
-<script src="js/state.js?v=20260718-reset1"></script>
+<script src="js/data.js?v=20260816-vo1"></script>
+<script src="js/state.js?v=20260816-vo1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260718-reset1"></script>
-<script src="js/speech.js?v=20260718-reset1"></script>
-<script src="js/progress.js?v=20260718-reset1"></script>
-<script src="js/fx.js?v=20260718-reset1"></script>
-<script src="js/writing.js?v=20260718-reset1"></script>
-<script src="js/ui.js?v=20260718-reset1"></script>
-<script src="js/canvas.js?v=20260718-reset1"></script>
-<script src="js/camera.js?v=20260718-reset1"></script>
-<script src="js/game.js?v=20260718-reset1"></script>
-<script src="js/match.js?v=20260718-reset1"></script>
-<script src="js/router.js?v=20260718-reset1"></script>
+<script src="js/secrets.js?v=20260816-vo1"></script>
+<script src="js/speech.js?v=20260816-vo1"></script>
+<script src="js/progress.js?v=20260816-vo1"></script>
+<script src="js/fx.js?v=20260816-vo1"></script>
+<script src="js/writing.js?v=20260816-vo1"></script>
+<script src="js/ui.js?v=20260816-vo1"></script>
+<script src="js/canvas.js?v=20260816-vo1"></script>
+<script src="js/camera.js?v=20260816-vo1"></script>
+<script src="js/game.js?v=20260816-vo1"></script>
+<script src="js/match.js?v=20260816-vo1"></script>
+<script src="js/router.js?v=20260816-vo1"></script>
 </body>
 </html>

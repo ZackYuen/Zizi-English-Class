@@ -97,14 +97,18 @@ window.updateMsg = function() {
     const session = window.WritingSession;
     const fullMark = (session && session.FULL_MARK) || 100;
     if(strokeIdx < D[idx].st.length) {
+        msg.setAttribute('data-silent', '1');
+        msg.setAttribute('aria-hidden', 'true');
         msg.innerText = session && session.formatProgressMsg
             ? session.formatProgressMsg(currentPercent, strokeIdx + 1)
-            : ('完成度: ' + currentPercent + '% / ' + fullMark + '%（第 ' + (strokeIdx+1) + ' 筆）');
+            : ('跟住綠點畫（第 ' + (strokeIdx+1) + ' 筆）');
         msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
     } else {
+        msg.setAttribute('data-silent', '0');
+        msg.removeAttribute('aria-hidden');
         msg.innerText = session && session.formatSuccessMsg
             ? session.formatSuccessMsg(currentPercent)
-            : ('完成度: ' + currentPercent + '% - 真叻！撳 ✨ 讀出嚟啦！');
+            : ('真叻！撳 ✨ 讀出嚟啦！');
         msg.style.color = '#06d6a0';
     }
 };
@@ -275,13 +279,14 @@ window.loop = function() {
 // - Green ball = follows finger while drawing
 // - Progress = project finger onto the stroke path
 // ==========================================
-// Kid-friendly scoring: pass gate + full mark 100% on success
-window.WRITE_PASS_SCORE = 70;
-var HIT_START = 78;
-var PATH_CORRIDOR = 70;
-var HIT_END = 52;
-var SCORE_INK_WIDTH = 36;   // fat brush when measuring
-var SCORE_DILATE_R = 14;    // allow small finger offset from the dashed guide
+// Must follow the dashed stroke in order — scribbling / 亂填 does not count
+window.WRITE_PASS_SCORE = 78;
+var HIT_START = 46;
+var PATH_CORRIDOR = 34;
+var HIT_END = 40;
+var MAX_PATH_JUMP = 0.14;   // cannot skip ahead along the stroke
+var SCORE_INK_WIDTH = 22;
+var SCORE_DILATE_R = 6;
 var STROKE_CONNECT_EPS = 30; // end≈next start → keep drawing without lift
 
 /** True when stroke A's end point matches stroke B's start (consecutive stroke). */
@@ -322,11 +327,7 @@ window.computeWriteCoverage = function () {
     if (!window.userCtx || !window.guideData || !window.totalGuide) return 0;
     window.userCtx.clearRect(0, 0, 300, 300);
     var scoreW = SCORE_INK_WIDTH;
-    if (window.strokeAttempts) {
-        window.strokeAttempts.forEach(function (st) {
-            drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
-        });
-    }
+    // Only committed, path-followed strokes count — random fills do not
     doneStrokes.forEach(function (st) {
         drawLineToCtx(window.userCtx, st, '#000', false, scoreW);
     });
@@ -368,9 +369,7 @@ window.computeWriteCoverage = function () {
     }
 
     var raw = covered / window.totalGuide;
-    // Mild kid boost in the mid range; still caps at 100
-    var boosted = Math.min(1, Math.pow(raw, 0.82) * 1.06);
-    return Math.min(100, Math.round(boosted * 100));
+    return Math.min(100, Math.round(raw * 100));
 };
 
 function finishLetterComplete(pointerId) {
@@ -387,11 +386,13 @@ function finishLetterComplete(pointerId) {
     if (currentPercent < passAt) {
         var msg = document.getElementById('msg');
         if (msg) {
-            msg.innerText = '\u4ef2\u5dee\u5572\uff01\u800c\u5bb6 ' + currentPercent + '%\uff0c\u8981 ' + passAt + '% \u5148\u5f97\u3002\u518d\u8ddf\u5be6\u865b\u7dda\u756b\u904e\uff01';
+            msg.setAttribute('data-silent', '0');
+            msg.removeAttribute('aria-hidden');
+            msg.innerText = '要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！';
             msg.style.color = '#e63946';
         }
         if (window.playCantoneseTTS) {
-            window.playCantoneseTTS('\u4ef2\u5dee\u5572\uff01\u8981\u8ddf\u5be6\u865b\u7dda\u518d\u756b\u904e\uff01');
+            window.playCantoneseTTS('要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！', { interrupt: true });
         }
         setTimeout(function () { resetCanvas(); }, 900);
         return;
@@ -438,8 +439,13 @@ function finishLetterComplete(pointerId) {
     }, 200);
     if (D[idx] && D[idx].l) {
         setTimeout(function () {
-            if (window.playCantoneseTTS) window.playCantoneseTTS('\u53fb\u4ed4\uff01\u5beb\u597d\u5497 ' + D[idx].l);
-            if (window.speakEnglish) window.speakEnglish(D[idx].l, { rate: 0.9 });
+            var letter = D[idx].l;
+            var spoken = window.playCantoneseTTS
+                ? window.playCantoneseTTS('叻仔！寫好咗 ' + letter, { interrupt: true })
+                : Promise.resolve();
+            Promise.resolve(spoken).then(function () {
+                if (window.speakEnglish) window.speakEnglish(letter, { rate: 0.9 });
+            });
         }, 500);
     }
 }
@@ -465,27 +471,25 @@ function advanceStrokeProgress(pos) {
     var hit = projectFingerOnPath(pos);
     if (!hit) return;
 
-    // Update guide marker on path (for idle / progress reference)
-    if (hit.dist <= PATH_CORRIDOR) {
-        // Monotonic progress along the letter stroke
-        if (hit.t >= (window.pathT || 0) - 0.02) {
-            window.pathT = Math.max(window.pathT || 0, hit.t);
-            nextWpIdx = Math.max(nextWpIdx, hit.i + 1);
-            window.guidePos = { x: hit.x, y: hit.y };
-        }
+    var pathT = window.pathT || 0;
+    // Only advance if finger is on the path AND near the current point (no skip-to-end)
+    if (hit.dist <= PATH_CORRIDOR && hit.t >= pathT - 0.06 && hit.t <= pathT + MAX_PATH_JUMP) {
+        window.pathT = Math.max(pathT, hit.t);
+        nextWpIdx = Math.max(nextWpIdx, hit.i + 1);
+        window.guidePos = { x: hit.x, y: hit.y };
     }
 
     var end = currentWPs[currentWPs.length - 1];
     var distEnd = Math.hypot(pos.x - end.x, pos.y - end.y);
     var prog = window.pathT || 0;
-    window._strokeCommitPending = (distEnd <= HIT_END && prog >= 0.88);
+    window._strokeCommitPending = (distEnd <= HIT_END && prog >= 0.92);
     if (window._strokeCommitPending) nextWpIdx = currentWPs.length;
 }
 
 function commitCurrentStroke(pointerId, pos) {
     if (!currentWPs.length) return false;
     var prog = window.pathT || 0;
-    if (prog < 0.85 && nextWpIdx < currentWPs.length) return false;
+    if (prog < 0.90) return false;
 
     playSnd(880, 'sine', 0.2);
     if (curStroke && curStroke.length >= 2) doneStrokes.push(curStroke);
@@ -527,7 +531,7 @@ function onStrokeStart(e) {
     if (e.type.startsWith('pointer')) window._strokeInput = 'pointer';
     if (e.type.startsWith('touch')) window._strokeInput = 'touch';
 
-    if (window.stopAllAudio) window.stopAllAudio();
+    if (!window._screenReaderLikely && window.stopSpeech) window.stopSpeech();
     if (isMagic || typeof D === 'undefined' || !D[idx] || strokeIdx >= D[idx].st.length) return;
     if (isDrawing) return;
     if (e.cancelable) e.preventDefault();
@@ -538,12 +542,15 @@ function onStrokeStart(e) {
 
     var startPt = currentWPs[0];
     var guide = window.guidePos || startPt;
-    var nearGuide = guide && Math.hypot(pos.x - guide.x, pos.y - guide.y) <= HIT_START;
+    var pathT = window.pathT || 0;
     var nearStart = startPt && Math.hypot(pos.x - startPt.x, pos.y - startPt.y) <= HIT_START;
-    // Also allow continuing near current path progress point
-    var hit = projectFingerOnPath(pos);
-    var nearPath = hit && hit.dist <= HIT_START && hit.t >= (window.pathT || 0) - 0.15;
-    if (!nearGuide && !nearStart && !nearPath) return;
+    var nearGuide = guide && Math.hypot(pos.x - guide.x, pos.y - guide.y) <= HIT_START;
+    // Resume only near the current progress point — not the far end of the stroke
+    if (pathT < 0.12) {
+        if (!nearStart) return;
+    } else if (!nearGuide) {
+        return;
+    }
 
     isDrawing = true;
     window._strokeCommitPending = false;
@@ -601,10 +608,8 @@ function onStrokeEnd(e) {
         if (pos) advanceStrokeProgress(pos);
         var end = currentWPs[currentWPs.length - 1];
         var prog = window.pathT || 0;
-        var nearEnd = !!(end && pos && Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END * 1.6);
-        if (prog >= 0.88 || (nearEnd && prog >= 0.75) || window._strokeCommitPending) {
-            nextWpIdx = currentWPs.length;
-            window.pathT = Math.max(prog, 0.95);
+        var nearEnd = !!(end && pos && Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END);
+        if ((prog >= 0.92 && nearEnd) || window._strokeCommitPending) {
             commitCurrentStroke(e && e.pointerId, pos);
         }
     }
