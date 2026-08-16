@@ -77,7 +77,7 @@ window.WritingSession = {
 
     /** Progress line while still tracing */
     formatProgressMsg: function (percent, strokeNum) {
-        return '跟住綠點畫（第 ' + strokeNum + ' 筆）';
+        return '跟住綠點由頭畫到尾（第 ' + strokeNum + ' 筆）';
     },
 
     /** Message after a letter is accepted */
