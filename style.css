@@ -745,10 +745,16 @@ button:disabled {
   overflow: hidden;
 }
 
-#camera-overlay.is-open,
-#camera-overlay[style*="display: flex"],
-#camera-overlay[style*="display:flex"] {
+#camera-overlay.is-open {
   display: flex !important;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#camera-overlay:not(.is-open) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 #camera-video {

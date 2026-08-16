@@ -41,8 +41,18 @@ window.WritingSession = {
         var topBar = document.getElementById('standard-top-bar');
         var backBtn = document.getElementById('back-to-home-btn');
         var app = document.getElementById('app');
+        var cam = document.getElementById('camera-overlay');
+        if (cam) {
+            cam.classList.remove('is-open');
+            cam.style.display = 'none';
+            cam.setAttribute('aria-hidden', 'true');
+        }
 
-        if (app) app.style.display = 'block';
+        if (app) {
+            app.style.display = 'block';
+            app.style.position = 'relative';
+            app.style.zIndex = '20';
+        }
         if (canvasWrapper) canvasWrapper.style.display = 'block';
         if (topBar) topBar.style.display = 'flex';
         if (backBtn) backBtn.style.display = 'inline-block';
@@ -67,15 +77,15 @@ window.WritingSession = {
 
     /** Progress line while still tracing */
     formatProgressMsg: function (percent, strokeNum) {
-        return '完成度: ' + percent + '% / ' + this.FULL_MARK + '%（第 ' + strokeNum + ' 筆）';
+        return '跟住綠點由頭畫到尾（第 ' + strokeNum + ' 筆）';
     },
 
     /** Message after a letter is accepted */
     formatSuccessMsg: function (percent) {
         if (this.isCamera()) {
-            return '完成度: ' + percent + '% - 撳 ✨ 讀出嚟，或者 📸 再影一個！';
+            return '真叻！撳 ✨ 讀出嚟，或者 📸 再影一個！';
         }
-        return '完成度: ' + percent + '% - 真叻！撳 ✨ 讀出嚟啦！';
+        return '真叻！撳 ✨ 讀出嚟啦！';
     },
 
     /** After magic TTS finishes */

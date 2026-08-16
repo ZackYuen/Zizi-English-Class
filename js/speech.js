@@ -11,6 +11,8 @@ window._speechQueue = [];
 window._speechBusy = false;
 window._speechToken = 0;
 window._audioUnlocked = false;
+window._screenReaderLikely = false;
+window._lastPointerAt = 0;
 
 window.getVoiceSettings = function () {
     var deployedProvider = (window.ZIZI_SECRETS && window.ZIZI_SECRETS.voiceProvider) || '';
@@ -180,12 +182,34 @@ function escapeXml(s) {
         .replace(/"/g, '&quot;');
 }
 
+/** Live percent / stroke HUD — never speak this (VoiceOver + TTS overlap). */
+window.isSilentUiText = function (text) {
+    var t = String(text || '').trim();
+    if (!t) return true;
+    if (/完成度/.test(t)) return true;
+    if (/\d+\s*%/.test(t) && /筆|第/.test(t)) return true;
+    if (/^第\s*\d+\s*\/\s*\d+\s*題/.test(t)) return true;
+    if (/^\d+\s*\/\s*\d+$/.test(t)) return true;
+    return false;
+};
+
+window.shouldAutoSpeak = function (opts) {
+    var options = opts || {};
+    // VoiceOver already reads the screen — extra TTS stacks on top
+    if (window._screenReaderLikely) return false;
+    var settings = window.getVoiceSettings ? window.getVoiceSettings() : { autoRead: true };
+    if (!settings.autoRead && !options.force) return false;
+    return true;
+};
+
 /** Core Cantonese speak — picks best available voice */
 window.playCantoneseTTS = async function (text, opts) {
     if (window.ZiziFX) window.ZiziFX.duckMusic(2.5);
     const options = opts || {};
     const utter = String(text || '').trim();
     if (!utter) return;
+    if (window.isSilentUiText && window.isSilentUiText(utter)) return;
+    if (window._screenReaderLikely && !options.force) return; // testVoice may pass force
 
     if (options.interrupt !== false) {
         // Stop previous instruction audio, but keep game English channel if requested
@@ -247,9 +271,8 @@ window.announce = function (text, opts) {
     const options = opts || {};
     const utter = String(text || '').trim();
     if (!utter) return;
-
-    const settings = window.getVoiceSettings();
-    if (!settings.autoRead && !options.force) return;
+    if (window.isSilentUiText && window.isSilentUiText(utter)) return;
+    if (!window.shouldAutoSpeak(options)) return;
 
     // Dedupe identical back-to-back announces
     if (window._lastAnnounce === utter && Date.now() - (window._lastAnnounceAt || 0) < 2500) {
@@ -258,7 +281,8 @@ window.announce = function (text, opts) {
     window._lastAnnounce = utter;
     window._lastAnnounceAt = Date.now();
 
-    if (options.interrupt !== false) {
+    // Queue instead of interrupting — stops VoiceOver / TTS pile-up
+    if (options.interrupt === true) {
         window.playCantoneseTTS(utter, { interrupt: true });
         return;
     }
@@ -369,11 +393,11 @@ window.startInstructionReader = function () {
         if (!el || el._announceBound) return;
         el._announceBound = true;
         const obs = new MutationObserver(function () {
+            if (el.getAttribute('data-silent') === '1') return;
             const text = (el.innerText || el.textContent || '').trim();
             if (!text) return;
-            // Skip pure percent spam mid-stroke unless complete/special
-            if (/^完成度:\s*\d+% \(第/.test(text)) return;
-            window.announce(text);
+            if (window.isSilentUiText && window.isSilentUiText(text)) return;
+            window.announce(text, { interrupt: false });
         });
         obs.observe(el, { childList: true, characterData: true, subtree: true });
     });
@@ -403,6 +427,16 @@ window.announceHomeMenu = function () {
 if (typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.onvoiceschanged = function () { pickIphoneCantoneseVoice(); };
 }
+
+window.addEventListener('pointerdown', function () {
+    window._lastPointerAt = Date.now();
+}, true);
+
+window.addEventListener('focusin', function () {
+    if (Date.now() - (window._lastPointerAt || 0) > 450) {
+        window._screenReaderLikely = true;
+    }
+}, true);
 
 window.addEventListener('load', function () {
     window.startInstructionReader();

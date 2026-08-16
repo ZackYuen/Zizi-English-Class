@@ -12,7 +12,15 @@ window.snapImg = null;
 // 安全獲取 DOM，防止因 HTML 缺失而卡死
 function safeDisplay(id, displayStyle) {
     const el = document.getElementById(id);
-    if (el) el.style.display = displayStyle;
+    if (!el) return;
+    el.style.display = displayStyle;
+    if (displayStyle === 'none') {
+        el.classList.remove('is-open');
+        el.setAttribute('aria-hidden', 'true');
+    } else if (id === 'camera-overlay') {
+        el.classList.add('is-open');
+        el.setAttribute('aria-hidden', 'false');
+    }
 }
 function getEl(id) { return document.getElementById(id); }
 
@@ -301,10 +309,17 @@ function setCameraControlsEnabled(enabled) {
 
 /** After AI recognizes a word: show tracing UI + "影下一個" retake button */
 window.enterCameraWritingFlow = function(word) {
+    if (window.closeCamera) window.closeCamera();
     safeDisplay('home-menu', 'none');
     safeDisplay('camera-overlay', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('match-overlay', 'none');
+    const cam = getEl('camera-overlay');
+    if (cam) {
+        cam.classList.remove('is-open');
+        cam.style.display = 'none';
+        cam.setAttribute('aria-hidden', 'true');
+    }
 
     if (window.WritingSession && typeof window.WritingSession.begin === 'function') {
         window.WritingSession.begin({
