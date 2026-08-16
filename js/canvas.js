@@ -95,7 +95,6 @@ window.updateMsg = function() {
     if(!msg || typeof D === 'undefined' || !D[idx]) return;
     const passAt = window.WRITE_PASS_SCORE || 70;
     const session = window.WritingSession;
-    const fullMark = (session && session.FULL_MARK) || 100;
     if(strokeIdx < D[idx].st.length) {
         msg.setAttribute('data-silent', '1');
         msg.setAttribute('aria-hidden', 'true');
