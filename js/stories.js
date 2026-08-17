@@ -82,7 +82,7 @@ window.WORD_STORIES = {
     six:   { yue: '六', parts: [{ en: 'six', yue: '六' }], from: '古英文 siex／拉丁文 sex', story: '歐洲好多語言數到六都差唔多音。英文 six，拉丁文 sex，都係六。' },
     toy:   { yue: '玩具', parts: [{ en: 'toy', yue: '玩具' }], from: '中古英文', story: 'toy 係用嚟玩、唔係真嘢用嘅。細路玩嘅就叫 toy。' },
     ten:   { yue: '十', parts: [{ en: 'ten', yue: '十' }], from: '古英文 tien', story: 'tien 就係十隻手指數完。而家 ten 仲係十。' },
-    tap:   { yue: '水龍頭／輕拍', parts: [{ en: 'tap', yue: '拍／水龍頭' }], from: '古英文', story: '香港人叫水喉。tap 本來係輕輕拍一下。開水嗰下好似拍開個口，所以水龍頭都叫 tap。' },
+    tap:   { yue: '水龍頭／輕拍', parts: [{ en: 'tap', yue: '拍／水龍頭' }], from: '古英文', story: '中文叫水喉。tap 本來係輕輕拍一下。開水嗰下好似拍開個口，所以水龍頭都叫 tap。' },
     tub:   { yue: '浴缸', parts: [{ en: 'tub', yue: '缸' }], from: '中古英文', story: 'tub 係開面大容器。沖涼浸住嘅缸就叫 tub。' },
     up:    { yue: '向上', parts: [{ en: 'up', yue: '上' }], from: '古英文', story: 'up 就係往高處。好似中文「上」，一個好短嘅方向字。' },
     urn:   { yue: '甕／瓶子', parts: [{ en: 'urn', yue: '甕' }], from: '拉丁文 urna', story: 'urna 係圓身陶瓶。裝嘢、裝灰都用過，而家仲叫 urn。' },
@@ -103,7 +103,7 @@ window.WORD_STORIES = {
     yell:  { yue: '大叫', parts: [{ en: 'yell', yue: '叫' }], from: '象聲／古英文', story: '好似中文「啊」係叫聲，yell 就係大聲叫嘅聲音寫成字。' },
     yolk:  { yue: '蛋黃', parts: [{ en: 'yolk', yue: '黃' }], from: '古英文 geolu', story: 'geolu 意思係「黃色」。蛋中間黃黃嗰舊，就叫 yolk。記住：yolk 裏面有 yellow。' },
     zip:   { yue: '拉鏈', parts: [{ en: 'zip', yue: '嗖' }], from: '象聲', story: '拉上去「zzzz／嗖」一聲，人哋用 zip 寫呢個聲。拉鏈就叫 zip。' },
-    zoo:   { yue: '動物園', parts: [{ en: 'zoo', yue: '動物' }], from: '希臘文 zoion', story: '香港人都識講 zoo。希臘文 zoion 意思係「動物」。zoological garden 太長喇，人哋淨係講 zoo。' },
+    zoo:   { yue: '動物園', parts: [{ en: 'zoo', yue: '動物' }], from: '希臘文 zoion', story: '廣東話都係講 zoo，借咗英文。希臘文 zoion 意思係「動物」。zoological garden 太長喇，人哋淨係講 zoo。' },
     zebra: { yue: '斑馬', parts: [{ en: 'zebra', yue: '斑馬' }], from: '非洲語言', story: '非洲人先叫呢隻黑白間動物 zebra。英文借咗呢個名。' },
     zero:  { yue: '零', parts: [{ en: 'zero', yue: '空／零' }], from: '阿拉伯文 sifr', story: '阿拉伯文 sifr 意思係「空」。經意大利傳到英文 zero。圓圓一個空位，就係 0。' },
 
@@ -116,7 +116,7 @@ window.WORD_STORIES = {
             word: 'aeroplane',
             parts: [{ en: 'aero', yue: '空氣（希臘文）' }, { en: 'plane', yue: '飛機' }]
         },
-        story: '香港人叫飛機。air 係空氣，plane 係平翼。合埋就係喺空氣裏面飛嘅機。英國人寫 aeroplane：aero 係希臘文，都係空氣。兩個講法意思一樣。'
+        story: 'air 係空氣，plane 係平翼。合埋就係喺空氣裏面飛嘅機。英國人寫 aeroplane：aero 係希臘文，都係空氣。兩個講法意思一樣。'
     },
     aeroplane: {
         yue: '飛機',
@@ -132,7 +132,7 @@ window.WORD_STORIES = {
         yue: '單車',
         parts: [{ en: 'bi', yue: '兩個（拉丁文）' }, { en: 'cycle', yue: '輪（希臘文）' }],
         from: '拉丁文 bi + 希臘文 kyklos',
-        story: '香港人叫單車。bi 係拉丁文「二」，cycle 來自希臘文 kyklos「圓輪」。兩個輪，所以叫 bicycle。三輪就係 tricycle：tri 係三。'
+        story: 'bi 係拉丁文「二」，cycle 來自希臘文 kyklos「圓輪」。兩個輪，所以叫 bicycle。三輪就係 tricycle：tri 係三。'
     },
     cupcake: {
         yue: '紙杯蛋糕',
@@ -166,38 +166,17 @@ window.WORD_STORIES = {
     }
 };
 
-// HK Cantonese nicknames / loanwords he already says at home
-window.WORD_NICKS = {
+// Only words where Cantonese *is* the English (音譯 / 直接借詞).
+// Do not tag 飛機、單車、水喉 — those are Chinese, not English loans.
+window.WORD_LOANS = {
     bus: '巴士',
     ice: '哎士',
     uncle: '安哥',
     van: 'van',
-    gum: 'gum',
     jam: '占',
-    zoo: 'zoo',
-    cap: 'cap',
-    fan: 'fan',
-    gas: 'gas',
-    kit: 'kit',
-    quiz: 'quiz',
-    vest: 'vest',
-    zip: 'zip',
-    ufo: 'UFO',
-    tap: '水喉',
-    pan: 'pan',
-    mug: 'mug',
-    jet: 'jet機',
-    zero: 'zero',
-    car: '車',
-    bicycle: '單車',
-    airplane: '飛機',
-    aeroplane: '飛機',
-    football: '足球',
-    telephone: '電話',
-    cupcake: '蛋糕',
-    rainbow: '彩虹',
-    sunflower: '向日葵'
+    zoo: 'zoo'
 };
+window.WORD_NICKS = window.WORD_LOANS;
 
 window.LETTER_HINTS = {
     A: 'A 好似尖尖座山，中間再加一條橫。',
@@ -235,10 +214,12 @@ window.LETTER_HINTS = {
     for (var i = 0; i < list.length; i++) {
         var s = stories[list[i].w];
         if (s) {
-            var nick = s.nick || (window.WORD_NICKS && window.WORD_NICKS[list[i].w]) || s.yue;
-            s.nick = nick;
+            var loan = (window.WORD_LOANS && window.WORD_LOANS[list[i].w]) || '';
+            s.loan = loan;
+            s.nick = loan;
             list[i].yue = s.yue;
-            list[i].nick = nick;
+            list[i].loan = loan;
+            list[i].nick = loan;
             list[i].story = s.story;
             list[i].parts = s.parts;
             list[i].from = s.from;

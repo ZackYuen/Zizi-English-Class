@@ -284,8 +284,8 @@ window.openWordAlbum = function () {
             btn.type = 'button';
             btn.className = 'album-card';
             var info = window.ZiziTeach ? window.ZiziTeach.info(item.word) : null;
+            var loan = info ? info.loan : '';
             var yue = info ? info.yue : '';
-            var nick = info ? info.nick : '';
             var parts = (info && info.parts && info.parts.length > 1)
                 ? info.parts.map(function (p) { return p.en; }).join('+')
                 : '';
@@ -294,7 +294,8 @@ window.openWordAlbum = function () {
             btn.innerHTML =
                 '<span class="album-emoji">' + (item.emoji || '⭐') + '</span>' +
                 '<span class="album-word">' + item.word + '</span>' +
-                (nick ? '<span class="album-yue">香港叫 ' + nick + '</span>' : (yue ? '<span class="album-yue">' + yue + '</span>' : '')) +
+                (loan ? '<span class="album-yue">香港叫 ' + loan + '</span>' : '') +
+                (yue && yue !== loan ? '<span class="album-yue">' + yue + '</span>' : '') +
                 (parts ? '<span class="album-parts">' + parts + '</span>' : '') +
                 (from ? '<span class="album-from">' + from + '</span>' : '') +
                 (story ? '<span class="album-story">' + story + '</span>' : '') +

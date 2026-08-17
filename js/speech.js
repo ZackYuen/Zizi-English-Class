@@ -29,22 +29,21 @@ function isAppleWebKit() {
     return typeof navigator.vendor === 'string' && navigator.vendor.indexOf('Apple') >= 0;
 }
 
-/** One-time upgrade: Pages already has a Google key — use Chirp3 like 小學預備. */
+/** Same as 小學預備: if a Google key exists, always use Chirp3 (Safari cannot use Siri 聲音 2). */
 function migrateVoiceDefaults() {
     try {
-        if (localStorage.getItem('zizi_voice_v') === 'chirp3') return;
         var googleKey = window.getApiKey
             ? window.getApiKey('google_tts_key')
             : (localStorage.getItem('google_tts_key') || '');
         var saved = localStorage.getItem('zizi_voice_provider');
-        if (googleKey && (!saved || saved === 'iphone')) {
+        if (googleKey && saved !== 'azure') {
             localStorage.setItem('zizi_voice_provider', 'google');
         }
         var yue = localStorage.getItem('google_yue_voice') || '';
-        if (!yue || /^yue-HK-Standard/.test(yue)) {
+        if (!yue || yue.indexOf('Chirp3') < 0) {
             localStorage.setItem('google_yue_voice', 'yue-HK-Chirp3-HD-Kore');
         }
-        localStorage.setItem('zizi_voice_v', 'chirp3');
+        localStorage.setItem('zizi_voice_v', 'chirp3-2');
     } catch (e) { /* ignore */ }
 }
 
@@ -57,10 +56,11 @@ window.getVoiceSettings = function () {
     var googleKey = window.getApiKey
         ? window.getApiKey('google_tts_key')
         : (localStorage.getItem('google_tts_key') || '');
-    // Chirp3 (小學預備) first when a Google key exists; Azure only if chosen
-    var defaultProvider = localStorage.getItem('zizi_voice_provider')
-        || deployedProvider
-        || (googleKey ? 'google' : (azureKey ? 'azure' : 'iphone'));
+    var saved = localStorage.getItem('zizi_voice_provider');
+    var defaultProvider;
+    if (saved === 'azure' && azureKey) defaultProvider = 'azure';
+    else if (googleKey) defaultProvider = 'google';
+    else defaultProvider = saved || deployedProvider || (azureKey ? 'azure' : 'iphone');
     return {
         provider: defaultProvider || 'google',
         azureKey: azureKey,

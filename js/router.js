@@ -93,7 +93,7 @@ window.saveSettings = function () {
     localStorage.setItem('azure_speech_region', azureRegion || 'eastasia');
     localStorage.setItem('azure_voice_name', azureVoice || 'zh-HK-HiuMaanNeural');
     localStorage.setItem('google_yue_voice', googleYue || 'yue-HK-Chirp3-HD-Kore');
-    localStorage.setItem('zizi_voice_v', 'chirp3');
+    localStorage.setItem('zizi_voice_v', 'chirp3-2');
     localStorage.setItem('zizi_auto_read', autoRead && autoRead.checked ? '1' : '0');
 
     if (tts) localStorage.setItem('google_tts_key', tts);
