@@ -55,20 +55,55 @@ window.unlockAudio = function () {
     }
 };
 
+window._voiceChain = Promise.resolve();
+
+function stopAudioEl(a) {
+    if (!a) return;
+    try {
+        a.pause();
+        a.onended = null;
+        a.currentTime = 0;
+    } catch (e) { /* ignore */ }
+}
+
 window.stopSpeech = function () {
     window._speechToken += 1;
     window._speechQueue = [];
     window._speechBusy = false;
+    window._voiceChain = Promise.resolve();
     if (window.speechSynthesis) {
         try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
     }
-    if (window.uiAudio) {
-        try {
-            window.uiAudio.pause();
-            window.uiAudio.onended = null;
-            window.uiAudio.currentTime = 0;
-        } catch (e) { /* ignore */ }
+    stopAudioEl(window.uiAudio);
+    stopAudioEl(window.enAudio);
+    stopAudioEl(window.mAudio);
+};
+
+/** One voice at a time: later lines wait, interrupt cuts in. */
+window._enqueueVoice = function (fn, interrupt) {
+    if (interrupt) {
+        window.stopSpeech();
     }
+    var tokenAtStart = window._speechToken;
+    var run = window._voiceChain.then(function () {
+        if (tokenAtStart !== window._speechToken) return;
+        return fn();
+    }, function () {
+        if (tokenAtStart !== window._speechToken) return;
+        return fn();
+    });
+    window._voiceChain = run.then(function () {}, function () {});
+    return run;
+};
+
+/** Write HUD text without the instruction reader speaking it. */
+window.setSilentMsg = function (text, color) {
+    var msg = document.getElementById('msg');
+    if (!msg) return;
+    msg.setAttribute('data-silent', '1');
+    msg.setAttribute('aria-hidden', 'true');
+    if (text != null && msg.innerText !== text) msg.innerText = text;
+    if (color) msg.style.color = color;
 };
 
 function pickIphoneCantoneseVoice() {
@@ -187,7 +222,10 @@ window.isSilentUiText = function (text) {
     var t = String(text || '').trim();
     if (!t) return true;
     if (/完成度/.test(t)) return true;
-    if (/\d+\s*%/.test(t) && /筆|第/.test(t)) return true;
+    if (/\d+\s*%/.test(t)) return true;
+    if (/第\s*\d+\s*筆/.test(t)) return true;
+    if (/^跟住綠點/.test(t)) return true;
+    if (/^由綠色點出發/.test(t)) return true;
     if (/^第\s*\d+\s*\/\s*\d+\s*題/.test(t)) return true;
     if (/^\d+\s*\/\s*\d+$/.test(t)) return true;
     return false;
@@ -204,31 +242,24 @@ window.shouldAutoSpeak = function (opts) {
 
 /** Core Cantonese speak — picks best available voice */
 window.playCantoneseTTS = async function (text, opts) {
-    if (window.ZiziFX) window.ZiziFX.duckMusic(2.5);
     const options = opts || {};
     const utter = String(text || '').trim();
     if (!utter) return;
     if (window.isSilentUiText && window.isSilentUiText(utter)) return;
-    if (window._screenReaderLikely && !options.force) return; // testVoice may pass force
+    if (window._screenReaderLikely && !options.force) return;
 
-    if (options.interrupt !== false) {
-        // Stop previous instruction audio, but keep game English channel if requested
-        window._speechToken += 1;
-        window._speechQueue = [];
-        if (window.speechSynthesis) {
-            try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
-        }
-        if (window.uiAudio) {
-            try { window.uiAudio.pause(); window.uiAudio.onended = null; } catch (e) { /* ignore */ }
-        }
-    }
+    return window._enqueueVoice(function () {
+        return window._speakCantoneseNow(utter, options);
+    }, options.interrupt !== false);
+};
 
+window._speakCantoneseNow = async function (utter, options) {
+    if (window.ZiziFX) window.ZiziFX.duckMusic(2.5);
     const token = window._speechToken;
     const settings = window.getVoiceSettings();
     window._lastAnnounce = utter;
     window._lastAnnounceAt = Date.now();
 
-    // Provider preference with automatic fallback
     const order = [];
     if (settings.provider === 'azure') order.push('azure', 'iphone', 'google');
     else if (settings.provider === 'google') order.push('google', 'iphone', 'azure');
@@ -255,7 +286,7 @@ window.playCantoneseTTS = async function (text, opts) {
         }
     }
 
-    // Last resort
+    if (token !== window._speechToken) return;
     if (options.requireKey) {
         if (window.openSettings) window.openSettings();
         return;
@@ -264,8 +295,7 @@ window.playCantoneseTTS = async function (text, opts) {
 };
 
 /**
- * Announce UI instructions (queued, auto-read).
- * Use for every on-screen instruction the boy needs to hear.
+ * Announce UI instructions. Queued on the same voice line — never stacks.
  */
 window.announce = function (text, opts) {
     const options = opts || {};
@@ -274,31 +304,16 @@ window.announce = function (text, opts) {
     if (window.isSilentUiText && window.isSilentUiText(utter)) return;
     if (!window.shouldAutoSpeak(options)) return;
 
-    // Dedupe identical back-to-back announces
     if (window._lastAnnounce === utter && Date.now() - (window._lastAnnounceAt || 0) < 2500) {
         return;
     }
     window._lastAnnounce = utter;
     window._lastAnnounceAt = Date.now();
 
-    // Queue instead of interrupting — stops VoiceOver / TTS pile-up
-    if (options.interrupt === true) {
-        window.playCantoneseTTS(utter, { interrupt: true });
-        return;
-    }
-
-    window._speechQueue.push(utter);
-    window._drainSpeechQueue();
-};
-
-window._drainSpeechQueue = async function () {
-    if (window._speechBusy) return;
-    window._speechBusy = true;
-    while (window._speechQueue.length) {
-        const next = window._speechQueue.shift();
-        await window.playCantoneseTTS(next, { interrupt: false });
-    }
-    window._speechBusy = false;
+    return window.playCantoneseTTS(utter, {
+        interrupt: options.interrupt === true,
+        force: options.force
+    });
 };
 
 function pickEnglishVoice() {
@@ -325,18 +340,19 @@ window.speakEnglish = function (text, opts) {
     const options = opts || {};
     const utter = String(text || '').trim();
     if (!utter) return Promise.resolve();
+    return window._enqueueVoice(function () {
+        return window._speakEnglishNow(utter, options);
+    }, options.interrupt === true);
+};
 
+window._speakEnglishNow = async function (utter, options) {
     const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
     if (key && !options.forceBrowser) {
         return window._speakGoogleEnglish(utter, options);
     }
-
-    if (!window.speechSynthesis) return Promise.resolve();
+    if (!window.speechSynthesis) return;
     return new Promise(function (resolve) {
         try {
-            if (options.cancel !== false) {
-                try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
-            }
             const u = new SpeechSynthesisUtterance(utter);
             u.lang = options.lang || 'en-US';
             u.rate = options.rate != null ? options.rate : 0.88;
@@ -356,7 +372,7 @@ window.speakEnglish = function (text, opts) {
 window._speakGoogleEnglish = async function (text, opts) {
     const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
     if (!key) {
-        return window.speakEnglish(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
+        return window._speakEnglishNow(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
     }
     try {
         const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
@@ -379,9 +395,9 @@ window._speakGoogleEnglish = async function (text, opts) {
             });
             return;
         }
-        return window.speakEnglish(text, { forceBrowser: true });
+        return window._speakEnglishNow(text, { forceBrowser: true });
     } catch (e) {
-        return window.speakEnglish(text, { forceBrowser: true });
+        return window._speakEnglishNow(text, { forceBrowser: true });
     }
 };
 

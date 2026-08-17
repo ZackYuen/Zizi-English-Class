@@ -102,19 +102,29 @@ window.updateMsg = function() {
     const passAt = window.WRITE_PASS_SCORE || 70;
     const session = window.WritingSession;
     if(strokeIdx < D[idx].st.length) {
-        msg.setAttribute('data-silent', '1');
-        msg.setAttribute('aria-hidden', 'true');
-        msg.innerText = session && session.formatProgressMsg
+        var next = session && session.formatProgressMsg
             ? session.formatProgressMsg(currentPercent, strokeIdx + 1)
             : ('跟住綠點畫（第 ' + (strokeIdx+1) + ' 筆）');
-        msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
+        if (window.setSilentMsg) {
+            window.setSilentMsg(next, currentPercent >= passAt ? '#06d6a0' : '#1982c4');
+        } else {
+            msg.setAttribute('data-silent', '1');
+            msg.setAttribute('aria-hidden', 'true');
+            if (msg.innerText !== next) msg.innerText = next;
+            msg.style.color = currentPercent >= passAt ? '#06d6a0' : '#1982c4';
+        }
     } else {
-        msg.setAttribute('data-silent', '0');
-        msg.removeAttribute('aria-hidden');
-        msg.innerText = session && session.formatSuccessMsg
+        var done = session && session.formatSuccessMsg
             ? session.formatSuccessMsg(currentPercent)
             : ('真叻！撳 ✨ 讀出嚟啦！');
-        msg.style.color = '#06d6a0';
+        if (window.setSilentMsg) {
+            window.setSilentMsg(done, '#06d6a0');
+        } else {
+            msg.setAttribute('data-silent', '1');
+            msg.setAttribute('aria-hidden', 'true');
+            msg.innerText = done;
+            msg.style.color = '#06d6a0';
+        }
     }
 };
 
@@ -399,10 +409,13 @@ function finishLetterComplete(pointerId) {
             ? '跟唔到綠點呀！撳「點畫？」睇提示，再跟住虛線由頭畫到尾。'
             : '要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！';
         if (msg) {
-            msg.setAttribute('data-silent', '0');
-            msg.removeAttribute('aria-hidden');
-            msg.innerText = hintLine;
-            msg.style.color = '#e63946';
+            if (window.setSilentMsg) window.setSilentMsg(hintLine, '#e63946');
+            else {
+                msg.setAttribute('data-silent', '1');
+                msg.setAttribute('aria-hidden', 'true');
+                msg.innerText = hintLine;
+                msg.style.color = '#e63946';
+            }
         }
         if (window.ZiziTeach && n >= 2) {
             window.ZiziTeach.applyWriteHint({ force: true, updateMsg: false });
@@ -460,9 +473,9 @@ function finishLetterComplete(pointerId) {
                 ? window.playCantoneseTTS('叻仔！寫好咗 ' + letter, { interrupt: true })
                 : Promise.resolve();
             Promise.resolve(spoken).then(function () {
-                if (window.speakEnglish) window.speakEnglish(letter, { rate: 0.9 });
+                if (window.speakEnglish) return window.speakEnglish(letter, { rate: 0.9 });
             });
-        }, 500);
+        }, 400);
     }
 }
 
@@ -684,7 +697,8 @@ window.magic = async function() {
     }
     
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
-    document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
+    if (window.setSilentMsg) window.setSilentMsg('聯絡緊 Google TTS...', '#1982c4');
+    else document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
     
     try {
         let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
@@ -708,12 +722,13 @@ window.magic = async function() {
         document.getElementById('canvas-wrapper').style.transform = "scale(1) rotate(0deg)";
         const msgEl = document.getElementById('msg');
         if (msgEl) {
-            if (window.WritingSession && window.WritingSession.formatMagicDoneMsg) {
-                msgEl.innerText = window.WritingSession.formatMagicDoneMsg();
-            } else if (window.currentMode === 'camera') {
-                msgEl.innerText = '讀完喇！可以撳 📸 再影一個 繼續玩！';
-            } else {
-                msgEl.innerText = '成功！';
+            var doneLine = window.WritingSession && window.WritingSession.formatMagicDoneMsg
+                ? window.WritingSession.formatMagicDoneMsg()
+                : (window.currentMode === 'camera' ? '讀完喇！可以撳 📸 再影一個 繼續玩！' : '成功！');
+            if (window.setSilentMsg) window.setSilentMsg(doneLine, '#06d6a0');
+            else {
+                msgEl.setAttribute('data-silent', '1');
+                msgEl.innerText = doneLine;
             }
             if (window.WritingSession && window.WritingSession.onLetterPassed) {
                 window.WritingSession.onLetterPassed();
@@ -727,10 +742,14 @@ window.magic = async function() {
             var w = window.ZiziTeach.info(D[idx].w);
             var done = document.getElementById('msg');
             if (done) {
-                done.setAttribute('data-silent', '0');
-                done.removeAttribute('aria-hidden');
-                done.innerText = w.w + ' = ' + w.yue + '。' + w.story;
-                done.style.color = '#023e8a';
+                if (window.setSilentMsg) {
+                    window.setSilentMsg(w.w + ' = ' + w.yue + '。' + w.story, '#023e8a');
+                } else {
+                    done.setAttribute('data-silent', '1');
+                    done.setAttribute('aria-hidden', 'true');
+                    done.innerText = w.w + ' = ' + w.yue + '。' + w.story;
+                    done.style.color = '#023e8a';
+                }
             }
             window.ZiziTeach.speak(w.w + '就係' + w.yue + '。' + w.story);
         };
@@ -806,10 +825,11 @@ window.processWord = function(word, imgUrl = null) {
     const letter = D[matchIdx] ? D[matchIdx].l : normalized.charAt(0).toUpperCase();
 
     if (window.playCantoneseTTS) {
-        window.playCantoneseTTS('搵到喇！係呢個字，孜孜，一齊寫 ' + letter + ' 啦。');
-    }
-    if (window.speakEnglish) {
-        setTimeout(function () { window.speakEnglish(normalized, { rate: 0.88 }); }, 650);
+        window.playCantoneseTTS('搵到喇！係呢個字，孜孜，一齊寫 ' + letter + ' 啦。', { interrupt: true }).then(function () {
+            if (window.speakEnglish) return window.speakEnglish(normalized, { rate: 0.88 });
+        });
+    } else if (window.speakEnglish) {
+        window.speakEnglish(normalized, { rate: 0.88 });
     }
     if (window.awardStars) {
         const entry = D[matchIdx] || {};

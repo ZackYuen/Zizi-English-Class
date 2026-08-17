@@ -20,8 +20,13 @@ window.startApp = function (mode) {
 window.setMode = function (mode) {
     const msg = document.getElementById('msg');
     if (msg) {
-        msg.innerText = '由綠色點出發，畫到尾為止！';
-        msg.style.color = '#1982c4';
+        if (window.setSilentMsg) {
+            window.setSilentMsg('由綠色點出發，畫到尾為止！', '#1982c4');
+        } else {
+            msg.setAttribute('data-silent', '1');
+            msg.innerText = '由綠色點出發，畫到尾為止！';
+            msg.style.color = '#1982c4';
+        }
     }
 
     if (window.WritingSession && typeof window.WritingSession.begin === 'function') {
