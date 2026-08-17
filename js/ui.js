@@ -79,6 +79,7 @@ window.selectGroup = function (gIndex) {
             }).filter(function (i) { return i !== -1; });
             if (matches.length > 0) {
                 window.idx = matches[Math.floor(Math.random() * matches.length)];
+                if (window.ZiziTeach) window.ZiziTeach.resetWrite();
                 if (typeof window.resetCanvas === 'function') window.resetCanvas();
             }
         };
@@ -92,6 +93,7 @@ window.selectGroup = function (gIndex) {
     }).filter(function (i) { return i !== -1; });
     if (initMatches.length > 0) {
         window.idx = initMatches[Math.floor(Math.random() * initMatches.length)];
+        if (window.ZiziTeach) window.ZiziTeach.resetWrite();
         if (typeof window.resetCanvas === 'function') window.resetCanvas();
     }
 };

@@ -283,14 +283,24 @@ window.openWordAlbum = function () {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'album-card';
+            var info = window.ZiziTeach ? window.ZiziTeach.info(item.word) : null;
+            var yue = info ? info.yue : '';
+            var nick = info ? info.nick : '';
+            var parts = (info && info.parts && info.parts.length > 1)
+                ? info.parts.map(function (p) { return p.en; }).join('+')
+                : '';
             btn.innerHTML =
                 '<span class="album-emoji">' + (item.emoji || '⭐') + '</span>' +
                 '<span class="album-word">' + item.word + '</span>' +
+                (nick ? '<span class="album-yue">香港叫 ' + nick + '</span>' : (yue ? '<span class="album-yue">' + yue + '</span>' : '')) +
+                (parts ? '<span class="album-parts">' + parts + '</span>' : '') +
                 '<span class="album-count">×' + (item.count || 1) + '</span>';
-            btn.onclick = function () {
+            btn.onclick = async function () {
                 if (window.ZiziFX) window.ZiziFX.play('pop');
-                if (window.speakEnglish) window.speakEnglish(item.word);
-                else if (window.playCantoneseTTS) {
+                if (window.speakEnglish) await window.speakEnglish(item.word);
+                if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+                    await window.ZiziTeach.speakStory(item.word);
+                } else if (window.playCantoneseTTS) {
                     window.playCantoneseTTS('呢個係 ' + item.word);
                 }
             };

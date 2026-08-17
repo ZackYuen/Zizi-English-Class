@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260816-score2">
+    <link rel="stylesheet" href="style.css?v=20260817-etym2">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -35,7 +35,7 @@
             <div class="zizi-cap">Z</div>
         </div>
         <h1>孜孜學英文</h1>
-        <p class="home-tagline">跟住孜孜去天空島學英文！</p>
+        <p class="home-tagline">跟住孜孜去天空島學英文！香港點叫、個字點拆，一齊記住。</p>
         <div class="home-level" id="home-level">
             <div class="home-level-top">
                 <span class="home-level-badge">Lv.<span id="home-level-num">1</span></span>
@@ -81,7 +81,7 @@
             <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">睇圖識字</span>
-                <span class="home-btn-sub">最啱開始 · 唔使上網 Key</span>
+                <span class="home-btn-sub">聽英文揀圖 · 拆字睇意思</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-standard" onclick="enterMode('standard')">
@@ -129,9 +129,11 @@
 <!-- Tracing app -->
 <div id="app" style="display:none;">
     <div id="msg" aria-live="off">由綠色點出發，跟住虛線畫到尾！</div>
+    <div id="write-word-chip" class="write-word-chip is-empty" aria-live="polite"></div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button type="button" class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
+        <button type="button" class="btn btn-hint" onclick="requestWriteHint()">💡 點畫？</button>
         <button type="button" class="btn btn-magic" onclick="magic()">✨ 讀出嚟</button>
         <button type="button" class="btn btn-recam" id="btn-re-cam" style="display:none;" onclick="openCamera()">📸 再影一個</button>
     </div>
@@ -170,6 +172,8 @@
         <span id="game-emoji-display">🔊</span>
         <span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
     </button>
+    <div id="game-coach" class="zizi-coach is-empty" hidden></div>
+    <button type="button" class="hint-btn" onclick="requestGameHint()">💡 提示我</button>
     <div class="game-answers">
         <button type="button" id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
         <button type="button" id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
@@ -194,6 +198,8 @@
         <span id="match-prompt-emoji">❓</span>
         <span class="match-speaker-label">再聽英文</span>
     </button>
+    <div id="match-coach" class="zizi-coach is-empty" hidden></div>
+    <button type="button" class="hint-btn" id="match-hint-btn" onclick="requestMatchHint()">💡 提示我</button>
     <div id="match-choices" class="match-choices"></div>
     <div id="match-finish" class="match-finish" style="display:none;" aria-live="polite">
         <div id="match-finish-emoji" class="match-finish-emoji" aria-hidden="true">🎉</div>
@@ -206,7 +212,7 @@
 <div id="album-overlay" style="display:none;">
     <div class="album-card-wrap">
         <h2>📒 我嘅單詞冊</h2>
-        <p class="album-hint">撳吓卡片可以再聽英文讀音～</p>
+        <p class="album-hint">撳卡片聽英文，再聽點解個字係咁寫～好似學中文部首。</p>
         <div id="album-empty" class="album-empty">仲未有單詞呀！去玩「睇圖識字」或者寫字攞星星啦！</div>
         <div id="album-grid" class="album-grid"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
@@ -286,19 +292,21 @@
 </div>
 
 <!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260816-score2"></script>
-<script src="js/state.js?v=20260816-score2"></script>
+<script src="js/data.js?v=20260817-etym2"></script>
+<script src="js/stories.js?v=20260817-etym2"></script>
+<script src="js/state.js?v=20260817-etym2"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260816-score2"></script>
-<script src="js/speech.js?v=20260816-score2"></script>
-<script src="js/progress.js?v=20260816-score2"></script>
-<script src="js/fx.js?v=20260816-score2"></script>
-<script src="js/writing.js?v=20260816-score2"></script>
-<script src="js/ui.js?v=20260816-score2"></script>
-<script src="js/canvas.js?v=20260816-score2"></script>
-<script src="js/camera.js?v=20260816-score2"></script>
-<script src="js/game.js?v=20260816-score2"></script>
-<script src="js/match.js?v=20260816-score2"></script>
-<script src="js/router.js?v=20260816-score2"></script>
+<script src="js/secrets.js?v=20260817-etym2"></script>
+<script src="js/speech.js?v=20260817-etym2"></script>
+<script src="js/progress.js?v=20260817-etym2"></script>
+<script src="js/fx.js?v=20260817-etym2"></script>
+<script src="js/teach.js?v=20260817-etym2"></script>
+<script src="js/writing.js?v=20260817-etym2"></script>
+<script src="js/ui.js?v=20260817-etym2"></script>
+<script src="js/canvas.js?v=20260817-etym2"></script>
+<script src="js/camera.js?v=20260817-etym2"></script>
+<script src="js/game.js?v=20260817-etym2"></script>
+<script src="js/match.js?v=20260817-etym2"></script>
+<script src="js/router.js?v=20260817-etym2"></script>
 </body>
 </html>

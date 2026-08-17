@@ -161,7 +161,7 @@ window.enterMode = function (mode) {
 
         if (typeof startApp === 'function') startApp('standard');
         if (window.announce) {
-            window.announce('基礎描字模式。由綠色點出發，用手指跟住虛線畫字母。畫完可以撳讀出嚟。', { force: true });
+            window.announce('基礎描字模式。由綠色點出發，用手指跟住虛線畫字母。上面有廣東話意思，唔識可以撳提示。', { force: true });
         }
     } else if (mode === 'camera') {
         // Camera has its own ❌ 取消 — do not show a second back button on top
@@ -212,6 +212,13 @@ window.backToHome = function () {
 
     if (window.closeCamera) window.closeCamera();
     if (window.exitMatchGame) window.exitMatchGame();
+    if (window.ZiziTeach) {
+        window.ZiziTeach.reset();
+        window.ZiziTeach.resetWrite();
+        window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
+        window.ZiziTeach.hideCoach(document.getElementById('game-coach'));
+        window.ZiziTeach.clearGlow(document);
+    }
 
     hideAllOverlays();
     window.currentMode = 'none';
