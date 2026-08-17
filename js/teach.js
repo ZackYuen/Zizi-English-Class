@@ -157,6 +157,7 @@ window.ZiziTeach = (function () {
         var chip = document.getElementById('write-word-chip');
         if (!chip || typeof D === 'undefined' || typeof idx === 'undefined' || !D[idx]) {
             if (chip) chip.classList.add('is-empty');
+            hideCoach(document.getElementById('write-coach'));
             return;
         }
         var w = info(D[idx].w);
@@ -174,7 +175,8 @@ window.ZiziTeach = (function () {
                 '<span class="write-chip-yue">香港叫 ' + escapeHtml(w.nick) + '</span>' +
                 partsMini +
             '</span>' +
-            '<button type="button" class="write-chip-story-btn" onclick="ZiziTeach.tellCurrentWordStory()">📖</button>';
+            '<button type="button" class="write-chip-story-btn" onclick="ZiziTeach.tellCurrentWordStory()">📖 點解</button>';
+        fillWriteCoach();
     }
 
     function matchHintPayload(word, n) {
@@ -377,6 +379,42 @@ window.ZiziTeach = (function () {
         });
     }
 
+    function storyCard(word, extra) {
+        var w = info(word);
+        extra = extra || {};
+        return {
+            emoji: extra.emoji || w.emoji,
+            title: extra.title || w.w,
+            body: extra.body != null ? extra.body : w.story,
+            nick: w.nick,
+            parts: w.parts,
+            from: w.from,
+            also: w.also
+        };
+    }
+
+    /** Show 香港叫 + word-parts + why. Visible teaching card, not only a hint. */
+    function showWordStory(word, coachId, opts) {
+        opts = opts || {};
+        var el = typeof coachId === 'string' ? document.getElementById(coachId) : coachId;
+        if (!el) {
+            return opts.speak === false ? Promise.resolve() : speakStory(word);
+        }
+        renderCoach(el, storyCard(word, opts));
+        if (opts.speak === false) return Promise.resolve();
+        return speakFull(info(word));
+    }
+
+    function fillWriteCoach() {
+        var el = document.getElementById('write-coach');
+        if (!el) return;
+        if (typeof D === 'undefined' || typeof idx === 'undefined' || !D[idx]) {
+            hideCoach(el);
+            return;
+        }
+        showWordStory(D[idx].w, el, { speak: false });
+    }
+
     function speakStory(word) {
         return speakFull(info(word));
     }
@@ -394,6 +432,8 @@ window.ZiziTeach = (function () {
         hideCoach: hideCoach,
         clearGlow: clearGlow,
         fillWriteChip: fillWriteChip,
+        fillWriteCoach: fillWriteCoach,
+        showWordStory: showWordStory,
         applyMatchHint: applyMatchHint,
         applyListenHint: applyListenHint,
         applyWriteHint: applyWriteHint,

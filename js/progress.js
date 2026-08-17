@@ -289,11 +289,15 @@ window.openWordAlbum = function () {
             var parts = (info && info.parts && info.parts.length > 1)
                 ? info.parts.map(function (p) { return p.en; }).join('+')
                 : '';
+            var from = info ? info.from : '';
+            var story = info ? info.story : '';
             btn.innerHTML =
                 '<span class="album-emoji">' + (item.emoji || '⭐') + '</span>' +
                 '<span class="album-word">' + item.word + '</span>' +
                 (nick ? '<span class="album-yue">香港叫 ' + nick + '</span>' : (yue ? '<span class="album-yue">' + yue + '</span>' : '')) +
                 (parts ? '<span class="album-parts">' + parts + '</span>' : '') +
+                (from ? '<span class="album-from">' + from + '</span>' : '') +
+                (story ? '<span class="album-story">' + story + '</span>' : '') +
                 '<span class="album-count">×' + (item.count || 1) + '</span>';
             btn.onclick = async function () {
                 if (window.ZiziFX) window.ZiziFX.play('pop');

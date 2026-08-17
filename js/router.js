@@ -217,6 +217,7 @@ window.backToHome = function () {
         window.ZiziTeach.resetWrite();
         window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
         window.ZiziTeach.hideCoach(document.getElementById('game-coach'));
+        window.ZiziTeach.hideCoach(document.getElementById('write-coach'));
         window.ZiziTeach.clearGlow(document);
     }
 

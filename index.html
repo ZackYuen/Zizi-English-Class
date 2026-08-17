@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260817-voice1">
+    <link rel="stylesheet" href="style.css?v=20260817-etym1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -81,14 +81,14 @@
             <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">睇圖識字</span>
-                <span class="home-btn-sub">聽英文揀圖 · 拆字睇意思</span>
+                <span class="home-btn-sub">答啱就見到字點解</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-standard" onclick="enterMode('standard')">
             <span class="home-btn-emoji" aria-hidden="true">✍️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">手指描字</span>
-                <span class="home-btn-sub">跟住綠點畫字母</span>
+                <span class="home-btn-sub">香港叫 · 字點解</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
@@ -109,7 +109,7 @@
             <span class="home-btn-emoji" aria-hidden="true">📒</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">我嘅單詞冊</span>
-                <span class="home-btn-sub">收藏過嘅英文詞</span>
+                <span class="home-btn-sub">香港叫 · 字點解</span>
             </span>
         </button>
     </div>
@@ -130,6 +130,7 @@
 <div id="app" style="display:none;">
     <div id="msg" aria-live="off">由綠色點出發，跟住虛線畫到尾！</div>
     <div id="write-word-chip" class="write-word-chip is-empty"></div>
+    <div id="write-coach" class="zizi-coach is-empty" hidden></div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button type="button" class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
@@ -212,7 +213,7 @@
 <div id="album-overlay" style="display:none;">
     <div class="album-card-wrap">
         <h2>📒 我嘅單詞冊</h2>
-        <p class="album-hint">撳卡片聽英文，再聽點解個字係咁寫～好似學中文部首。</p>
+        <p class="album-hint">每個字都有「香港叫」同點解咁寫（好似中文部首）。撳卡片會讀出嚟。</p>
         <div id="album-empty" class="album-empty">仲未有單詞呀！去玩「睇圖識字」或者寫字攞星星啦！</div>
         <div id="album-grid" class="album-grid"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
@@ -292,21 +293,21 @@
 </div>
 
 <!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260817-voice1"></script>
-<script src="js/stories.js?v=20260817-voice1"></script>
-<script src="js/state.js?v=20260817-voice1"></script>
+<script src="js/data.js?v=20260817-etym1"></script>
+<script src="js/stories.js?v=20260817-etym1"></script>
+<script src="js/state.js?v=20260817-etym1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260817-voice1"></script>
-<script src="js/speech.js?v=20260817-voice1"></script>
-<script src="js/progress.js?v=20260817-voice1"></script>
-<script src="js/fx.js?v=20260817-voice1"></script>
-<script src="js/teach.js?v=20260817-voice1"></script>
-<script src="js/writing.js?v=20260817-voice1"></script>
-<script src="js/ui.js?v=20260817-voice1"></script>
-<script src="js/canvas.js?v=20260817-voice1"></script>
-<script src="js/camera.js?v=20260817-voice1"></script>
-<script src="js/game.js?v=20260817-voice1"></script>
-<script src="js/match.js?v=20260817-voice1"></script>
-<script src="js/router.js?v=20260817-voice1"></script>
+<script src="js/secrets.js?v=20260817-etym1"></script>
+<script src="js/speech.js?v=20260817-etym1"></script>
+<script src="js/progress.js?v=20260817-etym1"></script>
+<script src="js/fx.js?v=20260817-etym1"></script>
+<script src="js/teach.js?v=20260817-etym1"></script>
+<script src="js/writing.js?v=20260817-etym1"></script>
+<script src="js/ui.js?v=20260817-etym1"></script>
+<script src="js/canvas.js?v=20260817-etym1"></script>
+<script src="js/camera.js?v=20260817-etym1"></script>
+<script src="js/game.js?v=20260817-etym1"></script>
+<script src="js/match.js?v=20260817-etym1"></script>
+<script src="js/router.js?v=20260817-etym1"></script>
 </body>
 </html>

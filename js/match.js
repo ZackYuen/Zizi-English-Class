@@ -263,7 +263,9 @@ window.checkMatchAnswer = async function (choiceWord) {
         if (window.speakEnglish) {
             await window.speakEnglish(window.matchTarget.w, { rate: 0.88 });
         }
-        if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+        if (window.ZiziTeach && window.ZiziTeach.showWordStory) {
+            await window.ZiziTeach.showWordStory(window.matchTarget.w, 'match-coach');
+        } else if (window.ZiziTeach && window.ZiziTeach.speakStory) {
             await window.ZiziTeach.speakStory(window.matchTarget.w);
         }
         window.isMatchProcessing = false;

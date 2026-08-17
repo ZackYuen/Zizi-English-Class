@@ -303,7 +303,9 @@ window.checkAnswer = function(choice) {
             if (window.speakEnglish) {
                 await window.speakEnglish(window.currentWord, { rate: 0.88 });
             }
-            if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+            if (window.ZiziTeach && window.ZiziTeach.showWordStory) {
+                await window.ZiziTeach.showWordStory(window.currentWord, 'game-coach');
+            } else if (window.ZiziTeach && window.ZiziTeach.speakStory) {
                 await window.ZiziTeach.speakStory(window.currentWord);
             }
             window.isGameProcessing = false;
