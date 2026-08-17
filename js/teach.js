@@ -27,12 +27,25 @@ window.ZiziTeach = (function () {
             }
         }
         var letter = (d && d.l) || (word.charAt(0) || '').toUpperCase();
+        var parts = s.parts || (d && d.parts) || [{ en: word, yue: s.yue || word }];
+        var partsLine = parts.map(function (p) {
+            return p.en + ' ' + (p.yue || '');
+        }).join(' 加 ');
+        var speakParts = parts.map(function (p) {
+            return p.en + ' 係' + (p.yue || '');
+        }).join('，');
+        if (parts.length > 1) speakParts += '。合埋就係 ' + word;
         return {
             w: word,
             emoji: (d && d.emoji) || '⭐',
             letter: letter,
             yue: s.yue || (d && d.yue) || word,
             story: s.story || (d && d.story) || ('呢個英文字叫 ' + word + '。'),
+            parts: parts,
+            from: s.from || (d && d.from) || '',
+            also: s.also || null,
+            partsLine: partsLine,
+            speakParts: speakParts,
             letterHint: (window.LETTER_HINTS && window.LETTER_HINTS[letter]) || ('跟住綠點畫 ' + letter + '。')
         };
     }
@@ -71,13 +84,35 @@ window.ZiziTeach = (function () {
         return Promise.resolve();
     }
 
+    function partsHtml(parts) {
+        if (!parts || !parts.length) return '';
+        var html = '<div class="etym-parts">';
+        for (var i = 0; i < parts.length; i++) {
+            if (i > 0) html += '<span class="etym-plus" aria-hidden="true">+</span>';
+            html += '<span class="etym-part">' +
+                '<b>' + escapeHtml(parts[i].en) + '</b>' +
+                '<small>' + escapeHtml(parts[i].yue || '') + '</small>' +
+                '</span>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function alsoHtml(also) {
+        if (!also || !also.parts || !also.parts.length) return '';
+        return '<p class="etym-also-label">又可以叫 ' + escapeHtml(also.word) + '</p>' + partsHtml(also.parts);
+    }
+
     function renderCoach(el, payload) {
         if (!el) return;
         payload = payload || {};
         var emoji = payload.emoji || '💡';
         var title = payload.title || '';
         var body = payload.body || '';
-        if (!title && !body) {
+        var from = payload.from || '';
+        var parts = payload.parts || [];
+        var also = payload.also || null;
+        if (!title && !body && !parts.length) {
             el.classList.add('is-empty');
             el.innerHTML = '';
             el.setAttribute('hidden', 'hidden');
@@ -89,6 +124,9 @@ window.ZiziTeach = (function () {
             '<div class="zizi-coach-emoji" aria-hidden="true">' + escapeHtml(emoji) + '</div>' +
             '<div class="zizi-coach-body">' +
                 (title ? '<p class="zizi-coach-title">' + escapeHtml(title) + '</p>' : '') +
+                (from ? '<p class="etym-from">' + escapeHtml(from) + '</p>' : '') +
+                partsHtml(parts) +
+                alsoHtml(also) +
                 (body ? '<p class="zizi-coach-story">' + escapeHtml(body) + '</p>' : '') +
             '</div>';
     }
@@ -116,11 +154,18 @@ window.ZiziTeach = (function () {
         }
         var w = info(D[idx].w);
         chip.classList.remove('is-empty');
+        var partsMini = '';
+        if (w.parts && w.parts.length > 1) {
+            partsMini = '<span class="write-chip-parts">' + escapeHtml(w.parts.map(function (p) {
+                return p.en;
+            }).join(' + ')) + '</span>';
+        }
         chip.innerHTML =
             '<span class="write-chip-emoji" aria-hidden="true">' + escapeHtml(w.emoji) + '</span>' +
             '<span class="write-chip-text">' +
                 '<span class="write-chip-en">' + escapeHtml(w.w) + '</span>' +
                 '<span class="write-chip-yue">' + escapeHtml(w.yue) + '</span>' +
+                partsMini +
             '</span>' +
             '<button type="button" class="write-chip-story-btn" onclick="ZiziTeach.tellCurrentWordStory()">📖</button>';
     }
@@ -133,7 +178,9 @@ window.ZiziTeach = (function () {
                 emoji: w.emoji,
                 title: '意思係：' + w.yue,
                 body: '聽多次英文，揀呢樣嘢嘅圖。',
-                speak: '意思係' + w.yue + '。聽多次，揀啱嘅圖。'
+                parts: w.parts && w.parts.length > 1 ? w.parts : [],
+                from: w.from,
+                speak: '意思係' + w.yue + '。' + (w.parts.length > 1 ? w.speakParts + '。' : '') + '聽多次，揀啱嘅圖。'
             };
         }
         if (n === 2) {
@@ -141,14 +188,20 @@ window.ZiziTeach = (function () {
                 emoji: w.emoji,
                 title: w.w + ' = ' + w.yue,
                 body: w.story,
-                speak: w.w + '就係' + w.yue + '。' + w.story
+                parts: w.parts,
+                from: w.from,
+                also: w.also,
+                speak: w.w + '就係' + w.yue + '。' + w.speakParts + '。' + w.story
             };
         }
         return {
             emoji: w.emoji,
             title: '係呢個！' + w.w + ' = ' + w.yue,
             body: w.story + ' 揀發光嗰幅圖啦。',
-            speak: '答案係' + w.yue + '。' + w.story + '揀發光嗰幅圖。'
+            parts: w.parts,
+            from: w.from,
+            also: w.also,
+            speak: '答案係' + w.yue + '。' + w.speakParts + '。揀發光嗰幅圖。'
         };
     }
 
@@ -170,14 +223,18 @@ window.ZiziTeach = (function () {
                 emoji: w.emoji,
                 title: '呢個字係 ' + w.w,
                 body: '意思係' + w.yue + '。開頭音係 ' + letter + '。',
-                speak: '呢個字係' + w.w + '，意思係' + w.yue + '。開頭係' + letter + '。'
+                parts: w.parts,
+                from: w.from,
+                speak: '呢個字係' + w.w + '，意思係' + w.yue + '。' + w.speakParts + '。開頭係' + letter + '。'
             };
         }
         return {
             emoji: w.emoji,
             title: '揀發光個掣！',
             body: w.w + ' = ' + w.yue + '，開頭係 ' + letter + '。',
-            speak: '揀發光嗰個。' + w.w + '開頭係' + letter + '。'
+            parts: w.parts,
+            from: w.from,
+            speak: '揀發光嗰個。' + w.w + '開頭係' + letter + '。' + w.speakParts + '。'
         };
     }
 
@@ -286,10 +343,10 @@ window.ZiziTeach = (function () {
         if (msg) {
             msg.setAttribute('data-silent', '0');
             msg.removeAttribute('aria-hidden');
-            msg.innerText = w.yue + '：' + w.story;
+            msg.innerText = (w.partsLine ? w.partsLine + '。' : '') + w.story;
             msg.style.color = '#023e8a';
         }
-        speak(w.w + '就係' + w.yue + '。' + w.story);
+        speak(w.w + '就係' + w.yue + '。' + w.speakParts + '。' + w.story);
         if (window.speakEnglish) {
             setTimeout(function () { window.speakEnglish(w.w, { rate: 0.88 }); }, 900);
         }
@@ -297,7 +354,7 @@ window.ZiziTeach = (function () {
 
     function speakStory(word) {
         var w = info(word);
-        return speak(w.w + '就係' + w.yue + '。' + w.story);
+        return speak(w.w + '就係' + w.yue + '。' + w.speakParts + '。' + w.story);
     }
 
     return {
