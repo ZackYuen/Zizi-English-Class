@@ -1776,6 +1776,17 @@ button:disabled {
   font-weight: 600;
 }
 
+.etym-nick {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #e76f51;
+}
+.etym-nick b {
+  background: #ffe8d6;
+  border-radius: 8px;
+  padding: 1px 6px;
+}
 .etym-from {
   margin: 0 0 6px;
   font-size: 11px;

@@ -285,13 +285,14 @@ window.openWordAlbum = function () {
             btn.className = 'album-card';
             var info = window.ZiziTeach ? window.ZiziTeach.info(item.word) : null;
             var yue = info ? info.yue : '';
+            var nick = info ? info.nick : '';
             var parts = (info && info.parts && info.parts.length > 1)
                 ? info.parts.map(function (p) { return p.en; }).join('+')
                 : '';
             btn.innerHTML =
                 '<span class="album-emoji">' + (item.emoji || '⭐') + '</span>' +
                 '<span class="album-word">' + item.word + '</span>' +
-                (yue ? '<span class="album-yue">' + yue + '</span>' : '') +
+                (nick ? '<span class="album-yue">香港叫 ' + nick + '</span>' : (yue ? '<span class="album-yue">' + yue + '</span>' : '')) +
                 (parts ? '<span class="album-parts">' + parts + '</span>' : '') +
                 '<span class="album-count">×' + (item.count || 1) + '</span>';
             btn.onclick = async function () {

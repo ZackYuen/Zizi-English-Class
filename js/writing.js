@@ -82,10 +82,10 @@ window.WritingSession = {
 
     /** Message after a letter is accepted */
     formatSuccessMsg: function (percent) {
-            var extra = '';
+        var extra = '';
         if (typeof D !== 'undefined' && typeof idx !== 'undefined' && D[idx] && window.ZiziTeach) {
             var w = window.ZiziTeach.info(D[idx].w);
-            extra = ' ' + w.w + ' 就係 ' + w.yue + '。';
+            extra = ' 香港叫 ' + w.nick + '。';
         }
         if (this.isCamera()) {
             return '真叻！撳 ✨ 讀出嚟，或者 📸 再影一個！' + extra;

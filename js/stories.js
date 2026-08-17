@@ -11,7 +11,7 @@ window.WORD_STORIES = {
     bug:   { yue: '蟲', parts: [{ en: 'bug', yue: '蟲' }], from: '古英文', story: 'bug 指細細隻爬蟲。後尾連電腦出錯都叫 bug，好似有隻蟲搞亂咗。' },
     bat:   { yue: '蝙蝠', parts: [{ en: 'bat', yue: '蝙蝠' }], from: '古英文', story: 'bat 指夜晚飛嗰隻。球棒都叫 bat，因為形狀好似一隻翼。' },
     bed:   { yue: '床', parts: [{ en: 'bed', yue: '床' }], from: '古英文 bedd', story: 'bedd 就係瞓覺個位。好似中文「床」下面有木，英文 bed 就係「瞓嘅地方」。' },
-    bus:   { yue: '巴士', parts: [{ en: 'bus', yue: '公共車' }], from: '拉丁文 omnibus', story: '以前叫 omnibus，拉丁文意思係「畀所有人坐」。太長喇，人哋淨係留低 bus。香港先至叫巴士。' },
+    bus:   { yue: '巴士', parts: [{ en: 'bus', yue: '公共車' }], from: '拉丁文 omnibus', story: '香港人叫巴士，聽落好似 bus。以前叫 omnibus，拉丁文意思係「畀所有人坐」。太長喇，人哋淨係留低 bus。' },
     cat:   { yue: '貓', parts: [{ en: 'cat', yue: '貓' }], from: '古英文', story: '好耐以前人見到貓就用 cat 呢個音。好似中文「貓」係象形，英文用三個音 c-a-t 砌出呢隻動物。' },
     cup:   { yue: '杯', parts: [{ en: 'cup', yue: '杯' }], from: '拉丁文 cupa', story: '拉丁文 cupa 係圓桶。後尾細咗變成杯，所以飲水杯叫 cup。' },
     car:   { yue: '車', parts: [{ en: 'car', yue: '車' }], from: '拉丁文 carrus', story: '拉丁文 carrus 係馬車。有轆可以行嘅都叫 car，而家就係汽車。' },
@@ -37,10 +37,10 @@ window.WORD_STORIES = {
     hit:   { yue: '打中', parts: [{ en: 'hit', yue: '打' }], from: '古北歐文', story: 'hit 意思係「碰到、打中」。字同動作一齊。' },
     hop:   { yue: '單腳跳', parts: [{ en: 'hop', yue: '跳' }], from: '古英文 hoppian', story: 'hoppian 就係跳。而家 hop 仲係跳，袋鼠都係 hop hop 跳。' },
     ink:   { yue: '墨水', parts: [{ en: 'ink', yue: '墨' }], from: '希臘文 enkauston', story: '希臘文 enkauston 意思係「燒入去」。以前用火熔蠟寫字，而家墨水仲叫 ink。' },
-    ice:   { yue: '冰', parts: [{ en: 'ice', yue: '冰' }], from: '古英文 is', story: '古英文 is 就係凍到硬嗰層水。香港有時講「哎士」，其實就係 ice。' },
+    ice:   { yue: '冰', parts: [{ en: 'ice', yue: '冰' }], from: '古英文 is', story: '香港人叫哎士，就係 ice。古英文 is 係凍到硬嗰層水。' },
     ill:   { yue: '病咗', parts: [{ en: 'ill', yue: '唔舒服' }], from: '古北歐文 illr', story: 'illr 意思係「壞、唔好」。人覺得壞咗、唔舒服，就叫 ill。' },
     insect:{ yue: '昆蟲', parts: [{ en: 'in', yue: '入／分開' }, { en: 'sect', yue: '切開' }], from: '拉丁文 insectum', story: '拉丁文 insectum 意思係「切成幾截」。因為蟲身體一截一截，好似被切開，所以叫 insect。' },
-    jam:   { yue: '果醬', parts: [{ en: 'jam', yue: '擠壓' }], from: '英文 jam＝擠', story: 'jam 本來係「擠、壓」。水果擠壓煮甜咗，就變成果醬 jam。' },
+    jam:   { yue: '果醬', parts: [{ en: 'jam', yue: '擠壓' }], from: '英文 jam＝擠', story: '香港有人叫占，就係 jam。jam 本來係「擠、壓」。水果擠壓煮甜咗，就變成果醬。' },
     jet:   { yue: '噴射機', parts: [{ en: 'jet', yue: '噴出' }], from: '法文 jeter', story: '法文 jeter 意思係「射出去」。噴射機將氣射出去先飛得快，所以叫 jet。' },
     jog:   { yue: '慢跑', parts: [{ en: 'jog', yue: '輕輕推' }], from: '英文 jog＝推一下', story: 'jog 本來係輕輕推一下。慢跑好似一下一下推自己向前，所以叫 jog。' },
     jug:   { yue: '水壺', parts: [{ en: 'jug', yue: '壺' }], from: '中古英文', story: 'jug 係有把手、用嚟倒水嘅壺。字就係呢個容器。' },
@@ -82,13 +82,13 @@ window.WORD_STORIES = {
     six:   { yue: '六', parts: [{ en: 'six', yue: '六' }], from: '古英文 siex／拉丁文 sex', story: '歐洲好多語言數到六都差唔多音。英文 six，拉丁文 sex，都係六。' },
     toy:   { yue: '玩具', parts: [{ en: 'toy', yue: '玩具' }], from: '中古英文', story: 'toy 係用嚟玩、唔係真嘢用嘅。細路玩嘅就叫 toy。' },
     ten:   { yue: '十', parts: [{ en: 'ten', yue: '十' }], from: '古英文 tien', story: 'tien 就係十隻手指數完。而家 ten 仲係十。' },
-    tap:   { yue: '水龍頭／輕拍', parts: [{ en: 'tap', yue: '拍／水龍頭' }], from: '古英文', story: 'tap 本來係輕輕拍一下。開水嗰下好似拍開個口，所以水龍頭都叫 tap。' },
+    tap:   { yue: '水龍頭／輕拍', parts: [{ en: 'tap', yue: '拍／水龍頭' }], from: '古英文', story: '香港人叫水喉。tap 本來係輕輕拍一下。開水嗰下好似拍開個口，所以水龍頭都叫 tap。' },
     tub:   { yue: '浴缸', parts: [{ en: 'tub', yue: '缸' }], from: '中古英文', story: 'tub 係開面大容器。沖涼浸住嘅缸就叫 tub。' },
     up:    { yue: '向上', parts: [{ en: 'up', yue: '上' }], from: '古英文', story: 'up 就係往高處。好似中文「上」，一個好短嘅方向字。' },
     urn:   { yue: '甕／瓶子', parts: [{ en: 'urn', yue: '甕' }], from: '拉丁文 urna', story: 'urna 係圓身陶瓶。裝嘢、裝灰都用過，而家仲叫 urn。' },
     ufo:   { yue: '飛碟', parts: [{ en: 'U', yue: '認唔出' }, { en: 'F', yue: '飛緊' }, { en: 'O', yue: '物體' }], from: '英文縮寫', story: 'UFO 三個字母：Unidentified 認唔出、Flying 飛緊、Object 物體。合埋就係天上認唔出嘅飛緊嘢。' },
-    uncle: { yue: '叔叔／舅舅', parts: [{ en: 'uncle', yue: '舅父' }], from: '拉丁文 avunculus', story: '拉丁文 avunculus 專指媽媽嘅兄弟。後尾所有叔叔舅舅都叫 uncle。香港有人叫安哥，就係呢個音。' },
-    van:   { yue: '客貨車', parts: [{ en: 'van', yue: '貨車' }], from: 'caravan 截短', story: 'van 來自 caravan 駱駝商隊。太長喇，人哋留低 van，變成客貨車。' },
+    uncle: { yue: '叔叔／舅舅', parts: [{ en: 'uncle', yue: '舅父' }], from: '拉丁文 avunculus', story: '香港有人叫安哥，就係 uncle 呢個音。拉丁文 avunculus 專指媽媽嘅兄弟。後尾所有叔叔舅舅都叫 uncle。' },
+    van:   { yue: '客貨車', parts: [{ en: 'van', yue: '貨車' }], from: 'caravan 截短', story: '香港人叫 van。van 來自 caravan 駱駝商隊。太長喇，人哋留低 van，變成客貨車。' },
     vet:   { yue: '獸醫', parts: [{ en: 'vet', yue: '獸醫' }], from: 'veterinarian 截短', story: '全寫係 veterinarian，拉丁文 veterinae 指牛馬。太長喇，人哋淨係講 vet，醫動物嘅醫生。' },
     vine:  { yue: '藤蔓', parts: [{ en: 'vine', yue: '藤' }], from: '拉丁文 vinea', story: 'vinea 係葡萄園。葡萄靠藤爬，所以爬牆嘅藤叫 vine。' },
     vest:  { yue: '背心', parts: [{ en: 'vest', yue: '衫' }], from: '拉丁文 vestis', story: 'vestis 意思係「衣服」。而家 vest 多數指冇袖背心。' },
@@ -103,7 +103,7 @@ window.WORD_STORIES = {
     yell:  { yue: '大叫', parts: [{ en: 'yell', yue: '叫' }], from: '象聲／古英文', story: '好似中文「啊」係叫聲，yell 就係大聲叫嘅聲音寫成字。' },
     yolk:  { yue: '蛋黃', parts: [{ en: 'yolk', yue: '黃' }], from: '古英文 geolu', story: 'geolu 意思係「黃色」。蛋中間黃黃嗰舊，就叫 yolk。記住：yolk 裏面有 yellow。' },
     zip:   { yue: '拉鏈', parts: [{ en: 'zip', yue: '嗖' }], from: '象聲', story: '拉上去「zzzz／嗖」一聲，人哋用 zip 寫呢個聲。拉鏈就叫 zip。' },
-    zoo:   { yue: '動物園', parts: [{ en: 'zoo', yue: '動物' }], from: '希臘文 zoion', story: '希臘文 zoion 意思係「動物」。zoological garden 太長喇，人哋淨係講 zoo。' },
+    zoo:   { yue: '動物園', parts: [{ en: 'zoo', yue: '動物' }], from: '希臘文 zoion', story: '香港人都識講 zoo。希臘文 zoion 意思係「動物」。zoological garden 太長喇，人哋淨係講 zoo。' },
     zebra: { yue: '斑馬', parts: [{ en: 'zebra', yue: '斑馬' }], from: '非洲語言', story: '非洲人先叫呢隻黑白間動物 zebra。英文借咗呢個名。' },
     zero:  { yue: '零', parts: [{ en: 'zero', yue: '空／零' }], from: '阿拉伯文 sifr', story: '阿拉伯文 sifr 意思係「空」。經意大利傳到英文 zero。圓圓一個空位，就係 0。' },
 
@@ -116,7 +116,7 @@ window.WORD_STORIES = {
             word: 'aeroplane',
             parts: [{ en: 'aero', yue: '空氣（希臘文）' }, { en: 'plane', yue: '飛機' }]
         },
-        story: 'air 係空氣，plane 係平翼。合埋就係喺空氣裏面飛嘅機。英國人寫 aeroplane：aero 係希臘文，都係空氣。兩個講法意思一樣。'
+        story: '香港人叫飛機。air 係空氣，plane 係平翼。合埋就係喺空氣裏面飛嘅機。英國人寫 aeroplane：aero 係希臘文，都係空氣。兩個講法意思一樣。'
     },
     aeroplane: {
         yue: '飛機',
@@ -132,7 +132,7 @@ window.WORD_STORIES = {
         yue: '單車',
         parts: [{ en: 'bi', yue: '兩個（拉丁文）' }, { en: 'cycle', yue: '輪（希臘文）' }],
         from: '拉丁文 bi + 希臘文 kyklos',
-        story: 'bi 係拉丁文「二」，cycle 來自希臘文 kyklos「圓輪」。兩個輪，所以叫 bicycle。三輪就係 tricycle：tri 係三。'
+        story: '香港人叫單車。bi 係拉丁文「二」，cycle 來自希臘文 kyklos「圓輪」。兩個輪，所以叫 bicycle。三輪就係 tricycle：tri 係三。'
     },
     cupcake: {
         yue: '紙杯蛋糕',
@@ -164,6 +164,39 @@ window.WORD_STORIES = {
         from: '希臘文 tele + phone',
         story: 'tele 係希臘文「遠」，phone 係「聲音」。好遠都聽到聲音，所以叫 telephone。電視 television：tele 遠 + vision 睇。'
     }
+};
+
+// HK Cantonese nicknames / loanwords he already says at home
+window.WORD_NICKS = {
+    bus: '巴士',
+    ice: '哎士',
+    uncle: '安哥',
+    van: 'van',
+    gum: 'gum',
+    jam: '占',
+    zoo: 'zoo',
+    cap: 'cap',
+    fan: 'fan',
+    gas: 'gas',
+    kit: 'kit',
+    quiz: 'quiz',
+    vest: 'vest',
+    zip: 'zip',
+    ufo: 'UFO',
+    tap: '水喉',
+    pan: 'pan',
+    mug: 'mug',
+    jet: 'jet機',
+    zero: 'zero',
+    car: '車',
+    bicycle: '單車',
+    airplane: '飛機',
+    aeroplane: '飛機',
+    football: '足球',
+    telephone: '電話',
+    cupcake: '蛋糕',
+    rainbow: '彩虹',
+    sunflower: '向日葵'
 };
 
 window.LETTER_HINTS = {
@@ -202,7 +235,10 @@ window.LETTER_HINTS = {
     for (var i = 0; i < list.length; i++) {
         var s = stories[list[i].w];
         if (s) {
+            var nick = s.nick || (window.WORD_NICKS && window.WORD_NICKS[list[i].w]) || s.yue;
+            s.nick = nick;
             list[i].yue = s.yue;
+            list[i].nick = nick;
             list[i].story = s.story;
             list[i].parts = s.parts;
             list[i].from = s.from;
