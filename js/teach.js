@@ -338,10 +338,13 @@ window.ZiziTeach = (function () {
         }
         var msg = document.getElementById('msg');
         if (msg && opts.updateMsg !== false) {
-            msg.setAttribute('data-silent', opts.speak === false ? '1' : '0');
-            if (opts.speak !== false) msg.removeAttribute('aria-hidden');
-            msg.innerText = body;
-            msg.style.color = '#1982c4';
+            if (window.setSilentMsg) window.setSilentMsg(body, '#1982c4');
+            else {
+                msg.setAttribute('data-silent', '1');
+                msg.setAttribute('aria-hidden', 'true');
+                msg.innerText = body;
+                msg.style.color = '#1982c4';
+            }
         }
         if (opts.speak !== false) return speak(say);
         return Promise.resolve();
@@ -360,15 +363,18 @@ window.ZiziTeach = (function () {
         fillWriteChip();
         var msg = document.getElementById('msg');
         if (msg) {
-            msg.setAttribute('data-silent', '0');
-            msg.removeAttribute('aria-hidden');
-            msg.innerText = '香港叫' + w.nick + '。' + (w.partsLine ? w.partsLine + '。' : '') + w.story;
-            msg.style.color = '#023e8a';
+            if (window.setSilentMsg) {
+                window.setSilentMsg('香港叫' + w.nick + '。' + (w.partsLine ? w.partsLine + '。' : '') + w.story, '#023e8a');
+            } else {
+                msg.setAttribute('data-silent', '1');
+                msg.setAttribute('aria-hidden', 'true');
+                msg.innerText = '香港叫' + w.nick + '。' + (w.partsLine ? w.partsLine + '。' : '') + w.story;
+                msg.style.color = '#023e8a';
+            }
         }
-        speakFull(w);
-        if (window.speakEnglish) {
-            setTimeout(function () { window.speakEnglish(w.w, { rate: 0.88 }); }, 900);
-        }
+        speakFull(w).then(function () {
+            if (window.speakEnglish) return window.speakEnglish(w.w, { rate: 0.88 });
+        });
     }
 
     function speakStory(word) {

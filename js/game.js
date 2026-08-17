@@ -56,6 +56,7 @@ window.stopAllAudio = function() {
     }
     window.gameAudioToken = 0;
     window.uiAudioToken = 0;
+    if (window.stopSpeech) window.stopSpeech();
 };
 
 const gameStyle = document.createElement('style');
