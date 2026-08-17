@@ -29,13 +29,13 @@ So the interactive app stays HTML/CSS/JS. Python is fine for tooling/data script
 
 ## Voices (important)
 
-Google yue-HK-Standard voices sound robotic. Prefer:
+Same voices as **小學預備** (`ZiZiPrimaryPrep`):
 
-1. **iPhone / browser Cantonese (default)** — free on-device Siri-style `zh-HK` voice; usually the most natural option without setup.
-2. **Azure Neural `zh-HK-HiuMaanNeural`（曉曼）** — best cloud quality for kids. Needs Azure Speech key + region (e.g. `eastasia`). If the browser blocks Azure (CORS), the app falls back to iPhone voice.
-3. **Google Yue Standard** — last resort; pick Standard-C if you must use Google.
+1. **Google Chirp3 HD (default when `GOOGLE_TTS_KEY` is set)** — Safari cannot use iPhone Siri 聲音 2 on the web. Cantonese `yue-HK-Chirp3-HD-Kore`, English `en-US-Chirp3-HD-Kore` (fallback Neural2-C).
+2. **iPhone / browser Cantonese** — only as fallback. Prefers Spoken Content 「Siri 聲音 2」; never Compact 善怡; never Mandarin Mei-Jia / Ting-Ting.
+3. **Azure Neural `zh-HK-HiuMaanNeural`（曉曼）** — optional if you pick it in Settings.
 
-In Settings: choose provider, keep **自動讀出畫面上所有指示** on, tap **試聽廣東話聲線**.
+In Settings: keep **自動讀出畫面上所有指示** on, tap **試聽廣東話同英文聲線**.
 On home: tap **讀出選單同指示** so the child hears the options before playing.
 
 ## Modes
@@ -59,7 +59,7 @@ You can inject API keys at deploy time so the iPhone never needs Settings filled
 
 | Secret | Used for |
 |--------|----------|
-| `GOOGLE_TTS_KEY` | English TTS (magic / listening game) + Google Yue fallback |
+| `GOOGLE_TTS_KEY` | Chirp3 HD Cantonese + English (same as 小學預備) |
 | `OPENROUTER_API_KEY` | Camera 探索魔鏡 vision |
 | `AZURE_SPEECH_KEY` | Natural Cantonese Neural (曉曼) |
 | `AZURE_SPEECH_REGION` | Optional, default `eastasia` |

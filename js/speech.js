@@ -1,10 +1,9 @@
 // ==========================================
-// Speech engine for 5-year-olds
-// - Reads ALL Cantonese instructions aloud
-// - Voice providers (best → ok):
-//   1) Azure Neural zh-HK-HiuMaanNeural (most natural cloud voice)
-//   2) iPhone / browser Siri Cantonese (often nicer than Google Standard)
-//   3) Google yue-HK Standard (fallback)
+// Speech engine — same voices as 小學預備 (ZiZiPrimaryPrep)
+// Preferred: Google Cloud TTS Chirp3 HD (Safari cannot use iPhone Siri 聲音 2)
+//   Cantonese: yue-HK-Chirp3-HD-Kore → yue-HK-Standard-A
+//   English:   en-US-Chirp3-HD-Kore → en-US-Neural2-C → en-US-Standard-C
+// Browser fallback: Spoken Content 「Siri 聲音 2」; never Compact 善怡; never Mandarin
 // ==========================================
 
 window._speechQueue = [];
@@ -13,40 +12,75 @@ window._speechToken = 0;
 window._audioUnlocked = false;
 window._screenReaderLikely = false;
 window._lastPointerAt = 0;
+window._ttsAbort = null;
+window._ttsCache = Object.create(null);
+window._ttsCacheKeys = [];
+window._TTS_CACHE_MAX = 40;
+
+var GOOGLE_YUE_VOICES = ['yue-HK-Chirp3-HD-Kore', 'yue-HK-Standard-A'];
+var GOOGLE_EN_VOICES = ['en-US-Chirp3-HD-Kore', 'en-US-Neural2-C', 'en-US-Standard-C'];
+var GOOGLE_EN_SSML_VOICES = ['en-US-Neural2-C', 'en-US-Wavenet-F', 'en-US-Standard-C'];
+
+function isAppleWebKit() {
+    if (typeof navigator === 'undefined') return false;
+    var ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua)) return true;
+    if (/Safari/i.test(ua) && !/Chrome|Chromium|Edg|OPR|CriOS|FxiOS/i.test(ua)) return true;
+    return typeof navigator.vendor === 'string' && navigator.vendor.indexOf('Apple') >= 0;
+}
+
+/** One-time upgrade: Pages already has a Google key — use Chirp3 like 小學預備. */
+function migrateVoiceDefaults() {
+    try {
+        if (localStorage.getItem('zizi_voice_v') === 'chirp3') return;
+        var googleKey = window.getApiKey
+            ? window.getApiKey('google_tts_key')
+            : (localStorage.getItem('google_tts_key') || '');
+        var saved = localStorage.getItem('zizi_voice_provider');
+        if (googleKey && (!saved || saved === 'iphone')) {
+            localStorage.setItem('zizi_voice_provider', 'google');
+        }
+        var yue = localStorage.getItem('google_yue_voice') || '';
+        if (!yue || /^yue-HK-Standard/.test(yue)) {
+            localStorage.setItem('google_yue_voice', 'yue-HK-Chirp3-HD-Kore');
+        }
+        localStorage.setItem('zizi_voice_v', 'chirp3');
+    } catch (e) { /* ignore */ }
+}
 
 window.getVoiceSettings = function () {
+    migrateVoiceDefaults();
     var deployedProvider = (window.ZIZI_SECRETS && window.ZIZI_SECRETS.voiceProvider) || '';
     var azureKey = window.getApiKey
         ? window.getApiKey('azure_speech_key')
         : (localStorage.getItem('azure_speech_key') || '');
-    // If Pages injected Azure and no local provider choice, prefer azure
+    var googleKey = window.getApiKey
+        ? window.getApiKey('google_tts_key')
+        : (localStorage.getItem('google_tts_key') || '');
+    // Chirp3 (小學預備) first when a Google key exists; Azure only if chosen
     var defaultProvider = localStorage.getItem('zizi_voice_provider')
         || deployedProvider
-        || (azureKey ? 'azure' : 'iphone');
+        || (googleKey ? 'google' : (azureKey ? 'azure' : 'iphone'));
     return {
-        // azure | iphone | google
-        provider: defaultProvider || 'iphone',
+        provider: defaultProvider || 'google',
         azureKey: azureKey,
         azureRegion: window.getApiKey
             ? window.getApiKey('azure_speech_region')
             : (localStorage.getItem('azure_speech_region') || 'eastasia'),
         azureVoice: localStorage.getItem('azure_voice_name') || 'zh-HK-HiuMaanNeural',
-        googleKey: window.getApiKey
-            ? window.getApiKey('google_tts_key')
-            : (localStorage.getItem('google_tts_key') || ''),
-        googleYueVoice: localStorage.getItem('google_yue_voice') || 'yue-HK-Standard-C',
-        autoRead: localStorage.getItem('zizi_auto_read') !== '0' // default ON
+        googleKey: googleKey,
+        googleYueVoice: localStorage.getItem('google_yue_voice') || 'yue-HK-Chirp3-HD-Kore',
+        autoRead: localStorage.getItem('zizi_auto_read') !== '0'
     };
 };
 
 window.unlockAudio = function () {
     window._audioUnlocked = true;
     if (window.ensureAudioContext) window.ensureAudioContext();
-    // Warm up speechSynthesis on iOS (needs a user gesture)
     if (window.speechSynthesis) {
         try {
             window.speechSynthesis.cancel();
-            const warm = new SpeechSynthesisUtterance(' ');
+            var warm = new SpeechSynthesisUtterance(' ');
             warm.volume = 0;
             warm.rate = 1;
             window.speechSynthesis.speak(warm);
@@ -71,6 +105,10 @@ window.stopSpeech = function () {
     window._speechQueue = [];
     window._speechBusy = false;
     window._voiceChain = Promise.resolve();
+    if (window._ttsAbort) {
+        try { window._ttsAbort.abort(); } catch (e) { /* ignore */ }
+        window._ttsAbort = null;
+    }
     if (window.speechSynthesis) {
         try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
     }
@@ -106,61 +144,237 @@ window.setSilentMsg = function (text, color) {
     if (color) msg.style.color = color;
 };
 
+/** Kid-friendly spoken form (same as 小學預備): skip UI symbols, don't say “equals”. */
+window.prepareSpokenText = function (raw, lang) {
+    var s = String(raw || '').replace(/\u00a0/g, ' ').trim();
+    if (!s) return '';
+    s = s.replace(/[＿_]{2,}/g, '…');
+    s = s.replace(/□+/g, '…');
+    s = s.replace(/\.{3,}/g, '…');
+    s = s.replace(/…+/g, '…');
+    s = s.replace(/[▶►●■★☆✓✔✕×⌫$]/g, ' ');
+    s = s.replace(/\s*[→←➔➡︎⇒⇐]+\s*/g, '，');
+    s = s.replace(/／/g, '，');
+    if (lang === 'en-US') {
+        s = s.replace(/(\d)\s*\+\s*(\d)/g, '$1 plus $2');
+        s = s.replace(/\s*=\s*\?/g, ' equals what');
+        s = s.replace(/(\d)\s*=\s*(\d)/g, '$1 equals $2');
+    } else {
+        s = s.replace(/(\d)\s*\+\s*(\d)/g, '$1 加 $2');
+        s = s.replace(/\s*=\s*\?/g, ' 等於幾多');
+        s = s.replace(/(\d)\s*=\s*(\d)/g, '$1 等於 $2');
+    }
+    s = s.replace(/\s*=\s*/g, '，');
+    s = s.replace(/[「」『』“”]/g, '');
+    s = s.replace(/＋/g, ' ');
+    s = s.replace(/－/g, ' ');
+    s = s.replace(/\s+/g, ' ').replace(/\s+([，。！？、,.!?…])/g, '$1').trim();
+    s = s.replace(/…([^\s，。！？,.!?])/g, '… $1');
+    return s;
+};
+
+function voiceBlob(v) {
+    var uri = v && typeof v.voiceURI === 'string' ? v.voiceURI : '';
+    return ((v && v.lang) || '') + ' ' + ((v && v.name) || '') + ' ' + uri;
+}
+
+function isEnglishVoice(v) {
+    return /^(en\b)|english|samantha|karen|daniel|moira|rishi|veena|fred|nicky|gordon/i.test(voiceBlob(v).toLowerCase());
+}
+
+function isChineseVoice(v) {
+    return /zh|yue|cantonese|chinese|中文|粵|普通話|普通话/.test(voiceBlob(v));
+}
+
+/** Apple HK Cantonese. Mei-Jia / 美嘉 is Taiwan Mandarin — never pick it. */
+function isHkCantoneseVoice(v) {
+    var b = voiceBlob(v).toLowerCase();
+    if (/eloquence/.test(b)) return false;
+    if (
+        /zh([-_]?cn)|zh([-_]?tw)|putonghua|mandarin|ting-?ting|mei-?jia|meijia|美嘉|婷婷|普通话|普通話/.test(b) &&
+        !/hk|yue|cantonese|sin[-.\s]?ji|善怡|阿成|香港/.test(b)
+    ) {
+        return false;
+    }
+    return (
+        /yue([-_]|$)/.test(b) ||
+        /zh([-_]?hk)/.test(b) ||
+        /sin[-.\s]?ji|善怡|阿成/.test(b) ||
+        (/\bsiri\b/.test(b) && /zh|yue|hk|cantonese|香港|廣東|粤/.test(b)) ||
+        /聲音\s*[12]/.test(b) ||
+        b.indexOf('cantonese') >= 0 ||
+        b.indexOf('粵語') >= 0 ||
+        b.indexOf('广东话') >= 0 ||
+        b.indexOf('廣東話') >= 0 ||
+        b.indexOf('hong kong') >= 0 ||
+        b.indexOf('hongkong') >= 0 ||
+        (v.lang || '').toLowerCase() === 'zh-hk' ||
+        (v.name || '').toLowerCase() === 'zh-hk'
+    );
+}
+
+function isCompactVoice(v) {
+    return /compact|精簡/.test(voiceBlob(v));
+}
+
+function isSiriVoice2(v) {
+    if (!isHkCantoneseVoice(v)) return false;
+    var b = voiceBlob(v);
+    return /聲音\s*2|voice\s*2|siri[\s._-]*2|\bvoice2\b/i.test(b);
+}
+
+function isSiriYueVoice(v) {
+    if (!isHkCantoneseVoice(v) || isCompactVoice(v)) return false;
+    var b = voiceBlob(v);
+    return /\bsiri\b/i.test(b) || /聲音\s*[12]/.test(b);
+}
+
+function scoreCantoneseVoice(v) {
+    var b = voiceBlob(v).toLowerCase();
+    var score = 0;
+    if (!isHkCantoneseVoice(v)) {
+        if (/zh([-_]?cn)|zh([-_]?tw)|putonghua|mandarin|普通话|普通話|汉语|漢語|ting-?ting|mei-?jia/.test(b)) {
+            return -100;
+        }
+        return 0;
+    }
+    if (/yue([-_]|$)/.test(b) || b.indexOf('cantonese') >= 0 || b.indexOf('粵語') >= 0 || b.indexOf('广东话') >= 0 || b.indexOf('廣東話') >= 0) {
+        score += 100;
+    }
+    if (/zh([-_]?hk)/.test(b) || b.indexOf('hong kong') >= 0 || b.indexOf('hongkong') >= 0 || b.indexOf('香港') >= 0) {
+        score += 90;
+    }
+    if (isSiriVoice2(v)) score += 260;
+    else if (isSiriYueVoice(v)) score += 180;
+    if (/阿成|\bfung\b|\bwing\b/.test(b)) score += 36;
+    if (/sin[-.\s]?ji|善怡/.test(b)) score += 18;
+    if (/premium|優質/.test(b)) score += 40;
+    if (/enhanced|已強化|增強/.test(b)) score += 28;
+    if (v.default) score += 24;
+    if (v.localService) score += 5;
+    if (/compact|精簡/.test(b)) score -= 50;
+    if (/eloquence/.test(b)) score -= 80;
+    return score;
+}
+
 function pickIphoneCantoneseVoice() {
     if (!window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices() || [];
-    const preferred = [
-        /sinji/i, /ting-?ting/i, /meijia/i, /susan/i,
-        /zh[-_]?hk/i, /yue/i, /cantonese/i, /香港|粤|粵/
-    ];
-    for (let i = 0; i < preferred.length; i++) {
-        const re = preferred[i];
-        const hit = voices.find(function (v) {
-            return re.test(v.name) || re.test(v.lang);
-        });
-        if (hit) return hit;
+    var voices = window.speechSynthesis.getVoices() || [];
+    var ranked = voices
+        .map(function (v) { return { v: v, score: scoreCantoneseVoice(v) }; })
+        .filter(function (x) { return x.score > 0; })
+        .sort(function (a, b) { return b.score - a.score; })
+        .map(function (x) { return x.v; });
+    if (!ranked.length) return null;
+
+    var siri2 = ranked.filter(isSiriVoice2)[0];
+    if (siri2) return siri2;
+    var siri = ranked.filter(isSiriYueVoice)[0];
+    if (siri) return siri;
+
+    var best = ranked[0];
+    // Do not pin Compact 善怡 on iPhone — that overrides Spoken Content 「Siri 聲音 2」.
+    if (isAppleWebKit() && isCompactVoice(best) && !isSiriYueVoice(best)) {
+        var nonCompact = ranked.filter(function (v) { return !isCompactVoice(v); })[0];
+        if (nonCompact) return nonCompact;
+        var selected = ranked.filter(function (v) { return v.default; })[0];
+        return selected || null;
     }
-    return voices.find(function (v) {
-        return (v.lang || '').toLowerCase().indexOf('zh-hk') === 0;
-    }) || null;
+    return best;
+}
+
+function pickEnglishVoice() {
+    if (!window.speechSynthesis) return null;
+    var voices = window.speechSynthesis.getVoices() || [];
+    var ranked = voices
+        .filter(isEnglishVoice)
+        .map(function (v) {
+            var b = voiceBlob(v).toLowerCase();
+            var s = 0;
+            if (/samantha|karen|daniel|moira|serena/.test(b)) s += 60;
+            if (/en([-_]?us)/.test(b)) s += 50;
+            if (/en([-_]?gb)/.test(b)) s += 40;
+            if (/en([-_]?hk)/.test(b)) s += 35;
+            if (v.localService) s += 10;
+            if (/eloquence/.test(b)) s -= 40;
+            if (/compact|精簡/.test(b)) s -= 20;
+            return { v: v, s: s };
+        })
+        .sort(function (a, b) { return b.s - a.s; });
+    return ranked.length ? ranked[0].v : null;
+}
+
+function waitForVoices() {
+    return new Promise(function (resolve) {
+        if (!window.speechSynthesis) return resolve();
+        var synth = window.speechSynthesis;
+        if ((synth.getVoices() || []).length) return resolve();
+        var done = false;
+        var finish = function () {
+            if (done) return;
+            done = true;
+            if (typeof synth.removeEventListener === 'function') {
+                try { synth.removeEventListener('voiceschanged', finish); } catch (e) { /* ignore */ }
+            }
+            resolve();
+        };
+        if (typeof synth.addEventListener === 'function') {
+            synth.addEventListener('voiceschanged', finish);
+        } else {
+            synth.onvoiceschanged = finish;
+        }
+        setTimeout(finish, 400);
+    });
 }
 
 window.speakCantoneseBrowser = function (text, opts) {
-    const options = opts || {};
+    var options = opts || {};
     if (!window.speechSynthesis) return Promise.resolve();
-    return new Promise(function (resolve) {
-        try {
-            // Don't cancel if we're mid-queue item unless forced
-            if (options.cancel !== false) window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(String(text || ''));
-            u.lang = 'zh-HK';
-            u.rate = options.rate != null ? options.rate : 0.92;
-            u.pitch = 1.05;
-            const voice = pickIphoneCantoneseVoice();
-            if (voice) u.voice = voice;
-            u.onend = function () { resolve(); };
-            u.onerror = function () { resolve(); };
-            window.speechSynthesis.speak(u);
-        } catch (e) {
-            console.warn('speakCantoneseBrowser failed', e);
-            resolve();
-        }
+    var prepared = window.prepareSpokenText(text, 'zh-HK');
+    if (!prepared) return Promise.resolve();
+    return waitForVoices().then(function () {
+        return new Promise(function (resolve) {
+            try {
+                if (options.cancel !== false) window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(prepared);
+                var voice = pickIphoneCantoneseVoice();
+                var skip = voice && isEnglishVoice(voice) && !isHkCantoneseVoice(voice);
+                if (voice && !skip) {
+                    u.voice = voice;
+                    u.lang = voice.lang || 'zh-HK';
+                } else {
+                    u.lang = 'zh-HK';
+                }
+                u.rate = options.rate != null ? options.rate : (isAppleWebKit() ? 1 : 0.92);
+                u.pitch = 1;
+                u.onend = function () { resolve(); };
+                u.onerror = function () { resolve(); };
+                window.speechSynthesis.speak(u);
+            } catch (e) {
+                console.warn('speakCantoneseBrowser failed', e);
+                resolve();
+            }
+        });
     });
 };
 
 async function speakAzureCantonese(text, settings) {
-    const key = settings.azureKey;
-    const region = settings.azureRegion || 'eastasia';
-    const voice = settings.azureVoice || 'zh-HK-HiuMaanNeural';
+    var key = settings.azureKey;
+    var region = settings.azureRegion || 'eastasia';
+    var voice = settings.azureVoice || 'zh-HK-HiuMaanNeural';
     if (!key) throw new Error('no azure key');
+    var prepared = window.prepareSpokenText(text, 'zh-HK');
+    if (!prepared) return;
 
-    const ssml =
+    var ssml =
         "<speak version='1.0' xml:lang='zh-HK'>" +
         "<voice name='" + voice + "'>" +
-        "<prosody rate='-5%' pitch='+5%'>" + escapeXml(text) + '</prosody>' +
+        "<prosody rate='-5%' pitch='+5%'>" + escapeXml(prepared) + '</prosody>' +
         '</voice></speak>';
 
-    const res = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/v1', {
+    var ac = new AbortController();
+    window._ttsAbort = ac;
+    var res = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/v1', {
         method: 'POST',
         headers: {
             'Ocp-Apim-Subscription-Key': key,
@@ -168,41 +382,130 @@ async function speakAzureCantonese(text, settings) {
             'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
             'User-Agent': 'ZiziEnglishClass'
         },
-        body: ssml
+        body: ssml,
+        signal: ac.signal
     });
     if (!res.ok) throw new Error('azure ' + res.status);
-    const buf = await res.arrayBuffer();
-    const blob = new Blob([buf], { type: 'audio/mpeg' });
-    const url = URL.createObjectURL(blob);
-    await playUrl(url);
+    var buf = await res.arrayBuffer();
+    var blob = new Blob([buf], { type: 'audio/mpeg' });
+    var url = URL.createObjectURL(blob);
+    await playUrl(url, 'ui');
     URL.revokeObjectURL(url);
 }
 
-async function speakGoogleYue(text, settings) {
-    const key = settings.googleKey;
-    if (!key) throw new Error('no google key');
-    const voiceName = settings.googleYueVoice || 'yue-HK-Standard-C';
-    const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
-        method: 'POST',
-        body: JSON.stringify({
-            input: { text: text },
-            voice: { languageCode: 'yue-HK', name: voiceName },
-            audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95, pitch: 1.0 }
-        })
-    });
-    const data = await res.json();
-    if (!data.audioContent) throw new Error('google empty');
-    await playUrl('data:audio/mp3;base64,' + data.audioContent);
+function rememberTts(key, dataUrl) {
+    window._ttsCache[key] = dataUrl;
+    window._ttsCacheKeys.push(key);
+    while (window._ttsCacheKeys.length > window._TTS_CACHE_MAX) {
+        var old = window._ttsCacheKeys.shift();
+        delete window._ttsCache[old];
+    }
 }
 
-function playUrl(src) {
+function yueVoiceList(preferred) {
+    var list = [];
+    if (preferred) list.push(preferred);
+    GOOGLE_YUE_VOICES.forEach(function (v) {
+        if (list.indexOf(v) < 0) list.push(v);
+    });
+    return list;
+}
+
+async function googleSynthesizeOnce(opts) {
+    var ac = opts.abort || window._ttsAbort || new AbortController();
+    window._ttsAbort = ac;
+    var res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + opts.apiKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            input: opts.ssml ? { ssml: opts.ssml } : { text: opts.text },
+            voice: { languageCode: opts.languageCode, name: opts.voiceName },
+            audioConfig: {
+                audioEncoding: 'MP3',
+                speakingRate: opts.rate != null
+                    ? opts.rate
+                    : (opts.languageCode.indexOf('yue') === 0 ? 0.95 : 0.96)
+            }
+        }),
+        signal: ac.signal
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.audioContent) {
+        throw new Error((data.error && data.error.message) || ('google ' + res.status));
+    }
+    return 'data:audio/mp3;base64,' + data.audioContent;
+}
+
+/**
+ * Fetch Google TTS audio (Chirp3 HD, with fallbacks).
+ * opts: { text?, ssml?, lang: 'zh-HK'|'en-US', rate?, voices? }
+ * Returns a data: URL.
+ */
+window.googleTtsFetch = async function (opts) {
+    var options = opts || {};
+    var settings = window.getVoiceSettings();
+    var key = settings.googleKey;
+    if (!key) throw new Error('no google key');
+    var lang = options.lang || 'zh-HK';
+    var isEn = lang === 'en-US';
+    var prepared = options.ssml
+        ? String(options.ssml)
+        : window.prepareSpokenText(options.text || '', isEn ? 'en-US' : 'zh-HK');
+    if (!prepared) throw new Error('無字');
+
+    var cacheKey = (options.ssml ? 'ssml:' : '') + lang + ':' + prepared + ':' + (options.rate || '');
+    if (window._ttsCache[cacheKey]) return window._ttsCache[cacheKey];
+
+    var languageCode = isEn ? 'en-US' : 'yue-HK';
+    var voices = options.voices;
+    if (!voices || !voices.length) {
+        voices = options.ssml
+            ? GOOGLE_EN_SSML_VOICES
+            : (isEn ? GOOGLE_EN_VOICES : yueVoiceList(settings.googleYueVoice));
+    }
+
+    var ac = new AbortController();
+    window._ttsAbort = ac;
+    var lastErr = 'Google TTS 失敗';
+    for (var i = 0; i < voices.length; i++) {
+        try {
+            var url = await googleSynthesizeOnce({
+                apiKey: key,
+                languageCode: languageCode,
+                voiceName: voices[i],
+                text: options.ssml ? undefined : prepared.slice(0, 4000),
+                ssml: options.ssml ? prepared : undefined,
+                rate: options.rate,
+                abort: ac
+            });
+            rememberTts(cacheKey, url);
+            return url;
+        } catch (err) {
+            if (err && err.name === 'AbortError') throw err;
+            lastErr = err && err.message ? err.message : lastErr;
+        }
+    }
+    throw new Error(lastErr);
+};
+
+async function speakGoogleYue(text, settings) {
+    var url = await window.googleTtsFetch({
+        text: text,
+        lang: 'zh-HK',
+        voices: yueVoiceList(settings.googleYueVoice)
+    });
+    await playUrl(url, 'ui');
+}
+
+function playUrl(src, which) {
     return new Promise(function (resolve) {
-        window.uiAudio = window.uiAudio || new Audio();
-        const a = window.uiAudio;
+        var slot = which === 'en' ? 'enAudio' : (which === 'magic' ? 'mAudio' : 'uiAudio');
+        window[slot] = window[slot] || new Audio();
+        var a = window[slot];
         a.onended = function () { a.onended = null; resolve(); };
         a.onerror = function () { a.onended = null; resolve(); };
         a.src = src;
-        const p = a.play();
+        var p = a.play();
         if (p && typeof p.catch === 'function') {
             p.catch(function () { resolve(); });
         }
@@ -233,7 +536,6 @@ window.isSilentUiText = function (text) {
 
 window.shouldAutoSpeak = function (opts) {
     var options = opts || {};
-    // VoiceOver already reads the screen — extra TTS stacks on top
     if (window._screenReaderLikely) return false;
     var settings = window.getVoiceSettings ? window.getVoiceSettings() : { autoRead: true };
     if (!settings.autoRead && !options.force) return false;
@@ -242,8 +544,8 @@ window.shouldAutoSpeak = function (opts) {
 
 /** Core Cantonese speak — picks best available voice */
 window.playCantoneseTTS = async function (text, opts) {
-    const options = opts || {};
-    const utter = String(text || '').trim();
+    var options = opts || {};
+    var utter = String(text || '').trim();
     if (!utter) return;
     if (window.isSilentUiText && window.isSilentUiText(utter)) return;
     if (window._screenReaderLikely && !options.force) return;
@@ -255,19 +557,19 @@ window.playCantoneseTTS = async function (text, opts) {
 
 window._speakCantoneseNow = async function (utter, options) {
     if (window.ZiziFX) window.ZiziFX.duckMusic(2.5);
-    const token = window._speechToken;
-    const settings = window.getVoiceSettings();
+    var token = window._speechToken;
+    var settings = window.getVoiceSettings();
     window._lastAnnounce = utter;
     window._lastAnnounceAt = Date.now();
 
-    const order = [];
-    if (settings.provider === 'azure') order.push('azure', 'iphone', 'google');
-    else if (settings.provider === 'google') order.push('google', 'iphone', 'azure');
-    else order.push('iphone', 'azure', 'google');
+    var order = [];
+    if (settings.provider === 'azure') order.push('azure', 'google', 'iphone');
+    else if (settings.provider === 'iphone') order.push('iphone', 'google', 'azure');
+    else order.push('google', 'iphone', 'azure');
 
-    for (let i = 0; i < order.length; i++) {
+    for (var i = 0; i < order.length; i++) {
         if (token !== window._speechToken) return;
-        const p = order[i];
+        var p = order[i];
         try {
             if (p === 'azure' && settings.azureKey) {
                 await speakAzureCantonese(utter, settings);
@@ -278,10 +580,14 @@ window._speakCantoneseNow = async function (utter, options) {
                 return;
             }
             if (p === 'iphone') {
-                await window.speakCantoneseBrowser(utter, { cancel: false, rate: 0.92 });
+                await window.speakCantoneseBrowser(utter, {
+                    cancel: false,
+                    rate: isAppleWebKit() ? 1 : 0.92
+                });
                 return;
             }
         } catch (e) {
+            if (e && e.name === 'AbortError') return;
             console.warn('voice provider failed', p, e);
         }
     }
@@ -298,8 +604,8 @@ window._speakCantoneseNow = async function (utter, options) {
  * Announce UI instructions. Queued on the same voice line — never stacks.
  */
 window.announce = function (text, opts) {
-    const options = opts || {};
-    const utter = String(text || '').trim();
+    var options = opts || {};
+    var utter = String(text || '').trim();
     if (!utter) return;
     if (window.isSilentUiText && window.isSilentUiText(utter)) return;
     if (!window.shouldAutoSpeak(options)) return;
@@ -316,29 +622,10 @@ window.announce = function (text, opts) {
     });
 };
 
-function pickEnglishVoice() {
-    if (!window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices() || [];
-    const preferred = [
-        /samantha/i, /karen/i, /moira/i, /serena/i, /martha/i,
-        /en[-_]?us/i, /en[-_]?gb/i, /english/i
-    ];
-    for (let i = 0; i < preferred.length; i++) {
-        const re = preferred[i];
-        const hit = voices.find(function (v) {
-            return re.test(v.name) || re.test(v.lang);
-        });
-        if (hit) return hit;
-    }
-    return voices.find(function (v) {
-        return (v.lang || '').toLowerCase().indexOf('en') === 0;
-    }) || null;
-}
-
 /** Speak English words/sounds with an English voice (never Cantonese TTS). */
 window.speakEnglish = function (text, opts) {
-    const options = opts || {};
-    const utter = String(text || '').trim();
+    var options = opts || {};
+    var utter = String(text || '').trim();
     if (!utter) return Promise.resolve();
     return window._enqueueVoice(function () {
         return window._speakEnglishNow(utter, options);
@@ -346,19 +633,31 @@ window.speakEnglish = function (text, opts) {
 };
 
 window._speakEnglishNow = async function (utter, options) {
-    const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
-    if (key && !options.forceBrowser) {
-        return window._speakGoogleEnglish(utter, options);
+    var settings = window.getVoiceSettings();
+    if (settings.googleKey && !options.forceBrowser) {
+        try {
+            return await window._speakGoogleEnglish(utter, options);
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+        }
     }
     if (!window.speechSynthesis) return;
+    var prepared = window.prepareSpokenText(utter, 'en-US');
+    if (!prepared) return;
+    await waitForVoices();
     return new Promise(function (resolve) {
         try {
-            const u = new SpeechSynthesisUtterance(utter);
-            u.lang = options.lang || 'en-US';
-            u.rate = options.rate != null ? options.rate : 0.88;
-            u.pitch = 1.05;
-            const voice = pickEnglishVoice();
-            if (voice) u.voice = voice;
+            var u = new SpeechSynthesisUtterance(prepared);
+            var voice = pickEnglishVoice();
+            var skip = voice && isChineseVoice(voice);
+            if (voice && !skip) {
+                u.voice = voice;
+                u.lang = voice.lang || options.lang || 'en-US';
+            } else {
+                u.lang = options.lang || 'en-US';
+            }
+            u.rate = options.rate != null ? options.rate : (isAppleWebKit() ? 1 : 0.95);
+            u.pitch = 1;
             u.onend = function () { resolve(); };
             u.onerror = function () { resolve(); };
             window.speechSynthesis.speak(u);
@@ -370,47 +669,26 @@ window._speakEnglishNow = async function (utter, options) {
 };
 
 window._speakGoogleEnglish = async function (text, opts) {
-    const key = window.getApiKey ? window.getApiKey('google_tts_key') : localStorage.getItem('google_tts_key');
-    if (!key) {
-        return window._speakEnglishNow(text, { forceBrowser: true, rate: (opts && opts.rate) || 0.88 });
-    }
-    try {
-        const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
-            method: 'POST',
-            body: JSON.stringify({
-                input: { text: text },
-                voice: { languageCode: 'en-US', name: 'en-US-Neural2-F' },
-                audioConfig: { audioEncoding: 'MP3', speakingRate: (opts && opts.rate) || 0.88 }
-            })
-        });
-        const data = await res.json();
-        if (data.audioContent) {
-            window.enAudio = window.enAudio || new Audio();
-            const a = window.enAudio;
-            a.src = 'data:audio/mp3;base64,' + data.audioContent;
-            await new Promise(function (resolve) {
-                a.onended = function () { a.onended = null; resolve(); };
-                a.onerror = function () { a.onended = null; resolve(); };
-                a.play().catch(function () { resolve(); });
-            });
-            return;
-        }
-        return window._speakEnglishNow(text, { forceBrowser: true });
-    } catch (e) {
-        return window._speakEnglishNow(text, { forceBrowser: true });
-    }
+    var options = opts || {};
+    var url = await window.googleTtsFetch({
+        text: text,
+        lang: 'en-US',
+        rate: options.rate,
+        voices: GOOGLE_EN_VOICES
+    });
+    await playUrl(url, 'en');
 };
 
 /** Watch text nodes / status messages and read them aloud */
 window.startInstructionReader = function () {
-    const ids = ['msg', 'game-msg', 'loading-msg'];
+    var ids = ['msg', 'game-msg', 'loading-msg'];
     ids.forEach(function (id) {
-        const el = document.getElementById(id);
+        var el = document.getElementById(id);
         if (!el || el._announceBound) return;
         el._announceBound = true;
-        const obs = new MutationObserver(function () {
+        var obs = new MutationObserver(function () {
             if (el.getAttribute('data-silent') === '1') return;
-            const text = (el.innerText || el.textContent || '').trim();
+            var text = (el.innerText || el.textContent || '').trim();
             if (!text) return;
             if (window.isSilentUiText && window.isSilentUiText(text)) return;
             window.announce(text, { interrupt: false });
@@ -439,7 +717,6 @@ window.announceHomeMenu = function () {
     , { force: true });
 };
 
-// iOS loads voices asynchronously
 if (typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.onvoiceschanged = function () { pickIphoneCantoneseVoice(); };
 }

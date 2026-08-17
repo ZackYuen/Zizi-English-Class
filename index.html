@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260817-voice1">
+    <link rel="stylesheet" href="style.css?v=20260817-chirp3">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -235,14 +235,14 @@
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
         <h2>⚙️ 聲線同設定</h2>
-        <p class="settings-note">所有指示會自動用廣東話讀出。建議：iPhone 用「手機廣東話」；想最自然就用 Azure「曉曼」。Google 粵語 Standard 比較機械。</p>
+        <p class="settings-note">同小學預備班一樣：Safari 用唔到 iPhone Siri 聲音 2（Apple 限制網頁），所以有 Google Key 就用 Chirp3 HD 高質粵語同英文。手機系統聲只係後備。</p>
         <p id="secrets-status" class="secrets-status">檢查緊 GitHub Pages Key…</p>
 
         <label for="input-voice-provider">廣東話聲線</label>
         <select id="input-voice-provider" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
-            <option value="iphone">手機廣東話（iPhone Siri，推薦免費）</option>
-            <option value="azure">Azure 曉曼 Neural（最自然，要 Key）</option>
-            <option value="google">Google 粵語 Standard（備用）</option>
+            <option value="google">Google Chirp3 HD（同小學預備班，推薦）</option>
+            <option value="iphone">手機系統聲（Safari 未必用到 Siri 聲音 2）</option>
+            <option value="azure">Azure 曉曼 Neural（要 Key）</option>
         </select>
 
         <label class="settings-check" for="input-auto-read">
@@ -263,21 +263,19 @@
             <option value="zh-HK-WanLungNeural">雲龍 WanLung（男聲）</option>
         </select>
 
-        <label for="input-google-tts">Google TTS Key（英文發音 / 備用粵語）</label>
+        <label for="input-google-tts">Google TTS Key（Chirp3 粵語 + 英文；可留空用 Pages Secret）</label>
         <input type="password" id="input-google-tts" placeholder="可留空（用 GitHub Secret）" autocomplete="off" autocapitalize="off" spellcheck="false">
 
-        <label for="input-google-yue-voice">Google 粵語聲線（若選 Google）</label>
+        <label for="input-google-yue-voice">Google 粵語聲線</label>
         <select id="input-google-yue-voice" style="width:100%; padding:12px; margin-bottom:12px; border:2px solid #a2d2ff; border-radius:10px; font-size:16px;">
-            <option value="yue-HK-Standard-C">Standard-C（相對自然啲）</option>
-            <option value="yue-HK-Standard-A">Standard-A</option>
-            <option value="yue-HK-Standard-B">Standard-B</option>
-            <option value="yue-HK-Standard-D">Standard-D</option>
+            <option value="yue-HK-Chirp3-HD-Kore">Chirp3 HD Kore（推薦，同小學預備）</option>
+            <option value="yue-HK-Standard-A">Standard-A（Chirp3 失敗先用）</option>
         </select>
 
         <label for="input-openrouter">OpenRouter（相機認字）</label>
         <input type="password" id="input-openrouter" placeholder="可留空（用 GitHub Secret）" autocomplete="off" autocapitalize="off" spellcheck="false">
 
-        <button type="button" class="settings-test-btn" onclick="testVoice()">🔊 試聽廣東話聲線</button>
+        <button type="button" class="settings-test-btn" onclick="testVoice()">🔊 試聽廣東話同英文聲線</button>
 
         <div class="settings-parent-zone">
             <p class="settings-parent-label">家長專區</p>
@@ -292,21 +290,21 @@
 </div>
 
 <!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260817-voice1"></script>
-<script src="js/stories.js?v=20260817-voice1"></script>
-<script src="js/state.js?v=20260817-voice1"></script>
+<script src="js/data.js?v=20260817-chirp3"></script>
+<script src="js/stories.js?v=20260817-chirp3"></script>
+<script src="js/state.js?v=20260817-chirp3"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260817-voice1"></script>
-<script src="js/speech.js?v=20260817-voice1"></script>
-<script src="js/progress.js?v=20260817-voice1"></script>
-<script src="js/fx.js?v=20260817-voice1"></script>
-<script src="js/teach.js?v=20260817-voice1"></script>
-<script src="js/writing.js?v=20260817-voice1"></script>
-<script src="js/ui.js?v=20260817-voice1"></script>
-<script src="js/canvas.js?v=20260817-voice1"></script>
-<script src="js/camera.js?v=20260817-voice1"></script>
-<script src="js/game.js?v=20260817-voice1"></script>
-<script src="js/match.js?v=20260817-voice1"></script>
-<script src="js/router.js?v=20260817-voice1"></script>
+<script src="js/secrets.js?v=20260817-chirp3"></script>
+<script src="js/speech.js?v=20260817-chirp3"></script>
+<script src="js/progress.js?v=20260817-chirp3"></script>
+<script src="js/fx.js?v=20260817-chirp3"></script>
+<script src="js/teach.js?v=20260817-chirp3"></script>
+<script src="js/writing.js?v=20260817-chirp3"></script>
+<script src="js/ui.js?v=20260817-chirp3"></script>
+<script src="js/canvas.js?v=20260817-chirp3"></script>
+<script src="js/camera.js?v=20260817-chirp3"></script>
+<script src="js/game.js?v=20260817-chirp3"></script>
+<script src="js/match.js?v=20260817-chirp3"></script>
+<script src="js/router.js?v=20260817-chirp3"></script>
 </body>
 </html>

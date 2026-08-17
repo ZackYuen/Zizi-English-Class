@@ -237,12 +237,23 @@ window.playGameSound = async function() {
     </prosody></speak>`;
 
     try {
+        if (window.googleTtsFetch) {
+            var url = await window.googleTtsFetch({
+                ssml: ssml,
+                lang: 'en-US',
+                rate: 0.8
+            });
+            if (window.gameAudioToken !== token || !window.isGamePlaying) return;
+            window.gameAudio.src = url;
+            window.gameAudio.play();
+            return;
+        }
         const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
             method: 'POST',
             body: JSON.stringify({
                 input: { ssml: ssml },
-                voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
-                audioConfig: { audioEncoding: 'MP3' }
+                voice: { languageCode: 'en-US', name: 'en-US-Neural2-C' },
+                audioConfig: { audioEncoding: 'MP3', speakingRate: 0.8 }
             })
         });
         const data = await res.json();
