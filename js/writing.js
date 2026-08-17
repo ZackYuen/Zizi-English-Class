@@ -85,7 +85,9 @@ window.WritingSession = {
         var extra = '';
         if (typeof D !== 'undefined' && typeof idx !== 'undefined' && D[idx] && window.ZiziTeach) {
             var w = window.ZiziTeach.info(D[idx].w);
-            extra = ' 香港叫 ' + w.nick + '。';
+            extra = w.loan
+                ? (' 香港叫 ' + w.loan + '。')
+                : (w.yue ? ' ' + w.yue + '。' : '');
         }
         if (this.isCamera()) {
             return '真叻！撳 ✨ 讀出嚟，或者 📸 再影一個！' + extra;

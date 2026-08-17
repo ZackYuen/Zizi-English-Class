@@ -60,11 +60,11 @@ window.openSettings = function () {
     const or = document.getElementById('input-openrouter');
     const autoRead = document.getElementById('input-auto-read');
 
-    if (provider) provider.value = vs.provider || 'iphone';
+    if (provider) provider.value = vs.provider || 'google';
     if (azureKey) azureKey.value = vs.azureKey || '';
     if (azureRegion) azureRegion.value = vs.azureRegion || 'eastasia';
     if (azureVoice) azureVoice.value = vs.azureVoice || 'zh-HK-HiuMaanNeural';
-    if (googleYue) googleYue.value = vs.googleYueVoice || 'yue-HK-Standard-C';
+    if (googleYue) googleYue.value = vs.googleYueVoice || 'yue-HK-Chirp3-HD-Kore';
     // Show local overrides only (not deploy secrets) so Pages keys stay out of the form
     if (tts) tts.value = localStorage.getItem('google_tts_key') || '';
     if (or) or.value = localStorage.getItem('openrouter_api_key') || '';
@@ -73,16 +73,16 @@ window.openSettings = function () {
 
     setDisplay('settings-modal', 'flex');
     if (window.announce) {
-        window.announce('設定頁面。喺度可以揀廣東話聲線，同埋開定自動讀出指示。', { force: true });
+        window.announce('設定頁面。而家預設用同小學預備班一樣嘅 Google 高質聲線。', { force: true });
     }
 };
 
 window.saveSettings = function () {
-    const provider = (document.getElementById('input-voice-provider') || {}).value || 'iphone';
+    const provider = (document.getElementById('input-voice-provider') || {}).value || 'google';
     const azureKey = ((document.getElementById('input-azure-speech') || {}).value || '').trim();
     const azureRegion = ((document.getElementById('input-azure-region') || {}).value || 'eastasia').trim();
     const azureVoice = ((document.getElementById('input-azure-voice') || {}).value || 'zh-HK-HiuMaanNeural').trim();
-    const googleYue = ((document.getElementById('input-google-yue-voice') || {}).value || 'yue-HK-Standard-C').trim();
+    const googleYue = ((document.getElementById('input-google-yue-voice') || {}).value || 'yue-HK-Chirp3-HD-Kore').trim();
     const tts = ((document.getElementById('input-google-tts') || {}).value || '').trim();
     const or = ((document.getElementById('input-openrouter') || {}).value || '').trim();
     const autoRead = document.getElementById('input-auto-read');
@@ -92,7 +92,8 @@ window.saveSettings = function () {
     else localStorage.removeItem('azure_speech_key');
     localStorage.setItem('azure_speech_region', azureRegion || 'eastasia');
     localStorage.setItem('azure_voice_name', azureVoice || 'zh-HK-HiuMaanNeural');
-    localStorage.setItem('google_yue_voice', googleYue || 'yue-HK-Standard-C');
+    localStorage.setItem('google_yue_voice', googleYue || 'yue-HK-Chirp3-HD-Kore');
+    localStorage.setItem('zizi_voice_v', 'chirp3-2');
     localStorage.setItem('zizi_auto_read', autoRead && autoRead.checked ? '1' : '0');
 
     if (tts) localStorage.setItem('google_tts_key', tts);
@@ -129,6 +130,9 @@ window.testVoice = function () {
 
     if (window.playCantoneseTTS) {
         window.playCantoneseTTS('你好呀孜孜！呢把係而家嘅廣東話聲線，聽唔聽得清楚？', { interrupt: true });
+    }
+    if (window.speakEnglish) {
+        window.speakEnglish('Hello Zizi! This is the English voice.');
     }
 };
 
@@ -217,6 +221,7 @@ window.backToHome = function () {
         window.ZiziTeach.resetWrite();
         window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
         window.ZiziTeach.hideCoach(document.getElementById('game-coach'));
+        window.ZiziTeach.hideCoach(document.getElementById('write-coach'));
         window.ZiziTeach.clearGlow(document);
     }
 
