@@ -58,6 +58,13 @@ function setMatchPlayUi() {
         finish.classList.remove('is-open');
     }
     if (choices) choices.style.display = '';
+    var hintBtn = document.getElementById('match-hint-btn');
+    if (hintBtn) hintBtn.style.display = '';
+    if (window.ZiziTeach) {
+        window.ZiziTeach.reset();
+        window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
+        window.ZiziTeach.clearGlow(document.getElementById('match-choices'));
+    }
 }
 
 function setMatchFinishUi(score, total) {
@@ -74,6 +81,12 @@ function setMatchFinishUi(score, total) {
     if (choices) {
         choices.innerHTML = '';
         choices.style.display = 'none';
+    }
+    var hintBtn = document.getElementById('match-hint-btn');
+    if (hintBtn) hintBtn.style.display = 'none';
+    if (window.ZiziTeach) {
+        window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
+        window.ZiziTeach.clearGlow(document.getElementById('match-choices'));
     }
     if (emoji) emoji.textContent = score >= total ? '🌟' : '🎉';
     if (title) {
@@ -161,6 +174,11 @@ window.nextMatchQuestion = async function () {
     window.isMatchProcessing = false;
     window.matchRound += 1;
     updateMatchProgress();
+    if (window.ZiziTeach) {
+        window.ZiziTeach.reset();
+        window.ZiziTeach.hideCoach(document.getElementById('match-coach'));
+        window.ZiziTeach.clearGlow(document.getElementById('match-choices'));
+    }
 
     let target;
     let tries = 0;
@@ -245,10 +263,15 @@ window.checkMatchAnswer = async function (choiceWord) {
         if (window.speakEnglish) {
             await window.speakEnglish(window.matchTarget.w, { rate: 0.88 });
         }
+        if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+            await window.ZiziTeach.speakStory(window.matchTarget.w);
+        }
         window.isMatchProcessing = false;
         if (window.isMatchPlaying) window.nextMatchQuestion();
     } else {
-        setMatchMsg('再試吓！', '#e63946');
+        var n = window.ZiziTeach ? window.ZiziTeach.bump() : 1;
+        var winfo = window.ZiziTeach ? window.ZiziTeach.info(window.matchTarget.w) : null;
+        setMatchMsg(n === 1 && winfo ? '再試吓！想吓：' + winfo.yue : '再試吓！撳提示都得！', '#e63946');
         if (window.ZiziFX) window.ZiziFX.play('wrong');
         else if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
         const box = document.getElementById('match-choices');
@@ -256,7 +279,9 @@ window.checkMatchAnswer = async function (choiceWord) {
             box.classList.add('shake-anim');
             setTimeout(function () { box.classList.remove('shake-anim'); }, 400);
         }
-        if (window.playCantoneseTTS) {
+        if (window.ZiziTeach) {
+            await window.ZiziTeach.applyMatchHint(n);
+        } else if (window.playCantoneseTTS) {
             await window.playCantoneseTTS('再試吓！', { interrupt: true });
         }
         window.isMatchProcessing = false;

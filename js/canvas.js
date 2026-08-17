@@ -45,6 +45,7 @@ window.resetCanvas = function() {
     initWaypoints();
     const wrapper = document.getElementById('canvas-wrapper');
     if(wrapper) wrapper.style.transform = "scale(1) rotate(0deg)";
+    if (window.ZiziTeach) window.ZiziTeach.fillWriteChip();
     updateMsg();
 };
 
@@ -392,21 +393,29 @@ function finishLetterComplete(pointerId) {
     currentPercent = window.computeFollowScore();
 
     if (!allFollowed || currentPercent < passAt) {
+        var n = window.ZiziTeach ? window.ZiziTeach.bumpWrite() : 1;
         var msg = document.getElementById('msg');
+        var hintLine = n >= 2
+            ? '跟唔到綠點呀！撳「點畫？」睇提示，再跟住虛線由頭畫到尾。'
+            : '要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！';
         if (msg) {
             msg.setAttribute('data-silent', '0');
             msg.removeAttribute('aria-hidden');
-            msg.innerText = '要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！';
+            msg.innerText = hintLine;
             msg.style.color = '#e63946';
         }
-        if (window.playCantoneseTTS) {
-            window.playCantoneseTTS('要跟住虛線由頭畫到尾，唔可以亂填呀！再試過！', { interrupt: true });
+        if (window.ZiziTeach && n >= 2) {
+            window.ZiziTeach.applyWriteHint({ force: true, updateMsg: false });
+        } else if (window.playCantoneseTTS) {
+            window.playCantoneseTTS(hintLine, { interrupt: true });
         }
         setTimeout(function () { resetCanvas(); }, 900);
         return;
     }
 
     currentPercent = 100;
+
+    if (window.ZiziTeach) window.ZiziTeach.resetWrite();
 
     updateMsg();
 
@@ -713,6 +722,18 @@ window.magic = async function() {
                 if (reCam) reCam.style.display = 'inline-block';
             }
         }
+        window.mAudio.onended = function () {
+            if (!D[idx] || !window.ZiziTeach) return;
+            var w = window.ZiziTeach.info(D[idx].w);
+            var done = document.getElementById('msg');
+            if (done) {
+                done.setAttribute('data-silent', '0');
+                done.removeAttribute('aria-hidden');
+                done.innerText = w.w + ' = ' + w.yue + '。' + w.story;
+                done.style.color = '#023e8a';
+            }
+            window.ZiziTeach.speak(w.w + '就係' + w.yue + '。' + w.story);
+        };
     }, 600);
 };
 
@@ -814,6 +835,7 @@ window.processWord = function(word, imgUrl = null) {
     }
 
     window.startRenderLoop();
+    if (window.ZiziTeach) window.ZiziTeach.resetWrite();
     resetCanvas();
 };
 

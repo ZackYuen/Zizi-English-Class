@@ -129,6 +129,14 @@ window.exitGame = function() {
         overlay.style.display = 'none';
         overlay.classList.remove('is-open');
     }
+    if (window.ZiziTeach) {
+        window.ZiziTeach.reset();
+        window.ZiziTeach.hideCoach(document.getElementById('game-coach'));
+        ['btn-A', 'btn-E', 'btn-I'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.classList.remove('is-hint');
+        });
+    }
     if (typeof window.backToHome === 'function') {
         window.backToHome();
         return;
@@ -165,6 +173,14 @@ window.nextGameQuestion = function() {
     document.getElementById('game-emoji-display').innerText = '❓';
     document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
     document.getElementById('game-msg').style.color = "#1d3557";
+    if (window.ZiziTeach) {
+        window.ZiziTeach.reset();
+        window.ZiziTeach.hideCoach(document.getElementById('game-coach'));
+        ['btn-A', 'btn-E', 'btn-I'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.classList.remove('is-hint');
+        });
+    }
     
     const colors = { 'A': '#d90429', 'E': '#023e8a', 'I': '#4a4e69' };
     const ipas = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
@@ -286,6 +302,9 @@ window.checkAnswer = function(choice) {
             if (window.speakEnglish) {
                 await window.speakEnglish(window.currentWord, { rate: 0.88 });
             }
+            if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+                await window.ZiziTeach.speakStory(window.currentWord);
+            }
             window.isGameProcessing = false;
             window.nextGameQuestion();
         });
@@ -298,11 +317,14 @@ window.checkAnswer = function(choice) {
         setTimeout(() => btn.classList.remove('shake-anim'), 400);
         
         let clickedWord = window.currentChoices[choice].w;
-        document.getElementById('game-msg').innerText = `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
+        var n = window.ZiziTeach ? window.ZiziTeach.bump() : 1;
+        document.getElementById('game-msg').innerText = n >= 2
+            ? `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]})。撳提示或者聽多次！`
+            : `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
         document.getElementById('game-msg').style.color = "#e63946";
         
-        // Cantonese cue, then English word with English voice
-        window.playGameMessage('唔係呢個，聽多次啦！', async () => {
+        // Visual hint ladder, then replay the target sound
+        var afterHint = async function () {
             if (window.speakEnglish) {
                 await window.speakEnglish(clickedWord, { rate: 0.88 });
             }
@@ -311,6 +333,11 @@ window.checkAnswer = function(choice) {
                     if(window.isGamePlaying && !window.isGameProcessing) window.playGameSound();
                 }, 400);
             }
-        });
+        };
+        if (window.ZiziTeach) {
+            window.ZiziTeach.applyListenHint(n).then(afterHint);
+        } else {
+            window.playGameMessage('唔係呢個，聽多次啦！', afterHint);
+        }
     }
 };

@@ -82,10 +82,15 @@ window.WritingSession = {
 
     /** Message after a letter is accepted */
     formatSuccessMsg: function (percent) {
-        if (this.isCamera()) {
-            return '真叻！撳 ✨ 讀出嚟，或者 📸 再影一個！';
+            var extra = '';
+        if (typeof D !== 'undefined' && typeof idx !== 'undefined' && D[idx] && window.ZiziTeach) {
+            var w = window.ZiziTeach.info(D[idx].w);
+            extra = ' ' + w.w + ' 就係 ' + w.yue + '。';
         }
-        return '真叻！撳 ✨ 讀出嚟啦！';
+        if (this.isCamera()) {
+            return '真叻！撳 ✨ 讀出嚟，或者 📸 再影一個！' + extra;
+        }
+        return '真叻！撳 ✨ 讀出嚟啦！' + extra;
     },
 
     /** After magic TTS finishes */
