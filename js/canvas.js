@@ -701,18 +701,25 @@ window.magic = async function() {
     else document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
     
     try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method:'POST', body:JSON.stringify({
-                input:{ssml:D[idx].ssml},
-                voice:{languageCode:'en-US',name:'en-US-Wavenet-F'},
-                audioConfig:{audioEncoding:'MP3'}
-            })
-        });
-        let data = await res.json();
-        if(data.error) throw data.error;
+        let url;
+        if (window.googleTtsFetch) {
+            url = await window.googleTtsFetch({ ssml: D[idx].ssml, lang: 'en-US' });
+        } else {
+            let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
+                method:'POST', body:JSON.stringify({
+                    input:{ssml:D[idx].ssml},
+                    voice:{languageCode:'en-US',name:'en-US-Neural2-C'},
+                    audioConfig:{audioEncoding:'MP3'}
+                })
+            });
+            let data = await res.json();
+            if(data.error) throw data.error;
+            url = 'data:audio/mp3;base64,' + data.audioContent;
+        }
         window.mAudio = window.mAudio || new Audio();
-        window.mAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-    } catch(e) { 
+        window.mAudio.src = url;
+    } catch(e) {
+        if (e && e.name === 'AbortError') return;
         document.getElementById('msg').innerText = "❌ TTS API Error: " + e.message; 
         return; 
     }
