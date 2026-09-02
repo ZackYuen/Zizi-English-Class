@@ -21,7 +21,7 @@ function huntHud() {
     var tgt = huntEl('hunt-target');
     if (tgt) {
         if (g.target) {
-            tgt.textContent = '搵 ' + g.target.w;
+            tgt.innerHTML = '搵 <span class="stage-word">' + g.target.w + '</span>';
         } else {
             tgt.textContent = '聽英文，揭開草叢搵佢';
         }

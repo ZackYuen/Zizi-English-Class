@@ -28,7 +28,7 @@ function shootHud() {
     var tgt = shEl('shoot-target');
     if (tgt) {
         if (g.target) {
-            tgt.textContent = '🚀 射 ' + g.target.w;
+            tgt.innerHTML = '🚀 射 <span class="stage-word">' + g.target.w + '</span>';
         } else {
             tgt.textContent = '撳啱氣球，火箭射爆佢';
         }
@@ -107,30 +107,30 @@ function shootDraw() {
         var y = b.y * H + Math.sin(g.bob * 2 + b.x * 5) * 6;
         ctx.fillStyle = b.color;
         ctx.beginPath();
-        ctx.ellipse(x, y, W * 0.09, W * 0.115, 0, 0, Math.PI * 2);
+        ctx.ellipse(x, y, W * 0.14, W * 0.175, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
         ctx.beginPath();
-        ctx.ellipse(x - W * 0.02, y - W * 0.05, W * 0.02, W * 0.035, 0, 0, Math.PI * 2);
+        ctx.ellipse(x - W * 0.04, y - W * 0.06, W * 0.03, W * 0.045, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#123b63';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(x, y + W * 0.115);
-        ctx.lineTo(x, y + W * 0.115 + H * 0.05);
+        ctx.moveTo(x, y + W * 0.175);
+        ctx.lineTo(x, y + W * 0.175 + H * 0.05);
         ctx.stroke();
-        ctx.fillStyle = '#123b63';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        if (window.ZiziArt) {
-            var s = W * 0.09;
-            window.ZiziArt.drawWord(ctx, b.item.w, x, y - s * 0.1, s, g.bob + b.x);
-        } else {
-            ctx.font = '22px serif';
-            ctx.fillText(b.item.emoji, x, y - 8);
-        }
-        ctx.font = 'bold 13px Fredoka, sans-serif';
-        ctx.fillText(b.item.w, x, y + W * 0.115 + H * 0.08);
+        var fs = window.ZiziArt
+            ? window.ZiziArt.fitWord(ctx, b.item.w, W * 0.24, W * 0.13)
+            : 32;
+        ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#123b63';
+        ctx.lineWidth = 5;
+        ctx.strokeText(b.item.w, x, y);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(b.item.w, x, y);
     });
 
     if (window.ZiziArt) {
@@ -292,7 +292,7 @@ window.replayShootWord = function () {
             var b = g.balloons[i];
             var bx = b.x * W;
             var by = b.y * H + Math.sin(g.bob * 2 + b.x * 5) * 6;
-            if (Math.hypot(p.x - bx, p.y - by) < W * 0.13) {
+            if (Math.hypot(p.x - bx, p.y - by) < W * 0.17) {
                 shootHit(b);
                 return;
             }

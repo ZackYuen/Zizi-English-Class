@@ -30,7 +30,7 @@ function raceHud() {
     var tgt = raceEl('race-target');
     if (tgt) {
         if (g.target) {
-            tgt.textContent = '🚗 ' + g.target.w;
+            tgt.innerHTML = '🚗 <span class="stage-word">' + g.target.w + '</span>';
         } else {
             tgt.textContent = '拖住架車去撞啱嗰幅圖';
         }
@@ -65,7 +65,7 @@ function raceSpawn() {
     var decoys = Curriculum.decoys(g.target, 2);
     var items = Curriculum.shuffle([g.target].concat(decoys).slice(0, 3));
     g.cards = items.map(function (item, i) {
-        return { item: item, lane: i, y: -0.15 };
+        return { item: item, lane: i, y: -0.22 };
     });
     raceHud();
     if (g.phase === 'play' && g.target) {
@@ -139,28 +139,35 @@ function raceDraw() {
         var x = raceLaneX(card.lane);
         var y = H * card.y;
         var good = g.target && card.item.w === g.target.w;
+        var word = card.item.w;
+        var w = W * 0.26;
+        var h = Math.max(128, H * 0.26);
+        var hasArt = window.ZiziArt && window.ZiziArt.has(word);
         ctx.save();
         ctx.translate(x, y);
         ctx.fillStyle = good ? '#d8f3dc' : '#fff';
         ctx.strokeStyle = good ? '#2ecc71' : '#123b63';
-        ctx.lineWidth = good ? 5 : 3;
-        var w = W * 0.24;
-        var h = H * 0.13;
-        roundRect(ctx, -w / 2, -h / 2, w, h, 12);
+        ctx.lineWidth = good ? 6 : 4;
+        roundRect(ctx, -w / 2, -h / 2, w, h, 18);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = '#123b63';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        if (window.ZiziArt) {
+        if (hasArt) {
             var pulse = good ? 1 + Math.sin(g.bob * 2) * 0.08 : 1;
-            window.ZiziArt.drawWord(ctx, card.item.w, 0, -h * 0.12, Math.round(26 * pulse), g.bob);
+            window.ZiziArt.drawWord(ctx, word, 0, -h * 0.22, Math.round(h * 0.4 * pulse), g.bob, true);
+            var fs = window.ZiziArt.fitWord(ctx, word, w * 0.88, h * 0.32);
+            ctx.fillStyle = '#123b63';
+            ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
+            ctx.fillText(word, 0, h * 0.28);
         } else {
-            ctx.font = '26px serif';
-            ctx.fillText(card.item.emoji, 0, -h * 0.12);
+            var fs2 = window.ZiziArt && window.ZiziArt.fitWord
+                ? window.ZiziArt.fitWord(ctx, word, w * 0.88, h * 0.46)
+                : Math.round(h * 0.36);
+            ctx.font = '800 ' + fs2 + 'px Fredoka, sans-serif';
+            ctx.fillText(word, 0, 0);
         }
-        ctx.font = 'bold 14px Fredoka, sans-serif';
-        ctx.fillText(card.item.w, 0, h * 0.32);
         ctx.restore();
     });
 
@@ -168,9 +175,9 @@ function raceDraw() {
     drawCarTop(ctx, g.car.x * W, cy + Math.sin(g.bob) * 3, '#e63946');
 
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = 'bold 15px Fredoka, sans-serif';
+    ctx.font = '800 20px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('拖住架紅車', W / 2, 22);
+    ctx.fillText('拖住架紅車', W / 2, 28);
 }
 
 function raceHit(card) {
@@ -202,7 +209,7 @@ function raceHit(card) {
     } else {
         Curriculum.missFx(raceEl('race-play'), '碰！');
         Curriculum.speakEn(card.item.w);
-        card.y = -0.18;
+        card.y = -0.22;
         g.pending = false;
     }
 }
@@ -215,12 +222,12 @@ function raceUpdate(dt) {
     if (!g.pending) {
         g.cards.forEach(function (card) {
             card.y += 0.14 * dt;
-            if (card.y > 0.76 && card.y < 0.9) {
+            if (card.y > 0.68 && card.y < 0.96) {
                 var cx = g.car.x * g.W;
                 var laneX = raceLaneX(card.lane);
-                if (Math.abs(cx - laneX) < g.W * 0.13) raceHit(card);
+                if (Math.abs(cx - laneX) < g.W * 0.16) raceHit(card);
             }
-            if (card.y > 1.2) card.y = -0.15;
+            if (card.y > 1.25) card.y = -0.22;
         });
     }
 }
