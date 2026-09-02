@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-race2">
+    <link rel="stylesheet" href="style.css?v=20260902-fit1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -81,28 +81,28 @@
             <span class="home-btn-emoji" aria-hidden="true">🏎️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">字母賽車</span>
-                <span class="home-btn-sub">揸車入閘 · 聽英文單詞</span>
+                <span class="home-btn-sub">手指拖車，衝入啱嘅閘</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-puzzle" onclick="enterMode('puzzle')">
             <span class="home-btn-emoji" aria-hidden="true">🧩</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">單詞拼圖</span>
-                <span class="home-btn-sub">限時砌圖 · 再砌字母</span>
+                <span class="home-btn-sub">撳兩塊對調，再砌字母</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-match" onclick="enterMode('match')">
             <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">尋寶圖</span>
-                <span class="home-btn-sub">聽英文，限時喺圖搵佢</span>
+                <span class="home-btn-sub">九格圖，聽英文撳佢</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
             <span class="home-btn-emoji" aria-hidden="true">🎈</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">音爆射擊</span>
-                <span class="home-btn-sub">聽英文，射爆啱嘅氣球</span>
+                <span class="home-btn-sub">畫面入面射爆啱嘅氣球</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-write" onclick="enterMode('standard')">
@@ -174,164 +174,107 @@
 
 <!-- 🏎️ Letter racing -->
 <div id="race-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
-    <div class="mode-header">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-        <h2>🏎️ 字母賽車</h2>
-        <span class="top-bar-spacer" aria-hidden="true"></span>
-    </div>
-    <div id="race-rules" class="arena-card">
-        <p class="arena-kicker" id="race-group">第 1 組</p>
-        <h3>點玩？</h3>
-        <div class="race-howto" aria-hidden="true">
-            <span>🚗 自己跑圈</span>
-            <span>👉 掃左／右</span>
-            <span>🟩 入綠色閘</span>
+    <div class="stage-bar">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" id="race-target" class="stage-ask" onclick="replayRaceWord()">拖住架車入綠色閘</button>
+        <div class="stage-stats">
+            <span>⏱️<b id="race-time">60</b></span>
+            <span>⭐<b id="race-score">0</b></span>
+            <span id="race-need">0/5</span>
         </div>
-        <ol>
-            <li>架車會自己沿住賽道跑，唔使拖架車。</li>
-            <li>聽英文，撳下面 <b>左 / 中 / 右</b>，或者用手指掃，揀一條線。</li>
-            <li>經過閘嘅時候要喺<b>綠色</b>嗰條線。入錯扣時間。</li>
-        </ol>
-        <button type="button" class="arena-go" onclick="beginRaceDrive()">🏁 開始賽車</button>
     </div>
-    <div id="race-play" class="arena-play" style="display:none;">
-        <div class="arena-hud">
-            <span>⏱️ <span id="race-time">75</span>s</span>
-            <span>⭐ <span id="race-score">0</span></span>
-            <span>🏁 <span id="race-need">0 / 5</span></span>
-        </div>
-        <button type="button" id="race-target" class="arena-target" onclick="replayRaceWord()">掃左掃右揀線，入綠色閘！</button>
-        <p class="race-hint">手指掃左／右，或者撳下面掣揀線</p>
+    <div id="race-play" class="stage-field">
         <div id="race-canvas-wrap"><canvas id="race-cvs"></canvas></div>
-        <div class="race-steer">
-            <button type="button" class="race-steer-btn" onclick="raceSteer(-1)">⬅️ 左</button>
-            <button type="button" class="race-steer-btn" onclick="raceSteer(0)">● 中</button>
-            <button type="button" class="race-steer-btn" onclick="raceSteer(1)">右 ➡️</button>
-        </div>
         <div id="race-count" class="arena-count" style="display:none;">3</div>
         <div id="race-coach" class="zizi-coach is-empty" hidden></div>
     </div>
-    <div id="race-over" class="arena-card" style="display:none;">
-        <h3 id="race-over-title">衝線喇！</h3>
-        <p id="race-over-sub"></p>
-        <ul id="race-over-words" class="arena-words"></ul>
-        <button type="button" class="arena-go" onclick="startRaceGame()">再嚟一轉</button>
-        <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+    <div id="race-over" class="stage-over" style="display:none;">
+        <div class="arena-card">
+            <h3 id="race-over-title">衝線喇！</h3>
+            <p id="race-over-sub"></p>
+            <ul id="race-over-words" class="arena-words"></ul>
+            <button type="button" class="arena-go" onclick="startRaceGame()">再嚟一轉</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+        </div>
     </div>
 </div>
 
 <!-- 🧩 Word puzzle -->
 <div id="puzzle-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
-    <div class="mode-header">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-        <h2>🧩 單詞拼圖</h2>
-        <span class="top-bar-spacer" aria-hidden="true"></span>
-    </div>
-    <div id="pz-rules" class="arena-card">
-        <p class="arena-kicker" id="pz-group">第 1 組</p>
-        <h3>遊戲規則</h3>
-        <ol>
-            <li>先撳下面一塊圖，再放上啱嘅空位。</li>
-            <li>砌完幅圖，跟讀音撳字母砌英文。</li>
-            <li>每個字 50 秒。放錯、撳錯會扣時間。</li>
-            <li>砌 4 個課程單詞先完場。</li>
-        </ol>
-        <button type="button" class="arena-go" onclick="beginPuzzlePlay()">🧩 開始拼圖</button>
-    </div>
-    <div id="pz-play" class="arena-play" style="display:none;">
-        <div class="arena-hud">
-            <span>⏱️ <span id="pz-time">50</span>s</span>
-            <span>⭐ <span id="pz-score">0</span></span>
-            <span>🧩 <span id="pz-round">1 / 4</span></span>
+    <div class="stage-bar">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <p id="pz-prompt" class="stage-ask">撳兩塊對調</p>
+        <div class="stage-stats">
+            <span>⏱️<b id="pz-time">45</b></span>
+            <span>⭐<b id="pz-score">0</b></span>
+            <span id="pz-round">1/3</span>
         </div>
-        <p id="pz-prompt" class="arena-target">砌返幅圖</p>
+    </div>
+    <div id="pz-play" class="stage-field">
         <div id="pz-board" class="pz-board"></div>
-        <div id="pz-tray" class="pz-tray"></div>
         <div id="pz-spell" class="pz-spell" style="display:none;"></div>
         <div id="pz-coach" class="zizi-coach is-empty" hidden></div>
     </div>
-    <div id="pz-over" class="arena-card" style="display:none;">
-        <h3 id="pz-over-title">拼圖完成！</h3>
-        <p id="pz-over-sub"></p>
-        <ul id="pz-over-words" class="arena-words"></ul>
-        <button type="button" class="arena-go" onclick="startWordPuzzle()">再砌一轉</button>
-        <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+    <div id="pz-over" class="stage-over" style="display:none;">
+        <div class="arena-card">
+            <h3 id="pz-over-title">拼圖完成！</h3>
+            <p id="pz-over-sub"></p>
+            <ul id="pz-over-words" class="arena-words"></ul>
+            <button type="button" class="arena-go" onclick="startWordPuzzle()">再砌一轉</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+        </div>
     </div>
 </div>
 
 <!-- 🖼️ Picture hunt -->
 <div id="hunt-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
-    <div class="mode-header">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-        <h2>🖼️ 尋寶圖</h2>
-        <span class="top-bar-spacer" aria-hidden="true"></span>
-    </div>
-    <div id="hunt-rules" class="arena-card">
-        <p class="arena-kicker" id="hunt-group">第 1 組</p>
-        <h3>遊戲規則</h3>
-        <ol>
-            <li>圖入面有好多課程單詞。</li>
-            <li>聽英文，限時撳啱嗰樣。</li>
-            <li>70 秒搵 8 樣。撳錯扣 4 秒。</li>
-            <li>連中有 combo 分。搵到會聽字點解。</li>
-        </ol>
-        <button type="button" class="arena-go" onclick="beginHuntPlay()">🔍 開始尋寶</button>
-    </div>
-    <div id="hunt-play" class="arena-play" style="display:none;">
-        <div class="arena-hud">
-            <span>⏱️ <span id="hunt-time">70</span>s</span>
-            <span>⭐ <span id="hunt-score">0</span></span>
-            <span>🔍 <span id="hunt-need">0 / 8</span></span>
+    <div class="stage-bar">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" id="hunt-target" class="stage-ask" onclick="replayHuntWord()">聽英文，撳啱嗰格</button>
+        <div class="stage-stats">
+            <span>⏱️<b id="hunt-time">60</b></span>
+            <span>⭐<b id="hunt-score">0</b></span>
+            <span id="hunt-need">0/6</span>
         </div>
-        <div class="hunt-timebar" aria-hidden="true"><div id="hunt-time-fill"></div></div>
-        <button type="button" id="hunt-target" class="arena-target" onclick="replayHuntWord()">聽英文，喺圖入面搵佢！</button>
+    </div>
+    <div id="hunt-play" class="stage-field">
         <div id="hunt-scene" class="hunt-scene"></div>
         <div id="hunt-coach" class="zizi-coach is-empty" hidden></div>
     </div>
-    <div id="hunt-over" class="arena-card" style="display:none;">
-        <h3 id="hunt-over-title">尋寶成功！</h3>
-        <p id="hunt-over-sub"></p>
-        <ul id="hunt-over-words" class="arena-words"></ul>
-        <button type="button" class="arena-go" onclick="startPictureHunt()">再尋一轉</button>
-        <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+    <div id="hunt-over" class="stage-over" style="display:none;">
+        <div class="arena-card">
+            <h3 id="hunt-over-title">尋寶成功！</h3>
+            <p id="hunt-over-sub"></p>
+            <ul id="hunt-over-words" class="arena-words"></ul>
+            <button type="button" class="arena-go" onclick="startPictureHunt()">再尋一轉</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+        </div>
     </div>
 </div>
 
 <!-- Balloon shooting -->
 <div id="shoot-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
-    <div class="mode-header">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-        <h2>🎈 音爆射擊</h2>
-        <span class="top-bar-spacer" aria-hidden="true"></span>
-    </div>
-    <div id="shoot-rules" class="arena-card">
-        <p class="arena-kicker" id="shoot-group">第 1 組</p>
-        <h3>遊戲規則</h3>
-        <ol>
-            <li>聽英文單詞，射爆有嗰個圖同字嘅氣球。</li>
-            <li>60 秒內射中 6 個課程單詞。</li>
-            <li>射錯會扣分同扣 4 秒。連中有 combo 分。</li>
-            <li>射中之後聽英文同字點解。</li>
-        </ol>
-        <button type="button" class="arena-go" onclick="beginShootPlay()">🎈 開始射擊</button>
-    </div>
-    <div id="shoot-play" class="arena-play" style="display:none;">
-        <div class="arena-hud">
-            <span>⏱️ <span id="shoot-time">60</span>s</span>
-            <span>⭐ <span id="shoot-score">0</span></span>
-            <span>🎈 <span id="shoot-need">0 / 6</span></span>
+    <div class="stage-bar">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">聽英文，射爆啱嘅氣球</button>
+        <div class="stage-stats">
+            <span>⏱️<b id="shoot-time">50</b></span>
+            <span>⭐<b id="shoot-score">0</b></span>
+            <span id="shoot-need">0/5</span>
         </div>
-        <div class="hunt-timebar" aria-hidden="true"><div id="shoot-time-fill"></div></div>
-        <button type="button" id="shoot-target" class="arena-target" onclick="replayShootWord()">聽英文，射爆啱嘅氣球！</button>
+    </div>
+    <div id="shoot-play" class="stage-field">
         <div id="shoot-field" class="shoot-field"></div>
         <div id="shoot-coach" class="zizi-coach is-empty" hidden></div>
     </div>
-    <div id="shoot-over" class="arena-card" style="display:none;">
-        <h3 id="shoot-over-title">射擊完成！</h3>
-        <p id="shoot-over-sub"></p>
-        <ul id="shoot-over-words" class="arena-words"></ul>
-        <button type="button" class="arena-go" onclick="startShootGame()">再射一轉</button>
-        <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+    <div id="shoot-over" class="stage-over" style="display:none;">
+        <div class="arena-card">
+            <h3 id="shoot-over-title">射擊完成！</h3>
+            <p id="shoot-over-sub"></p>
+            <ul id="shoot-over-words" class="arena-words"></ul>
+            <button type="button" class="arena-go" onclick="startShootGame()">再射一轉</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+        </div>
     </div>
 </div>
 
@@ -416,24 +359,24 @@
 </div>
 
 <!-- Load order: data → stories → state → config/secrets → speech/progress → fx → writing → curriculum/games → camera → router -->
-<script src="js/data.js?v=20260902-race2"></script>
-<script src="js/stories.js?v=20260902-race2"></script>
-<script src="js/state.js?v=20260902-race2"></script>
+<script src="js/data.js?v=20260902-fit1"></script>
+<script src="js/stories.js?v=20260902-fit1"></script>
+<script src="js/state.js?v=20260902-fit1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260902-race2"></script>
-<script src="js/speech.js?v=20260902-race2"></script>
-<script src="js/progress.js?v=20260902-race2"></script>
-<script src="js/fx.js?v=20260902-race2"></script>
-<script src="js/teach.js?v=20260902-race2"></script>
-<script src="js/writing.js?v=20260902-race2"></script>
-<script src="js/ui.js?v=20260902-race2"></script>
-<script src="js/canvas.js?v=20260902-race2"></script>
-<script src="js/curriculum.js?v=20260902-race2"></script>
-<script src="js/race.js?v=20260902-race2"></script>
-<script src="js/wordpuzzle.js?v=20260902-race2"></script>
-<script src="js/hunt.js?v=20260902-race2"></script>
-<script src="js/shoot.js?v=20260902-race2"></script>
-<script src="js/camera.js?v=20260902-race2"></script>
-<script src="js/router.js?v=20260902-race2"></script>
+<script src="js/secrets.js?v=20260902-fit1"></script>
+<script src="js/speech.js?v=20260902-fit1"></script>
+<script src="js/progress.js?v=20260902-fit1"></script>
+<script src="js/fx.js?v=20260902-fit1"></script>
+<script src="js/teach.js?v=20260902-fit1"></script>
+<script src="js/writing.js?v=20260902-fit1"></script>
+<script src="js/ui.js?v=20260902-fit1"></script>
+<script src="js/canvas.js?v=20260902-fit1"></script>
+<script src="js/curriculum.js?v=20260902-fit1"></script>
+<script src="js/race.js?v=20260902-fit1"></script>
+<script src="js/wordpuzzle.js?v=20260902-fit1"></script>
+<script src="js/hunt.js?v=20260902-fit1"></script>
+<script src="js/shoot.js?v=20260902-fit1"></script>
+<script src="js/camera.js?v=20260902-fit1"></script>
+<script src="js/router.js?v=20260902-fit1"></script>
 </body>
 </html>

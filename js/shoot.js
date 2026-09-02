@@ -1,16 +1,15 @@
 // ==========================================
-// Balloon shoot -- hear English, pop the matching balloon
-// Timed, scored, uses SATIPN curriculum words + etymology.
+// 🎈 音爆射擊 — balloons stay on screen and bob
+// Hear English, tap the matching balloon.
 // ==========================================
 
 window.ShootGame = {
     active: false,
-    phase: 'rules',
+    phase: 'play',
     clock: null,
-    spawnTimer: null,
-    TIME: 60,
-    NEED: 6,
-    timeLeft: 60,
+    TIME: 50,
+    NEED: 5,
+    timeLeft: 50,
     score: 0,
     combo: 0,
     got: 0,
@@ -28,27 +27,24 @@ function shootHud() {
     var s = shEl('shoot-score');
     var n = shEl('shoot-need');
     var tgt = shEl('shoot-target');
-    var bar = shEl('shoot-time-fill');
     if (t) t.textContent = String(Math.max(0, Math.ceil(g.timeLeft)));
     if (s) s.textContent = String(g.score);
-    if (n) n.textContent = g.got + ' / ' + g.NEED;
-    if (bar) bar.style.width = Math.max(0, Math.min(100, (g.timeLeft / g.TIME) * 100)) + '%';
+    if (n) n.textContent = g.got + '/' + g.NEED;
     if (tgt) {
         if (g.target) {
             var yue = Curriculum.yue(g.target.w);
-            tgt.innerHTML = '射 <b>' + g.target.w + '</b>' + (yue ? '（' + yue + '）' : '');
+            tgt.textContent = '射 ' + g.target.w + (yue ? '（' + yue + '）' : '');
         } else {
-            tgt.textContent = '聽英文，射爆啱嘅氣球！';
+            tgt.textContent = '聽英文，射爆啱嘅氣球';
         }
     }
 }
 
-function shootShow(panel) {
-    ['shoot-rules', 'shoot-play', 'shoot-over'].forEach(function (id) {
-        var el = shEl(id);
-        if (!el) return;
-        el.style.display = id === panel ? (id === 'shoot-play' ? 'flex' : 'block') : 'none';
-    });
+function shootShowOver(on) {
+    var el = shEl('shoot-over');
+    if (!el) return;
+    el.style.display = on ? 'flex' : 'none';
+    el.classList.toggle('is-open', on);
 }
 
 function shootAsk() {
@@ -56,43 +52,45 @@ function shootAsk() {
     g.target = g.queue[g.got];
     g.pending = false;
     shootHud();
-    var field = shEl('shoot-field');
-    if (field) field.innerHTML = '';
     if (!g.target) return;
+    shootFill();
     Curriculum.say('射 ' + g.target.w + ' 嗰個氣球！').then(function () {
         if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
     });
 }
 
-function shootSpawn() {
+function shootFill() {
     var g = window.ShootGame;
     var field = shEl('shoot-field');
-    if (!field || !g.active || g.phase !== 'play' || !g.target || g.pending) return;
-    if (field.querySelectorAll('.shoot-balloon').length >= 7) return;
-
-    var item = Math.random() < 0.5
-        ? g.target
-        : (Curriculum.decoys(g.target, 1)[0] || g.target);
+    if (!field || !g.target) return;
+    field.innerHTML = '';
+    var decoys = Curriculum.decoys(g.target, 2);
+    var items = Curriculum.shuffle([g.target].concat(decoys).slice(0, 3));
+    var spots = [
+        { left: '12%', top: '18%' },
+        { left: '38%', top: '48%' },
+        { left: '64%', top: '22%' }
+    ];
     var colors = ['#ff6b6b', '#4dabf7', '#845ef7', '#ffc93c', '#2ecc71'];
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'shoot-balloon';
-    b.style.left = (8 + Math.random() * 70) + '%';
-    b.style.background = colors[Math.floor(Math.random() * colors.length)];
-    b.style.animationDuration = (4.0 + Math.random() * 2.2) + 's';
-    b.dataset.word = item.w;
-    b.setAttribute('aria-label', item.w);
-    b.innerHTML = '<span class="shoot-balloon-emoji">' + item.emoji + '</span>' +
-        '<span class="shoot-balloon-word">' + item.w + '</span>' +
-        '<span class="shoot-balloon-letter">' + item.l + '</span>';
-    b.onclick = function (ev) {
-        ev.preventDefault();
-        shootPop(b, item);
-    };
-    b.addEventListener('animationend', function () {
-        if (b.parentNode) b.parentNode.removeChild(b);
+    items.forEach(function (item, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'shoot-balloon';
+        b.style.left = spots[i].left;
+        b.style.top = spots[i].top;
+        b.style.background = colors[i % colors.length];
+        b.style.animationDelay = (i * 0.25) + 's';
+        b.dataset.word = item.w;
+        b.setAttribute('aria-label', item.w);
+        b.innerHTML = '<span class="shoot-balloon-emoji">' + item.emoji + '</span>' +
+            '<span class="shoot-balloon-word">' + item.w + '</span>' +
+            '<span class="shoot-balloon-letter">' + item.l + '</span>';
+        b.onclick = function (ev) {
+            ev.preventDefault();
+            shootPop(b, item);
+        };
+        field.appendChild(b);
     });
-    field.appendChild(b);
 }
 
 function shootPop(el, item) {
@@ -139,6 +137,8 @@ function shootPop(el, item) {
         shootHud();
         Curriculum.say('唔係 ' + item.w + '。聽多次 ' + g.target.w).then(function () {
             if (g.active && g.target) return Curriculum.speakEn(g.target.w);
+        }).then(function () {
+            if (g.active && g.phase === 'play') shootFill();
         });
     }
 }
@@ -160,13 +160,12 @@ function shootFinish(ok) {
     g.phase = 'over';
     g.pending = false;
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
-    if (g.spawnTimer) { clearInterval(g.spawnTimer); g.spawnTimer = null; }
     var field = shEl('shoot-field');
     if (field) field.innerHTML = '';
-    var stars = Curriculum.starsForScore(g.score, 550);
+    var stars = Curriculum.starsForScore(g.score, 450);
     Curriculum.award(stars, { reason: '完成音爆射擊', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
-    shootShow('shoot-over');
+    shootShowOver(true);
     var overlay = shEl('shoot-overlay');
     if (overlay) overlay.classList.remove('is-urgent');
     Curriculum.finishFx({
@@ -185,18 +184,18 @@ function shootFinish(ok) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>今轉未射中，再聽英文試過！</li>';
     }
-    Curriculum.say(ok ? '射擊完成！記住啲英文圖同字。' : '時間到！聽英文再射啱嗰個氣球。');
+    Curriculum.say(ok ? '射擊完成！記住啲英文圖同字。' : '時間到！聽英文再射畫面入面啱嗰個。');
 }
 
 window.stopShootGame = function () {
     var g = window.ShootGame;
     g.active = false;
-    g.phase = 'rules';
+    g.phase = 'play';
     g.pending = false;
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
-    if (g.spawnTimer) { clearInterval(g.spawnTimer); g.spawnTimer = null; }
     var field = shEl('shoot-field');
     if (field) field.innerHTML = '';
+    shootShowOver(false);
     var overlay = shEl('shoot-overlay');
     if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
     if (window.setDisplay) window.setDisplay('shoot-overlay', 'none');
@@ -211,7 +210,6 @@ window.startShootGame = function () {
     }
     var g = window.ShootGame;
     g.active = true;
-    g.phase = 'rules';
     g.score = 0;
     g.combo = 0;
     g.got = 0;
@@ -219,10 +217,8 @@ window.startShootGame = function () {
     g.queue = Curriculum.pickLesson(g.NEED);
     g.target = null;
     Curriculum.bootFx();
-    shootShow('shoot-rules');
-    var group = shEl('shoot-group');
-    if (group) group.textContent = Curriculum.groupName();
-    Curriculum.say('音爆射擊。限時聽英文，射爆啱嗰個氣球。射錯會扣時間。');
+    shootShowOver(false);
+    window.beginShootPlay();
 };
 
 window.beginShootPlay = function () {
@@ -230,12 +226,9 @@ window.beginShootPlay = function () {
     g.phase = 'play';
     g.timeLeft = g.TIME;
     Curriculum.startFx();
-    shootShow('shoot-play');
     shootHud();
     if (g.clock) clearInterval(g.clock);
-    if (g.spawnTimer) clearInterval(g.spawnTimer);
     g.clock = setInterval(shootTick, 250);
-    g.spawnTimer = setInterval(shootSpawn, 900);
     shootAsk();
 };
 
