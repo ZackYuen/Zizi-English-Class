@@ -286,14 +286,14 @@ window.loop = function() {
 // Score = path following, NOT "did ink cover the letter shape"
 // Scribbling / 亂填 cannot advance or pass
 // ==========================================
-window.WRITE_PASS_SCORE = 80;
-var HIT_START = 38;
-var PATH_CORRIDOR = 26;
-var HIT_END = 36;
-var LOOKAHEAD_T = 0.10;     // only look a short way ahead on the path
-var MIN_FOLLOW = 0.90;      // must walk ≥90% of this stroke
-var MIN_CLEAN = 0.58;       // most samples must stay on the path
-var STROKE_CONNECT_EPS = 30;
+window.WRITE_PASS_SCORE = 62;
+var HIT_START = 48;
+var PATH_CORRIDOR = 34;
+var HIT_END = 52;
+var LOOKAHEAD_T = 0.32;     // fast fingers skip ahead — still count
+var MIN_FOLLOW = 0.78;      // walk most of this stroke
+var MIN_CLEAN = 0.48;       // stay near the dashed line
+var STROKE_CONNECT_EPS = 36;
 
 /** True when stroke A's end point matches stroke B's start (consecutive stroke). */
 window.strokesConnect = function (strokeA, strokeB) {
@@ -333,18 +333,39 @@ window.getCanvasPos = function(e, canvas) {
 function projectFingerOnLocalPath(pos) {
     if (!currentWPs || !currentWPs.length) return null;
     var n = currentWPs.length;
-    var from = Math.max(0, (nextWpIdx || 0) - 1);
-    var ahead = Math.max(3, Math.ceil(n * LOOKAHEAD_T));
+    var from = Math.max(0, (nextWpIdx || 0) - 2);
+    var ahead = Math.max(8, Math.ceil(n * LOOKAHEAD_T));
     var to = Math.min(n - 1, from + ahead);
     var best = null;
-    for (var i = from; i <= to; i++) {
+    var i;
+    for (i = from; i <= to; i++) {
         var wp = currentWPs[i];
         var d = Math.hypot(pos.x - wp.x, pos.y - wp.y);
         if (!best || d < best.dist) {
             best = { x: wp.x, y: wp.y, t: wp.t, dist: d, i: i };
         }
     }
+    if (!best || best.dist > PATH_CORRIDOR) {
+        to = Math.min(n - 1, from + Math.max(ahead, Math.ceil(n * 0.5)));
+        for (i = from; i <= to; i++) {
+            var wp2 = currentWPs[i];
+            var d2 = Math.hypot(pos.x - wp2.x, pos.y - wp2.y);
+            if (!best || d2 < best.dist) {
+                best = { x: wp2.x, y: wp2.y, t: wp2.t, dist: d2, i: i };
+            }
+        }
+    }
     return best;
+}
+
+function guideAtProgress(t) {
+    if (!currentWPs || !currentWPs.length) return null;
+    var best = currentWPs[0];
+    for (var i = 0; i < currentWPs.length; i++) {
+        if (currentWPs[i].t <= t) best = currentWPs[i];
+        else break;
+    }
+    return { x: best.x, y: best.y };
 }
 
 function currentStrokeLiveScore() {
@@ -492,11 +513,14 @@ function advanceStrokeProgress(pos) {
     if (hit.dist <= PATH_CORRIDOR) {
         window._strokeOn = (window._strokeOn || 0) + 1;
         var pathT = window.pathT || 0;
-        if (hit.t >= pathT - 0.04 && hit.t <= pathT + LOOKAHEAD_T + 0.02) {
-            window.pathT = Math.max(pathT, hit.t);
-            nextWpIdx = Math.max(nextWpIdx || 0, hit.i);
-            window.guidePos = { x: hit.x, y: hit.y };
+        if (hit.t >= pathT - 0.06) {
+            var jump = Math.min(hit.t, pathT + 0.32);
+            if (jump > pathT) {
+                window.pathT = jump;
+                nextWpIdx = Math.max(nextWpIdx || 0, hit.i);
+            }
         }
+        window.guidePos = guideAtProgress(window.pathT || 0);
     } else {
         window._strokeOff = (window._strokeOff || 0) + 1;
     }
@@ -504,7 +528,7 @@ function advanceStrokeProgress(pos) {
     var end = currentWPs[currentWPs.length - 1];
     var distEnd = Math.hypot(pos.x - end.x, pos.y - end.y);
     var prog = window.pathT || 0;
-    window._strokeCommitPending = (distEnd <= HIT_END && prog >= MIN_FOLLOW);
+    window._strokeCommitPending = (prog >= MIN_FOLLOW && (distEnd <= HIT_END || prog >= 0.92));
 }
 
 function strokeReportNow() {
@@ -638,10 +662,8 @@ function onStrokeEnd(e) {
 
     if (isDrawing && currentWPs && currentWPs.length) {
         if (pos) advanceStrokeProgress(pos);
-        var end = currentWPs[currentWPs.length - 1];
         var report = strokeReportNow();
-        var nearEnd = !!(end && pos && Math.hypot(pos.x - end.x, pos.y - end.y) <= HIT_END);
-        if ((report.follow >= MIN_FOLLOW && nearEnd && report.clean >= MIN_CLEAN) || window._strokeCommitPending) {
+        if ((report.follow >= MIN_FOLLOW && report.clean >= MIN_CLEAN) || window._strokeCommitPending) {
             commitCurrentStroke(e && e.pointerId, pos);
         } else if (report.samples >= 12 && report.clean < MIN_CLEAN) {
             rejectDirtyStroke();
