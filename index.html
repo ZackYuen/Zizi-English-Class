@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260817-loan1">
+    <link rel="stylesheet" href="style.css?v=20260902-games1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -81,28 +81,35 @@
             <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">睇圖識字</span>
-                <span class="home-btn-sub">答啱就見到字點解</span>
+                <span class="home-btn-sub">聽英文，揀啱嘅圖</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-standard" onclick="enterMode('standard')">
-            <span class="home-btn-emoji" aria-hidden="true">✍️</span>
+            <span class="home-btn-emoji" aria-hidden="true">🏎️</span>
             <span class="home-btn-text">
-                <span class="home-btn-title">手指描字</span>
-                <span class="home-btn-sub">跟住綠點 · 字點解</span>
+                <span class="home-btn-title">描字賽車</span>
+                <span class="home-btn-sub">跟綠點畫，贏隻烏龜</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
-            <span class="home-btn-emoji" aria-hidden="true">🎧</span>
+            <span class="home-btn-emoji" aria-hidden="true">🎈</span>
             <span class="home-btn-text">
-                <span class="home-btn-title">聽音大挑戰</span>
-                <span class="home-btn-sub">聽音揀 A · E · I</span>
+                <span class="home-btn-title">音爆射擊</span>
+                <span class="home-btn-sub">聽音射爆啱嘅氣球</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-camera" onclick="enterMode('camera')">
             <span class="home-btn-emoji" aria-hidden="true">📸</span>
             <span class="home-btn-text">
-                <span class="home-btn-title">探索魔鏡</span>
-                <span class="home-btn-sub">影真嘢學單詞</span>
+                <span class="home-btn-title">魔鏡捉迷藏</span>
+                <span class="home-btn-sub">影真嘢 → 聽英文 → 搵返佢</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-puzzle" onclick="enterMode('puzzle')">
+            <span class="home-btn-emoji" aria-hidden="true">🧩</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">搵唔同</span>
+                <span class="home-btn-sub">捉迷藏 + 兩張相睇分別</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-album" onclick="enterMode('album')">
@@ -122,13 +129,17 @@
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
     <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-    <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">🌟 孜孜學英文</h2>
+    <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">🏎️ 描字賽車</h2>
     <span class="top-bar-spacer" aria-hidden="true"></span>
 </div>
 
 <!-- Tracing app -->
 <div id="app" style="display:none;">
-    <div id="msg" aria-live="off">由綠色點出發，跟住虛線畫到尾！</div>
+    <div id="race-track" class="race-track" aria-hidden="true">
+        <div class="race-lane"><span class="racer racer-turtle" id="racer-turtle">🐢</span></div>
+        <div class="race-lane"><span class="racer racer-kid" id="racer-kid">🚗</span></div>
+    </div>
+    <div id="msg" aria-live="off">由綠色點出發，跟住虛線畫到尾！贏隻烏龜！</div>
     <div id="write-word-chip" class="write-word-chip is-empty"></div>
     <div id="write-coach" class="zizi-coach is-empty" hidden></div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
@@ -146,6 +157,7 @@
 
 <!-- Camera mode -->
 <div id="camera-overlay" style="display:none;">
+    <p class="cam-quest">影一樣嘢，之後同佢玩捉迷藏！</p>
     <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
     <canvas id="crop-canvas" width="300" height="300"></canvas>
     <div id="camera-controls">
@@ -157,29 +169,26 @@
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
-<!-- Listening game -->
+<!-- Balloon shooting -->
 <div id="game-overlay" style="display:none;">
     <div class="mode-header">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-        <h2>🎧 聽音大挑戰</h2>
+        <h2>🎈 音爆射擊</h2>
         <span class="top-bar-spacer" aria-hidden="true"></span>
     </div>
-    <div class="game-hud" aria-label="分數">
-        <div class="game-hud-chip">⭐ <span id="game-score">0</span></div>
-        <div class="game-hud-chip">🔥 <span id="game-streak">0</span></div>
+    <div class="arcade-hud" aria-label="分數">
+        <span>⭐ <span id="shoot-score">0</span></span>
+        <span id="shoot-lives">❤️❤️❤️</span>
+        <span>再射 <span id="shoot-need">3</span></span>
     </div>
-    <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
+    <div id="game-msg">聽音，射爆啱嘅氣球！</div>
     <button type="button" id="game-speaker" onclick="playGameSound()">
         <span id="game-emoji-display">🔊</span>
         <span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
     </button>
     <div id="game-coach" class="zizi-coach is-empty" hidden></div>
     <button type="button" class="hint-btn" onclick="requestGameHint()">💡 提示我</button>
-    <div class="game-answers">
-        <button type="button" id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
-        <button type="button" id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
-        <button type="button" id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')"></button>
-    </div>
+    <div id="shoot-field" class="shoot-field"></div>
 </div>
 
 <!-- Picture match (offline kid mode) -->
@@ -218,6 +227,21 @@
         <div id="album-grid" class="album-grid"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
     </div>
+</div>
+
+<!-- Hide-and-seek / spot the difference -->
+<div id="play-overlay" style="display:none;" aria-hidden="true">
+    <div class="mode-header">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+        <h2 id="play-title">🙈 捉迷藏</h2>
+        <span class="top-bar-spacer" aria-hidden="true"></span>
+    </div>
+    <div class="arcade-hud" aria-label="進度">
+        <span>⭐ 星星</span>
+        <span>搵到 <span id="play-found">0</span></span>
+    </div>
+    <p id="play-msg">搵吓佢匿喺邊！</p>
+    <div id="play-stage" class="play-stage"></div>
 </div>
 
 
@@ -290,22 +314,24 @@
     </div>
 </div>
 
-<!-- Load order: data → state → config/secrets → speech/progress → fx → writing → features → router -->
-<script src="js/data.js?v=20260817-loan1"></script>
-<script src="js/stories.js?v=20260817-loan1"></script>
-<script src="js/state.js?v=20260817-loan1"></script>
+<!-- Load order: data → state → config/secrets → speech/progress → fx → writing → arcade → features → router -->
+<script src="js/data.js?v=20260902-games1"></script>
+<script src="js/stories.js?v=20260902-games1"></script>
+<script src="js/state.js?v=20260902-games1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260817-loan1"></script>
-<script src="js/speech.js?v=20260817-loan1"></script>
-<script src="js/progress.js?v=20260817-loan1"></script>
-<script src="js/fx.js?v=20260817-loan1"></script>
-<script src="js/teach.js?v=20260817-loan1"></script>
-<script src="js/writing.js?v=20260817-loan1"></script>
-<script src="js/ui.js?v=20260817-loan1"></script>
-<script src="js/canvas.js?v=20260817-loan1"></script>
-<script src="js/camera.js?v=20260817-loan1"></script>
-<script src="js/game.js?v=20260817-loan1"></script>
-<script src="js/match.js?v=20260817-loan1"></script>
-<script src="js/router.js?v=20260817-loan1"></script>
+<script src="js/secrets.js?v=20260902-games1"></script>
+<script src="js/speech.js?v=20260902-games1"></script>
+<script src="js/progress.js?v=20260902-games1"></script>
+<script src="js/fx.js?v=20260902-games1"></script>
+<script src="js/teach.js?v=20260902-games1"></script>
+<script src="js/writing.js?v=20260902-games1"></script>
+<script src="js/ui.js?v=20260902-games1"></script>
+<script src="js/canvas.js?v=20260902-games1"></script>
+<script src="js/arcade.js?v=20260902-games1"></script>
+<script src="js/seek.js?v=20260902-games1"></script>
+<script src="js/camera.js?v=20260902-games1"></script>
+<script src="js/game.js?v=20260902-games1"></script>
+<script src="js/match.js?v=20260902-games1"></script>
+<script src="js/router.js?v=20260902-games1"></script>
 </body>
 </html>

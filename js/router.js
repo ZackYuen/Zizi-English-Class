@@ -43,6 +43,7 @@ function hideAllOverlays() {
     setDisplay('match-overlay', 'none');
     setDisplay('album-overlay', 'none');
     setDisplay('settings-modal', 'none');
+    setDisplay('play-overlay', 'none');
     setDisplay('app', 'none');
     setDisplay('standard-ui', 'none');
     setDisplay('standard-top-bar', 'none');
@@ -148,9 +149,13 @@ window.enterMode = function (mode) {
     setDisplay('home-menu', 'none');
     setDisplay('settings-modal', 'none');
     setDisplay('album-overlay', 'none');
+    setDisplay('play-overlay', 'none');
     // Back control sits inside each mode header — never as a floating overlay
     setDisplay('back-to-home-btn', 'none');
     setDisplay('standard-top-bar', 'none');
+    if (window.stopShootGame) window.stopShootGame();
+    if (window.stopPlayGames) window.stopPlayGames();
+    if (window.Arcade && window.Arcade.hideRace) window.Arcade.hideRace();
 
     if (mode === 'standard') {
         setDisplay('camera-overlay', 'none');
@@ -165,7 +170,7 @@ window.enterMode = function (mode) {
 
         if (typeof startApp === 'function') startApp('standard');
         if (window.announce) {
-            window.announce('基礎描字模式。跟住綠點畫字母，唔識可以撳提示。', { force: true, interrupt: true });
+            window.announce('描字賽車。跟住綠點畫字母，同烏龜比賽，唔識可以撳提示。', { force: true, interrupt: true });
         }
     } else if (mode === 'camera') {
         // Camera has its own ❌ 取消 — do not show a second back button on top
@@ -173,19 +178,29 @@ window.enterMode = function (mode) {
         setDisplay('standard-ui', 'none');
         setDisplay('game-overlay', 'none');
         setDisplay('match-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         if (window.openCamera) window.openCamera();
     } else if (mode === 'game') {
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
         setDisplay('match-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         if (window.startGame) window.startGame();
     } else if (mode === 'match') {
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         if (window.startMatchGame) window.startMatchGame();
+    } else if (mode === 'puzzle') {
+        setDisplay('app', 'none');
+        setDisplay('standard-ui', 'none');
+        setDisplay('camera-overlay', 'none');
+        setDisplay('game-overlay', 'none');
+        setDisplay('match-overlay', 'none');
+        if (window.startPuzzleGame) window.startPuzzleGame();
     } else if (mode === 'album') {
         setDisplay('home-menu', 'block');
         window.currentMode = 'none';
@@ -202,6 +217,9 @@ window.backToHome = function () {
 
     if (window.gameNextTimeout) clearTimeout(window.gameNextTimeout);
     if (window.gameReplayTimeout) clearTimeout(window.gameReplayTimeout);
+    if (window.stopShootGame) window.stopShootGame();
+    if (window.stopPlayGames) window.stopPlayGames();
+    if (window.Arcade && window.Arcade.hideRace) window.Arcade.hideRace();
 
     window.isGamePlaying = false;
     window.isGameProcessing = false;
@@ -240,6 +258,7 @@ window.addEventListener('pageshow', function () {
         setDisplay('game-overlay', 'none');
         setDisplay('match-overlay', 'none');
         setDisplay('album-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         setDisplay('settings-modal', 'none');
         setDisplay('home-menu', 'block');
         setDisplay('back-to-home-btn', 'none');
