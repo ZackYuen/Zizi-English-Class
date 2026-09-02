@@ -2201,18 +2201,28 @@ button:disabled {
   background: #fff3b0;
   color: #123b63;
   font-weight: 800;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: clamp(15px, 4.2vw, 18px);
+  line-height: 1.15;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 40px;
+  min-height: 52px;
 }
-p.stage-ask {
+p.stage-ask,
+button.stage-ask {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+}
+.stage-word {
+  display: inline;
+  font-size: clamp(26px, 8vw, 40px);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #123b63;
+  line-height: 1;
 }
 .stage-stars {
   display: flex;

@@ -30,14 +30,22 @@
         ctx.arc(x + r * 0.2, y, r * 0.45, 0, Math.PI * 2);
         ctx.fill();
     }
-    function generic(ctx, x, y, s, word) {
+    function generic(ctx, x, y, s, word, withText) {
         ctx.fillStyle = col(hash(word) % 8);
         ctx.beginPath();
-        ctx.arc(x, y, s * 0.4, 0, Math.PI * 2);
+        ctx.arc(x, y, s * 0.48, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#123b63';
-        ctx.lineWidth = s * 0.05;
+        ctx.lineWidth = Math.max(3, s * 0.05);
         ctx.stroke();
+        if (withText === false) return;
+        var w = String(word || '');
+        var fs = Math.min(s * 0.52, (s * 1.55) / Math.max(1, w.length));
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '800 ' + Math.round(fs) + 'px Fredoka, sans-serif';
+        ctx.fillText(w, x, y);
     }
 
     var draw = {
@@ -182,22 +190,33 @@
     };
 
     window.ZiziArt = {
-    drawWord: function (ctx, word, x, y, s, t) {
-        var key = String(word || '').toLowerCase();
-        var tt = t || 0;
-        var bob = Math.sin(tt * 3) * s * 0.03;
-        var blink = (Math.floor(tt * 0.8) + key.length) % 6 === 0;
-        ctx.save();
-        ctx.translate(x, y + bob);
-        ctx.scale(1, blink ? 0.92 : 1);
-        if (draw[key]) {
-            draw[key](ctx, 0, 0, s);
-        } else {
-            generic(ctx, 0, 0, s, key);
-            text(ctx, key.slice(0, 4), 0, s * 0.02, s * 0.2);
-        }
-        ctx.restore();
-    },
+        has: function (word) {
+            return !!draw[String(word || '').toLowerCase()];
+        },
+        fitWord: function (ctx, word, maxW, maxPx) {
+            var fs = Math.round(maxPx);
+            ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
+            while (fs > 22 && ctx.measureText(word).width > maxW) {
+                fs -= 2;
+                ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
+            }
+            return fs;
+        },
+        drawWord: function (ctx, word, x, y, s, t, skipLabel) {
+            var key = String(word || '').toLowerCase();
+            var tt = t || 0;
+            var bob = Math.sin(tt * 3) * s * 0.03;
+            var blink = (Math.floor(tt * 0.8) + key.length) % 6 === 0;
+            ctx.save();
+            ctx.translate(x, y + bob);
+            ctx.scale(1, blink ? 0.92 : 1);
+            if (draw[key]) {
+                draw[key](ctx, 0, 0, s);
+            } else {
+                generic(ctx, 0, 0, s, key, !skipLabel);
+            }
+            ctx.restore();
+        },
         color: col
     };
 })();
