@@ -2238,6 +2238,9 @@ p.stage-ask {
   border-radius: 18px;
   margin-top: 6px;
 }
+.stage-field.has-controls {
+  padding-bottom: 58px;
+}
 
 .stage-over {
   position: absolute;
@@ -2334,6 +2337,28 @@ p.stage-ask {
   margin: 0;
 }
 
+.race-steer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  display: flex;
+  gap: 10px;
+  padding: 0 10px;
+  z-index: 5;
+}
+.race-steer-btn {
+  flex: 1;
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #123b63;
+  font-size: 26px;
+  font-weight: 800;
+  box-shadow: 0 4px 0 rgba(18, 59, 99, 0.2);
+}
+.race-steer-btn:active { transform: translateY(2px); }
 #race-canvas-wrap,
 #race-cvs {
   position: absolute;
@@ -2505,9 +2530,9 @@ p.stage-ask {
   transform: scale(0.9);
 }
 .hunt-item.is-found .hunt-emoji { transform: scale(1.2); }
-.hunt-item.is-found { opacity: 0.45; pointer-events: none; }
+.hunt-item.is-found .hunt-art { transform: scale(1.15); }
 .hunt-item.is-wrong { background: rgba(255, 179, 179, 0.7); }
-.hunt-item.is-hint .hunt-emoji { outline: none; animation: hint-pulse 1s ease-in-out infinite; }
+.hunt-item.is-hint .hunt-art { outline: none; animation: hint-pulse 1s ease-in-out infinite; }
 
 #shoot-overlay .shoot-field {
   position: absolute;
@@ -2537,9 +2562,13 @@ p.stage-ask {
   padding: 4px 0 0;
   bottom: auto;
 }
-.shoot-balloon-emoji { font-size: clamp(22px, 5vh, 32px); line-height: 1; }
+.shoot-art {
+  width: 54px;
+  height: 54px;
+  display: block;
+  margin-top: 6px;
+}
 .shoot-balloon-word { font-size: 13px; line-height: 1.1; }
-.shoot-balloon-letter { font-size: 14px; opacity: 0.9; }
 .shoot-ship {
   position: absolute;
   left: 50%;

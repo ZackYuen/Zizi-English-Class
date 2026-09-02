@@ -81,14 +81,22 @@ function shootFill() {
         b.style.animationDelay = (i * 0.25) + 's';
         b.dataset.word = item.w;
         b.setAttribute('aria-label', item.w);
-        b.innerHTML = '<span class="shoot-balloon-emoji">' + item.emoji + '</span>' +
-            '<span class="shoot-balloon-word">' + item.w + '</span>' +
-            '<span class="shoot-balloon-letter">' + item.l + '</span>';
+        b.innerHTML = '<canvas class="shoot-art"></canvas>' +
+            '<span class="shoot-balloon-word">' + item.w + '</span>';
         b.onclick = function (ev) {
             ev.preventDefault();
             shootPop(b, item);
         };
         field.appendChild(b);
+        var art = b.querySelector('.shoot-art');
+        if (art && window.ZiziArt) {
+            var cs = 44;
+            art.width = cs * 2;
+            art.height = cs * 2;
+            var ac = art.getContext('2d');
+            ac.scale(2, 2);
+            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs);
+        }
     });
 }
 
