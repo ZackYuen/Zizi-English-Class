@@ -1900,11 +1900,88 @@ button:disabled {
   flex-shrink: 0;
 }
 
-#write-coach {
-  width: min(320px, 92vw);
-  max-height: 26vh;
-  overflow-y: auto;
-  margin-bottom: 8px;
+body.tracing-mode {
+  overflow: hidden;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 6px 8px max(6px, env(safe-area-inset-bottom, 0px));
+}
+body.tracing-mode .top-bar {
+  margin-bottom: 4px;
+  flex: 0 0 auto;
+}
+body.tracing-mode .top-bar h2 {
+  font-size: 18px;
+}
+body.tracing-mode #app {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 400px;
+  padding: 8px;
+  overflow: hidden;
+}
+body.tracing-mode #msg {
+  min-height: 0;
+  margin-bottom: 4px;
+  font-size: 13px;
+  line-height: 1.25;
+  flex: 0 0 auto;
+}
+body.tracing-mode .write-word-chip {
+  width: 100%;
+  margin: 0 auto 4px;
+  padding: 4px 8px;
+  flex: 0 0 auto;
+}
+body.tracing-mode .write-chip-emoji { font-size: 22px; }
+body.tracing-mode .write-chip-en { font-size: 16px; }
+body.tracing-mode #write-coach {
+  display: none !important;
+}
+body.tracing-mode #canvas-wrapper {
+  flex: 1 1 auto;
+  width: min(260px, 72vw, calc(100dvh - 310px));
+  height: min(260px, 72vw, calc(100dvh - 310px));
+  max-height: calc(100dvh - 310px);
+  margin: 0 auto;
+}
+body.tracing-mode .controls {
+  margin-top: 6px;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+body.tracing-mode .controls .btn {
+  padding: 8px 10px;
+  font-size: 14px;
+  min-height: 40px;
+  flex: 1 1 0;
+}
+body.tracing-mode #standard-ui {
+  flex: 0 0 auto;
+}
+body.tracing-mode #group-tabs {
+  margin-top: 6px;
+  gap: 4px;
+}
+body.tracing-mode .tab {
+  padding: 5px 9px;
+  min-height: 32px;
+  font-size: 12px;
+}
+body.tracing-mode #kb {
+  margin-top: 6px;
+  padding-bottom: 2px;
+  gap: 5px;
+}
+body.tracing-mode .key {
+  width: 32px;
+  height: 32px;
+  line-height: 28px;
+  font-size: 16px;
 }
 
 @keyframes hint-pulse {

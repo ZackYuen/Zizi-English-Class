@@ -186,7 +186,7 @@ window.enterMode = function (mode) {
         setDisplay('camera-overlay', 'none');
         setDisplay('standard-top-bar', 'flex');
         setDisplay('back-to-home-btn', 'inline-block');
-        setDisplay('app', 'block');
+        setDisplay('app', 'flex');
         setDisplay('standard-ui', 'block');
         const reCam = document.getElementById('btn-re-cam');
         if (reCam) reCam.style.display = 'none';
@@ -244,6 +244,7 @@ window.backToHome = function () {
 
     hideAllOverlays();
     window.currentMode = 'none';
+    document.body.classList.remove('tracing-mode');
     setDisplay('home-menu', 'block');
     if (window.refreshHomeProgress) window.refreshHomeProgress();
     if (window.announce) {

@@ -134,7 +134,6 @@ window.ZiziTeach = (function () {
             '<div class="zizi-coach-body">' +
                 (title ? '<p class="zizi-coach-title">' + escapeHtml(title) + '</p>' : '') +
                 (nick ? '<p class="etym-nick">香港叫 <b>' + escapeHtml(nick) + '</b></p>' : '') +
-                (from ? '<p class="etym-from">' + escapeHtml(from) + '</p>' : '') +
                 partsHtml(parts) +
                 alsoHtml(also) +
                 (body ? '<p class="zizi-coach-story">' + escapeHtml(body) + '</p>' : '') +
@@ -165,24 +164,16 @@ window.ZiziTeach = (function () {
         }
         var w = info(D[idx].w);
         chip.classList.remove('is-empty');
-        var partsMini = '';
-        if (w.parts && w.parts.length > 1) {
-            partsMini = '<span class="write-chip-parts">' + escapeHtml(w.parts.map(function (p) {
-                return p.en;
-            }).join(' + ')) + '</span>';
-        }
         var yueLine = w.loan
             ? ('香港叫 ' + w.loan + (w.loan !== w.yue ? '（' + w.yue + '）' : ''))
-            : w.yue;
+            : (w.yue || '');
         chip.innerHTML =
             '<span class="write-chip-emoji" aria-hidden="true">' + escapeHtml(w.emoji) + '</span>' +
             '<span class="write-chip-text">' +
                 '<span class="write-chip-en">' + escapeHtml(w.w) + '</span>' +
                 '<span class="write-chip-yue">' + escapeHtml(yueLine) + '</span>' +
-                partsMini +
-            '</span>' +
-            '<button type="button" class="write-chip-story-btn" onclick="ZiziTeach.tellCurrentWordStory()">📖 點解</button>';
-        fillWriteCoach();
+            '</span>';
+        hideCoach(document.getElementById('write-coach'));
     }
 
     function withNickSpeak(w, rest) {
@@ -398,9 +389,9 @@ window.ZiziTeach = (function () {
             title: extra.title || w.w,
             body: extra.body != null ? extra.body : w.story,
             nick: w.nick,
-            parts: w.parts,
-            from: w.from,
-            also: w.also
+            parts: extra.parts || [],
+            from: '',
+            also: extra.also || null
         };
     }
 
@@ -423,7 +414,7 @@ window.ZiziTeach = (function () {
             hideCoach(el);
             return;
         }
-        showWordStory(D[idx].w, el, { speak: false });
+        hideCoach(el);
     }
 
     function speakStory(word) {
