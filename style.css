@@ -2390,10 +2390,10 @@ p.stage-ask {
 
 .pz-reveal {
   position: absolute;
-  top: 8px;
+  top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(240px, 60vw);
+  width: min(160px, 42vw);
   aspect-ratio: 1;
   border-radius: 18px;
   overflow: hidden;
@@ -2403,21 +2403,92 @@ p.stage-ask {
 .pz-reveal canvas { display: block; width: 100%; height: 100%; }
 .pz-spell {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  left: 6px;
+  right: 6px;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  top: min(178px, calc(42vw + 18px));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 14px;
   width: auto;
   margin: 0;
 }
+.pz-slots-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+.pz-letter-slot {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 84px;
+  min-width: 52px;
+  height: clamp(64px, 16vw, 88px);
+  background: #fff;
+  border: 4px solid #b8d4ea;
+  border-radius: 16px;
+  color: #8aa7bf;
+  font-family: Fredoka, "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 10vw, 52px);
+  line-height: 1;
+  text-transform: lowercase;
+  box-shadow: 0 5px 0 rgba(18, 59, 99, 0.12);
+}
 .pz-letter-slot.is-next {
-  outline: 5px solid #ffc93c;
+  color: #123b63;
+  background: #fff8dc;
+  border-color: #ffc93c;
+  outline: 4px solid #ffc93c;
   animation: hint-pulse 1s ease-in-out infinite;
 }
-.pz-letter-slot.is-done { background: #d8f3dc; border-color: #2ecc71; }
+.pz-letter-slot.is-done {
+  color: #1b7a3d;
+  background: #d8f3dc;
+  border-color: #2ecc71;
+  outline: none;
+  animation: none;
+}
+.pz-pop-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding-bottom: 4px;
+}
+.pz-pop {
+  flex: 0 0 auto;
+  width: clamp(64px, 18vw, 88px);
+  height: clamp(64px, 18vw, 88px);
+  border: 4px solid #fff;
+  border-radius: 20px;
+  background: linear-gradient(#fff, #ffe8b0);
+  color: #123b63;
+  font-family: Fredoka, "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: clamp(34px, 11vw, 56px);
+  line-height: 1;
+  text-transform: lowercase;
+  box-shadow: 0 6px 0 #f4a261;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pz-pop:active { transform: translateY(3px); box-shadow: 0 3px 0 #f4a261; }
+.pz-pop.is-used {
+  opacity: 0.28;
+  pointer-events: none;
+  box-shadow: 0 3px 0 #c9b8a0;
+}
 
 .hunt-scene {
   position: absolute;
