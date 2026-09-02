@@ -35,6 +35,7 @@ window.openCamera = async function() {
     safeDisplay('race-overlay', 'none');
     safeDisplay('puzzle-overlay', 'none');
     safeDisplay('hunt-overlay', 'none');
+    safeDisplay('shoot-overlay', 'none');
     safeDisplay('standard-top-bar', 'none');
     safeDisplay('back-to-home-btn', 'none');
     safeDisplay('standard-ui', 'none');
