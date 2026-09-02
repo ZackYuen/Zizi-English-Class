@@ -2393,7 +2393,7 @@ p.stage-ask {
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(160px, 42vw);
+  width: min(188px, 48vw);
   aspect-ratio: 1;
   border-radius: 18px;
   overflow: hidden;
@@ -2406,12 +2406,12 @@ p.stage-ask {
   left: 6px;
   right: 6px;
   bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  top: min(178px, calc(42vw + 18px));
+  top: min(206px, calc(48vw + 18px));
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
+  justify-content: center;
+  gap: 16px;
   width: auto;
   margin: 0;
 }
