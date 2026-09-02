@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-write1">
+    <link rel="stylesheet" href="style.css?v=20260902-shoot10">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -102,7 +102,7 @@
             <span class="home-btn-emoji" aria-hidden="true">🎈</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">音爆射擊</span>
-                <span class="home-btn-sub">氣球飛走前射爆佢</span>
+                <span class="home-btn-sub">射十個波波，加滿能源</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-write" onclick="enterMode('standard')">
@@ -244,10 +244,11 @@
 <div id="shoot-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
-        <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">撳啱氣球，火箭射爆佢</button>
+        <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">射十個波波，加滿能源</button>
         <div class="stage-stars" id="shoot-stars">☆☆☆☆☆</div>
     </div>
     <div id="shoot-play" class="stage-field">
+        <div id="shoot-energy" class="shoot-energy" aria-label="能源"></div>
         <div id="shoot-field" class="shoot-field"></div>
         <div id="shoot-coach" class="zizi-coach is-empty" hidden></div>
     </div>
@@ -360,7 +361,7 @@
 <script src="js/race.js?v=20260902-write1"></script>
 <script src="js/wordpuzzle.js?v=20260902-write1"></script>
 <script src="js/hunt.js?v=20260902-write1"></script>
-<script src="js/shoot.js?v=20260902-write1"></script>
+<script src="js/shoot.js?v=20260902-shoot10"></script>
 <script src="js/camera.js?v=20260902-write1"></script>
 <script src="js/router.js?v=20260902-write1"></script>
 </body>
