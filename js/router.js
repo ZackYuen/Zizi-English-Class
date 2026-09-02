@@ -121,11 +121,14 @@ window.closeSettings = function () {
 
 window.testVoice = function () {
     if (window.unlockAudio) window.unlockAudio();
-    // Temporarily apply form values without saving? Use current saved + form preview
     const providerEl = document.getElementById('input-voice-provider');
     if (providerEl) localStorage.setItem('zizi_voice_provider', providerEl.value);
     const azureKey = document.getElementById('input-azure-speech');
     if (azureKey && azureKey.value.trim()) localStorage.setItem('azure_speech_key', azureKey.value.trim());
+    const azureRegion = document.getElementById('input-azure-region');
+    if (azureRegion && azureRegion.value.trim()) {
+        localStorage.setItem('azure_speech_region', azureRegion.value.trim());
+    }
     const azureVoice = document.getElementById('input-azure-voice');
     if (azureVoice) localStorage.setItem('azure_voice_name', azureVoice.value);
     const googleYue = document.getElementById('input-google-yue-voice');
@@ -133,12 +136,17 @@ window.testVoice = function () {
     const tts = document.getElementById('input-google-tts');
     if (tts && tts.value.trim()) localStorage.setItem('google_tts_key', tts.value.trim());
 
-    if (window.playCantoneseTTS) {
-        window.playCantoneseTTS('你好呀孜孜！呢把係而家嘅廣東話聲線，聽唔聽得清楚？', { interrupt: true });
-    }
-    if (window.speakEnglish) {
-        window.speakEnglish('Hello Zizi! This is the English voice.');
-    }
+    var yueLine = '你好呀孜孜！呢把係而家嘅廣東話聲線，聽唔聽得清楚？';
+    var enLine = 'Hello Zizi! This is the English voice.';
+    var p = window.playCantoneseTTS
+        ? window.playCantoneseTTS(yueLine, { interrupt: true, force: true })
+        : Promise.resolve();
+    Promise.resolve(p).then(function () {
+        if (window.speakEnglish) return window.speakEnglish(enLine);
+    }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        console.warn(err);
+    });
 };
 
 window.enterMode = function (mode) {
