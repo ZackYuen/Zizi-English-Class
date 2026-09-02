@@ -70,9 +70,11 @@ function raceSpawn() {
     });
     raceHud();
     if (g.phase === 'play' && g.target) {
-        Curriculum.say('撞 ' + g.target.w + '！').then(function () {
-            if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
-        });
+        Curriculum.voiceCatch(
+            Curriculum.say('撞 ' + g.target.w + '！').then(function () {
+                if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
+            })
+        );
     }
 }
 

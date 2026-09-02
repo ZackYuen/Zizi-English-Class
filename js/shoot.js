@@ -137,9 +137,11 @@ function shootNewRound(announce) {
     shootFillSky(true);
     shootHud();
     if (announce && g.phase === 'play' && g.target) {
-        Curriculum.say('射十個 ' + g.target.w + ' 波波！').then(function () {
-            if (g.active && g.phase === 'play' && g.target) return Curriculum.speakEn(g.target.w);
-        });
+        Curriculum.voiceCatch(
+            Curriculum.say('射十個 ' + g.target.w + ' 波波！').then(function () {
+                if (g.active && g.phase === 'play' && g.target) return Curriculum.speakEn(g.target.w);
+            })
+        );
     }
 }
 
@@ -411,9 +413,11 @@ window.startShootGame = function () {
     });
     if (g.raf) cancelAnimationFrame(g.raf);
     g.raf = requestAnimationFrame(function () { shootLoop(performance.now()); });
-    Curriculum.say('好多波波，射十個啱嘅先換下一個字。開始！').then(function () {
-        if (g.active && g.phase === 'play' && g.target) return Curriculum.speakEn(g.target.w);
-    });
+    Curriculum.voiceCatch(
+        Curriculum.say('好多波波，射十個啱嘅先換下一個字。開始！').then(function () {
+            if (g.active && g.phase === 'play' && g.target) return Curriculum.speakEn(g.target.w);
+        })
+    );
 };
 
 window.replayShootWord = function () {

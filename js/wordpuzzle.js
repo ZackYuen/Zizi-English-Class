@@ -113,9 +113,15 @@ function pzStartWord() {
     });
     spell.appendChild(row);
     pzPaintReveal();
-    Curriculum.say('撳下面啲字母砌 ' + g.item.w + '！').then(function () {
-        if (g.active) return Curriculum.speakEn(g.item.w);
-    });
+    g.talkId = (g.talkId || 0) + 1;
+    var talkId = g.talkId;
+    var word = g.item.w;
+    Curriculum.voiceCatch(
+        Curriculum.say('撳下面啲字母砌呢個字！').then(function () {
+            if (!g.active || g.talkId !== talkId || !g.item || g.item.w !== word) return;
+            return Curriculum.speakEn(word);
+        })
+    );
 }
 
 function pzHintTapBelow() {
@@ -127,7 +133,7 @@ function pzHintTapBelow() {
         void row.offsetWidth;
         row.classList.add('is-nudge');
     }
-    Curriculum.say('撳下面啲字母！');
+    Curriculum.voiceCatch(Curriculum.say('撳下面啲字母！'));
 }
 
 function pzPaintReveal() {
@@ -153,7 +159,7 @@ function pzTapLetter(ch, btn) {
     var need = g.item.w.split('')[g.next];
     if (ch !== need) {
         Curriculum.missFx(btn, '聽聲');
-        Curriculum.speakEn(ch);
+        Curriculum.voiceCatch(Curriculum.speakEn(ch));
         return;
     }
     Curriculum.pop();
@@ -181,7 +187,8 @@ function pzTapLetter(ch, btn) {
             reason: '拼圖學到 ' + g.item.w
         });
         pzHud();
-        Curriculum.speakEn(g.item.w);
+        g.talkId = (g.talkId || 0) + 1;
+        Curriculum.voiceCatch(Curriculum.speakEn(g.item.w));
         setTimeout(function () {
             if (!g.active) return;
             if (g.got >= g.STARS) {
@@ -189,7 +196,7 @@ function pzTapLetter(ch, btn) {
                 return;
             }
             pzStartWord();
-        }, 700);
+        }, 1200);
     }
 }
 
@@ -215,13 +222,14 @@ function pzFinish() {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再砌多啲字！</li>';
     }
-    Curriculum.say('揭開晒！你砌字好快。');
+    Curriculum.voiceCatch(Curriculum.say('揭開晒！你砌字好快。'));
 }
 
 window.stopPuzzleGame = function () {
     var g = window.PuzzleGame;
     g.active = false;
     g.phase = 'play';
+    g.talkId = (g.talkId || 0) + 1;
     pzShowOver(false);
     var overlay = pzEl('puzzle-overlay');
     if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');

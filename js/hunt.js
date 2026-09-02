@@ -86,9 +86,11 @@ function huntAsk() {
     var others = Curriculum.decoys(g.target, 2);
     g.bushes = Curriculum.shuffle([g.target].concat(others)).slice(0, 3);
     huntPaintScene();
-    Curriculum.say('邊個草叢入面係 ' + g.target.w + '？').then(function () {
-        if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
-    });
+    Curriculum.voiceCatch(
+        Curriculum.say('邊個草叢入面係 ' + g.target.w + '？').then(function () {
+            if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
+        })
+    );
 }
 
 function huntTap(item, btn) {
