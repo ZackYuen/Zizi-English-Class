@@ -20,7 +20,10 @@ window.RaceGame = {
     W: 320,
     H: 420,
     ctx: null,
-    pending: false
+    pending: false,
+    holding: false,
+    boost: 0,
+    streaks: []
 };
 
 function raceEl(id) { return document.getElementById(id); }
@@ -33,7 +36,7 @@ function raceHud() {
         if (g.target) {
             Curriculum.fillTarget(tgt, g.target.w);
         } else {
-            tgt.textContent = '拖住架車去撞啱嗰幅圖';
+            tgt.textContent = '拖住架車，按住就加速';
         }
     }
 }
@@ -88,11 +91,46 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
-function drawCarTop(ctx, x, y, color) {
+function drawCarTop(ctx, x, y, color, boost) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.shadowColor = '#fff59d';
-    ctx.shadowBlur = 12;
+    boost = boost || 0;
+    if (boost > 0.08) {
+        var wob = Math.sin(performance.now() / 40) * (8 + boost * 10);
+        var flame = 22 + boost * 48 + wob;
+        ctx.globalAlpha = 0.55 + boost * 0.4;
+        ctx.fillStyle = '#7df9ff';
+        ctx.beginPath();
+        ctx.moveTo(-16, 36);
+        ctx.lineTo(0, 40 + flame * 1.15);
+        ctx.lineTo(16, 36);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffe066';
+        ctx.beginPath();
+        ctx.moveTo(-13, 38);
+        ctx.lineTo(0, 38 + flame);
+        ctx.lineTo(13, 38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.moveTo(-7, 38);
+        ctx.lineTo(0, 38 + flame * 0.62);
+        ctx.lineTo(7, 38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#fff8e1';
+        ctx.beginPath();
+        ctx.moveTo(-3, 38);
+        ctx.lineTo(0, 38 + flame * 0.32);
+        ctx.lineTo(3, 38);
+        ctx.closePath();
+        ctx.fill();
+    }
+    ctx.shadowColor = boost > 0.2 ? '#ff9f1c' : '#fff59d';
+    ctx.shadowBlur = boost > 0.2 ? 22 : 12;
     ctx.fillStyle = color;
     roundRect(ctx, -24, -42, 48, 84, 14);
     ctx.fill();
@@ -126,8 +164,16 @@ function raceDraw() {
     ctx.fillStyle = '#4d4d4d';
     roundRect(ctx, W * 0.04, -20, W * 0.92, H + 40, 24);
     ctx.fill();
-    ctx.strokeStyle = '#f4d35e';
-    ctx.lineWidth = 5;
+    if (g.boost > 0.2) {
+        var heat = ctx.createLinearGradient(0, 0, 0, H);
+        heat.addColorStop(0, 'rgba(255, 180, 40, 0)');
+        heat.addColorStop(1, 'rgba(255, 90, 20, ' + (0.12 + g.boost * 0.22) + ')');
+        ctx.fillStyle = heat;
+        roundRect(ctx, W * 0.04, -20, W * 0.92, H + 40, 24);
+        ctx.fill();
+    }
+    ctx.strokeStyle = g.boost > 0.35 ? '#fff3b0' : '#f4d35e';
+    ctx.lineWidth = g.boost > 0.35 ? 7 : 5;
     ctx.setLineDash([22, 18]);
     ctx.lineDashOffset = g.scroll;
     [1, 2].forEach(function (i) {
@@ -137,6 +183,21 @@ function raceDraw() {
         ctx.stroke();
     });
     ctx.setLineDash([]);
+
+    if (g.streaks) {
+        g.streaks.forEach(function (s) {
+            if (g.boost < 0.12) return;
+            var x = s.x * W;
+            var y = s.y * H;
+            var len = s.len * H * (0.7 + g.boost);
+            ctx.strokeStyle = 'rgba(255,255,255,' + (0.25 + g.boost * 0.55) + ')';
+            ctx.lineWidth = s.w + g.boost * 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + len);
+            ctx.stroke();
+        });
+    }
 
     g.cards.forEach(function (card) {
         var x = raceLaneX(card.lane);
@@ -175,12 +236,16 @@ function raceDraw() {
     });
 
     var cy = H * 0.82;
-    drawCarTop(ctx, g.car.x * W, cy + Math.sin(g.bob) * 3, '#e63946');
-
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = '800 20px Fredoka, sans-serif';
+    var shake = g.boost > 0.25 ? (Math.random() - 0.5) * g.boost * 8 : 0;
+    drawCarTop(ctx, g.car.x * W + shake, cy + Math.sin(g.bob) * 3, '#e63946', g.boost);
+    ctx.fillStyle = g.holding ? '#ff9f1c' : 'rgba(255,255,255,0.92)';
+    ctx.font = g.holding ? '800 28px Fredoka, sans-serif' : '800 18px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('拖住架紅車', W / 2, 28);
+    ctx.strokeStyle = g.holding ? '#123b63' : 'transparent';
+    ctx.lineWidth = g.holding ? 5 : 0;
+    var label = g.holding ? '🔥 加速！！' : '拖住架紅車 · 按住加速';
+    if (g.holding) ctx.strokeText(label, W / 2, 34);
+    ctx.fillText(label, W / 2, 34);
 }
 
 function raceHit(card) {
@@ -218,14 +283,58 @@ function raceHit(card) {
     }
 }
 
+/** 0 = cruise, 1 = full boost. Cards fall this much of the track per second. */
+function raceCardSpeed(boost) {
+    boost = Math.max(0, Math.min(1, boost || 0));
+    return 0.10 + boost * 0.38;
+}
+
+function raceDashSpeed(boost) {
+    boost = Math.max(0, Math.min(1, boost || 0));
+    return 140 + boost * 420;
+}
+
+function raceEnsureStreaks() {
+    var g = window.RaceGame;
+    if (g.streaks && g.streaks.length) return;
+    g.streaks = [];
+    for (var i = 0; i < 22; i++) {
+        g.streaks.push({
+            x: 0.08 + Math.random() * 0.84,
+            y: Math.random(),
+            len: 0.05 + Math.random() * 0.14,
+            w: 1 + Math.random() * 2.2
+        });
+    }
+}
+
+function raceSyncBoostFx() {
+    var g = window.RaceGame;
+    var overlay = raceEl('race-overlay');
+    var on = g.active && g.phase === 'play' && g.boost > 0.22;
+    if (overlay) overlay.classList.toggle('is-boosting', on);
+    if (window.ZiziFX) window.ZiziFX.setEngine(g.active && g.holding ? g.boost : 0);
+}
+
 function raceUpdate(dt) {
     var g = window.RaceGame;
     if (g.phase !== 'play') return;
-    g.scroll += 200 * dt;
-    g.bob += dt * 7;
+    var want = g.holding ? 1 : 0;
+    g.boost += (want - g.boost) * Math.min(1, dt * 8);
+    g.scroll += raceDashSpeed(g.boost) * dt;
+    g.bob += dt * (7 + g.boost * 10);
+    raceEnsureStreaks();
+    var fall = raceCardSpeed(g.boost);
+    g.streaks.forEach(function (s) {
+        s.y += (0.9 + g.boost * 3.4) * dt;
+        if (s.y > 1.1) {
+            s.y = -0.15;
+            s.x = 0.08 + Math.random() * 0.84;
+        }
+    });
     if (!g.pending) {
         g.cards.forEach(function (card) {
-            card.y += 0.14 * dt;
+            card.y += fall * dt;
             if (card.y > 0.68 && card.y < 0.96) {
                 var cx = g.car.x * g.W;
                 var laneX = raceLaneX(card.lane);
@@ -234,6 +343,7 @@ function raceUpdate(dt) {
             if (card.y > 1.25) card.y = -0.22;
         });
     }
+    raceSyncBoostFx();
 }
 
 function raceLoop(prev) {
@@ -255,6 +365,11 @@ function raceShowOver(on) {
 function raceFinish() {
     var g = window.RaceGame;
     g.phase = 'over';
+    g.holding = false;
+    g.boost = 0;
+    if (window.ZiziFX) window.ZiziFX.stopEngine();
+    var overlay = raceEl('race-overlay');
+    if (overlay) overlay.classList.remove('is-boosting');
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     Curriculum.award(1, { reason: '完成字母賽車', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
@@ -283,10 +398,14 @@ window.stopRaceGame = function () {
     g.active = false;
     g.phase = 'play';
     g.pending = false;
+    g.holding = false;
+    g.boost = 0;
+    g.streaks = [];
+    if (window.ZiziFX) window.ZiziFX.stopEngine();
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     raceShowOver(false);
     var overlay = raceEl('race-overlay');
-    if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
+    if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake', 'is-boosting');
     if (overlay && window.setDisplay) window.setDisplay('race-overlay', 'none');
     else if (overlay) {
         overlay.style.display = 'none';
@@ -310,6 +429,9 @@ window.startRaceGame = function () {
     g.target = null;
     g.car.x = 0.5;
     g.pending = false;
+    g.holding = false;
+    g.boost = 0;
+    g.streaks = [];
     Curriculum.bootFx();
     raceShowOver(false);
     raceHud();
@@ -323,7 +445,7 @@ window.startRaceGame = function () {
     });
     if (g.raf) cancelAnimationFrame(g.raf);
     g.raf = requestAnimationFrame(function () { raceLoop(performance.now()); });
-    Curriculum.say('拖住架紅車，撞啱嗰幅圖。開始！');
+    Curriculum.say('拖住架紅車，按住就加速。開始！');
 };
 
 window.replayRaceWord = function () {
@@ -333,6 +455,7 @@ window.replayRaceWord = function () {
 };
 
 (function bindRaceInput() {
+    if (typeof document === 'undefined') return;
     function x(e) {
         if (e.touches && e.touches[0]) return e.touches[0].clientX;
         if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
@@ -345,6 +468,16 @@ window.replayRaceWord = function () {
         var t = (clientX - r.left) / (r.width || 1);
         window.RaceGame.car.x = Math.max(0.1, Math.min(0.9, t));
     }
+    function setHold(on) {
+        var g = window.RaceGame;
+        var was = g.holding;
+        g.holding = !!on && g.active && g.phase === 'play';
+        if (g.holding && !was && window.ZiziFX) {
+            window.ZiziFX.play('nitro');
+            window.ZiziFX.startEngine();
+        }
+        if (!g.holding && window.ZiziFX) window.ZiziFX.stopEngine();
+    }
     function down(e) {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || !window.RaceGame.active) return;
@@ -352,6 +485,7 @@ window.replayRaceWord = function () {
         if (e.pointerId != null && wrap.setPointerCapture) {
             try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
         }
+        setHold(true);
         setCar(x(e));
     }
     function move(e) {
@@ -359,14 +493,21 @@ window.replayRaceWord = function () {
         if (e.cancelable) e.preventDefault();
         setCar(x(e));
     }
+    function up() {
+        setHold(false);
+    }
     function bind() {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || wrap._raceBound) return;
         wrap._raceBound = true;
         wrap.addEventListener('pointerdown', down);
         wrap.addEventListener('pointermove', move);
+        wrap.addEventListener('pointerup', up);
+        wrap.addEventListener('pointercancel', up);
         wrap.addEventListener('touchstart', down, { passive: false });
         wrap.addEventListener('touchmove', move, { passive: false });
+        wrap.addEventListener('touchend', up);
+        wrap.addEventListener('touchcancel', up);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
     else bind();
@@ -378,3 +519,7 @@ window.replayRaceWord = function () {
         }
     });
 })();
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { raceCardSpeed: raceCardSpeed, raceDashSpeed: raceDashSpeed };
+}
