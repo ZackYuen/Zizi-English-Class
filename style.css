@@ -2216,6 +2216,12 @@ button.stage-ask {
   justify-content: center;
   gap: 6px;
 }
+.stage-pic {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: block;
+}
 .stage-word {
   display: inline;
   font-size: clamp(26px, 8vw, 40px);

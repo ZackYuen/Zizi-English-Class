@@ -21,7 +21,7 @@ function pzHud() {
     var prompt = pzEl('pz-prompt');
     if (prompt) {
         if (g.item) {
-            prompt.innerHTML = '撳下面砌 <span class="stage-word">' + g.item.w + '</span>';
+            Curriculum.fillTarget(prompt, g.item.w);
         } else {
             prompt.textContent = '撳下面啲字母填格仔';
         }

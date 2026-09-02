@@ -228,6 +228,40 @@ window.Curriculum = {
         ctx.fillText(item.emoji, x, y);
     },
 
+    wordPic: function (word, cssPx) {
+        var size = cssPx || 44;
+        var cvs = document.createElement('canvas');
+        cvs.className = 'stage-pic';
+        cvs.setAttribute('aria-hidden', 'true');
+        var dpr = Math.min(2, window.devicePixelRatio || 1);
+        cvs.width = Math.round(size * dpr);
+        cvs.height = Math.round(size * dpr);
+        cvs.style.width = size + 'px';
+        cvs.style.height = size + 'px';
+        var ctx = cvs.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (window.ZiziArt) {
+            window.ZiziArt.drawWord(ctx, word, size / 2, size / 2, size * 0.9, 0);
+        } else {
+            var item = this.pool().filter(function (d) { return d.w === word; })[0];
+            ctx.font = Math.round(size * 0.72) + 'px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText((item && item.emoji) || '', size / 2, size / 2);
+        }
+        return cvs;
+    },
+
+    fillTarget: function (el, word) {
+        if (!el) return;
+        el.innerHTML = '';
+        el.appendChild(this.wordPic(word, 44));
+        var sp = document.createElement('span');
+        sp.className = 'stage-word';
+        sp.textContent = word;
+        el.appendChild(sp);
+    },
+
     stars: function (el, n, total) {
         if (!el) return;
         total = total || 5;

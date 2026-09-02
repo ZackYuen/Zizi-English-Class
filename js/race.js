@@ -30,7 +30,7 @@ function raceHud() {
     var tgt = raceEl('race-target');
     if (tgt) {
         if (g.target) {
-            tgt.innerHTML = '🚗 <span class="stage-word">' + g.target.w + '</span>';
+            Curriculum.fillTarget(tgt, g.target.w);
         } else {
             tgt.textContent = '拖住架車去撞啱嗰幅圖';
         }

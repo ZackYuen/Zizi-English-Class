@@ -28,7 +28,7 @@ function shootHud() {
     var tgt = shEl('shoot-target');
     if (tgt) {
         if (g.target) {
-            tgt.innerHTML = '🚀 射 <span class="stage-word">' + g.target.w + '</span>';
+            Curriculum.fillTarget(tgt, g.target.w);
         } else {
             tgt.textContent = '撳啱氣球，火箭射爆佢';
         }
