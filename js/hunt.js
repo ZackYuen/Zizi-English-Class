@@ -1,6 +1,6 @@
 // ==========================================
-// 🖼️ 尋寶圖 — three bushes, tap to open
-// Hear English, open the bush that matches. No timer.
+// 🖼️ 尋寶圖 — three bushes fly around the field
+// Hear English, tap the matching bush. No timer.
 // ==========================================
 
 window.HuntGame = {
@@ -11,7 +11,11 @@ window.HuntGame = {
     found: [],
     target: null,
     queue: [],
-    bushes: []
+    bushes: [],
+    fly: [],
+    raf: 0,
+    busy: false,
+    bob: 0
 };
 
 function huntEl(id) { return document.getElementById(id); }
@@ -36,23 +40,101 @@ function huntShowOver(on) {
     el.classList.toggle('is-open', on);
 }
 
+function huntSceneSize() {
+    var scene = huntEl('hunt-scene');
+    if (!scene) return { w: 320, h: 420 };
+    return {
+        w: Math.max(200, scene.clientWidth || 320),
+        h: Math.max(240, scene.clientHeight || 400)
+    };
+}
+
+function huntBushSize(field) {
+    return Math.min(128, Math.max(92, Math.min(field.w, field.h) * 0.28));
+}
+
+/** Bounce a flying bush inside the field. Pure math for tests. */
+function huntStepFly(b, field, dt) {
+    if (b.paused) return b;
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    var maxX = Math.max(0, field.w - b.s);
+    var maxY = Math.max(0, field.h - b.s);
+    if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx); }
+    if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy); }
+    if (b.x > maxX) { b.x = maxX; b.vx = -Math.abs(b.vx); }
+    if (b.y > maxY) { b.y = maxY; b.vy = -Math.abs(b.vy); }
+    return b;
+}
+
+function huntSeparate(flies) {
+    for (var i = 0; i < flies.length; i++) {
+        for (var j = i + 1; j < flies.length; j++) {
+            var a = flies[i];
+            var b = flies[j];
+            var dx = (b.x + b.s / 2) - (a.x + a.s / 2);
+            var dy = (b.y + b.s / 2) - (a.y + a.s / 2);
+            var d = Math.hypot(dx, dy) || 0.01;
+            var min = (a.s + b.s) * 0.52;
+            if (d >= min) continue;
+            var push = (min - d) / 2;
+            var ux = dx / d;
+            var uy = dy / d;
+            a.x -= ux * push;
+            a.y -= uy * push;
+            b.x += ux * push;
+            b.y += uy * push;
+        }
+    }
+}
+
+function huntApplyFly(b) {
+    if (!b.el) return;
+    var wob = Math.sin(window.HuntGame.bob * 2.2 + b.wob) * 4;
+    b.el.style.transform = 'translate(' + Math.round(b.x) + 'px,' + Math.round(b.y) + 'px) rotate(' + wob + 'deg)';
+}
+
 function huntPaintScene() {
     var g = window.HuntGame;
     var scene = huntEl('hunt-scene');
     if (!scene) return;
     scene.innerHTML = '';
+    var field = huntSceneSize();
+    var size = huntBushSize(field);
+    g.fly = [];
     g.bushes.forEach(function (item, i) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'hunt-bush';
         btn.dataset.word = item.w;
         btn.setAttribute('aria-label', item.w);
+        btn.style.width = size + 'px';
+        btn.style.height = size + 'px';
         btn.innerHTML =
             '<canvas class="hunt-cover"></canvas>' +
             '<canvas class="hunt-art"></canvas>';
         btn.onclick = function () { huntTap(item, btn); };
         scene.appendChild(btn);
+
+        var speed = 42 + Math.random() * 36;
+        var ang = (i / 3) * Math.PI * 2 + Math.random() * 0.8;
+        var fly = {
+            el: btn,
+            item: item,
+            s: size,
+            x: 12 + (i * (field.w - size - 24) / 2),
+            y: 16 + (i % 2 === 0 ? field.h * 0.12 : field.h * 0.48) + Math.random() * 24,
+            vx: Math.cos(ang) * speed,
+            vy: Math.sin(ang) * speed,
+            wob: i * 1.7,
+            paused: false
+        };
+        if (fly.y > field.h - size - 8) fly.y = Math.max(8, field.h - size - 8);
+        g.fly.push(fly);
+        huntApplyFly(fly);
     });
+    huntSeparate(g.fly);
+    g.fly.forEach(huntApplyFly);
     requestAnimationFrame(function () { huntPaintCanvases(); });
 }
 
@@ -60,7 +142,7 @@ function huntPaintCanvases() {
     var scene = huntEl('hunt-scene');
     if (!scene || !window.ZiziArt) return;
     Array.prototype.forEach.call(scene.querySelectorAll('.hunt-bush'), function (btn, i) {
-        var box = Math.max(88, Math.floor(Math.min(btn.clientWidth || 120, btn.clientHeight || 160) * 0.72));
+        var box = Math.max(80, Math.floor(Math.min(btn.clientWidth || 110, btn.clientHeight || 110) * 0.9));
         ['cover', 'art'].forEach(function (cls) {
             var cvs = btn.querySelector('.hunt-' + cls);
             if (!cvs) return;
@@ -72,15 +154,42 @@ function huntPaintCanvases() {
             c.setTransform(2, 0, 0, 2, 0, 0);
             c.clearRect(0, 0, box, box);
             var word = cls === 'cover' ? 'bush' : btn.dataset.word;
-            var size = cls === 'cover' ? box * 0.96 : box * 0.78;
+            var size = cls === 'cover' ? box * 0.96 : box * 0.72;
             window.ZiziArt.drawWord(c, word, box / 2, box / 2, size, performance.now() / 1000 + i);
         });
     });
 }
 
+function huntUpdate(dt) {
+    var g = window.HuntGame;
+    if (g.phase !== 'play' || g.busy) return;
+    g.bob += dt;
+    var field = huntSceneSize();
+    g.fly.forEach(function (b) {
+        huntStepFly(b, field, dt);
+    });
+    huntSeparate(g.fly);
+    var maxX = Math.max(0, field.w - (g.fly[0] && g.fly[0].s || 100));
+    var maxY = Math.max(0, field.h - (g.fly[0] && g.fly[0].s || 100));
+    g.fly.forEach(function (b) {
+        b.x = Math.max(0, Math.min(maxX, b.x));
+        b.y = Math.max(0, Math.min(maxY, b.y));
+        huntApplyFly(b);
+    });
+}
+
+function huntLoop(prev) {
+    if (!window.HuntGame.active) return;
+    var now = performance.now();
+    var dt = Math.min(0.05, (now - prev) / 1000);
+    huntUpdate(dt);
+    window.HuntGame.raf = requestAnimationFrame(function () { huntLoop(now); });
+}
+
 function huntAsk() {
     var g = window.HuntGame;
     g.target = g.queue[g.got];
+    g.busy = false;
     huntHud();
     if (!g.target) return;
     var others = Curriculum.decoys(g.target, 2);
@@ -93,9 +202,12 @@ function huntAsk() {
 
 function huntTap(item, btn) {
     var g = window.HuntGame;
-    if (!g.active || g.phase !== 'play' || !g.target) return;
+    if (!g.active || g.phase !== 'play' || !g.target || g.busy) return;
     btn.classList.add('is-open');
+    btn.style.zIndex = '6';
     if (item.w === g.target.w) {
+        g.busy = true;
+        g.fly.forEach(function (b) { b.paused = true; });
         g.got += 1;
         g.found.push(g.target);
         Curriculum.hitFx(huntEl('hunt-overlay'), null, g.got);
@@ -120,6 +232,7 @@ function huntTap(item, btn) {
         Curriculum.speakEn(item.w);
         setTimeout(function () {
             btn.classList.remove('is-open');
+            btn.style.zIndex = '';
         }, 900);
     }
 }
@@ -127,6 +240,8 @@ function huntTap(item, btn) {
 function huntFinish() {
     var g = window.HuntGame;
     g.phase = 'over';
+    g.busy = false;
+    if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     Curriculum.award(1, { reason: '完成尋寶圖', quest: 'match' });
     if (window.markQuest) window.markQuest('match');
     huntShowOver(true);
@@ -153,6 +268,9 @@ window.stopHuntGame = function () {
     var g = window.HuntGame;
     g.active = false;
     g.phase = 'play';
+    g.busy = false;
+    g.fly = [];
+    if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     huntShowOver(false);
     var overlay = huntEl('hunt-overlay');
     if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
@@ -174,6 +292,8 @@ window.startPictureHunt = function () {
     Curriculum.bootFx();
     huntShowOver(false);
     window.beginHuntPlay();
+    if (g.raf) cancelAnimationFrame(g.raf);
+    g.raf = requestAnimationFrame(function () { huntLoop(performance.now()); });
 };
 
 window.beginHuntPlay = function () {
@@ -189,6 +309,16 @@ window.replayHuntWord = function () {
     if (g.target) Curriculum.speakEn(g.target.w);
 };
 
+if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('resize', function () {
+        if (window.HuntGame.active) huntPaintCanvases();
+    });
+}
+
 window.startMatchGame = window.startPictureHunt;
 window.exitMatchGame = window.stopHuntGame;
 window.isMatchPlaying = false;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { huntStepFly: huntStepFly, huntSeparate: huntSeparate };
+}
