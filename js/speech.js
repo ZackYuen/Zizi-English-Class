@@ -91,12 +91,24 @@ window.unlockAudio = function () {
 
 window._voiceChain = Promise.resolve();
 
+window._requireLiveSpeech = function (token) {
+    if (token === window._speechToken) return;
+    var err = new Error('speech-abort');
+    err.name = 'AbortError';
+    throw err;
+};
+
 function stopAudioEl(a) {
     if (!a) return;
     try {
-        a.pause();
+        var ended = a.onended;
         a.onended = null;
-        a.currentTime = 0;
+        a.onerror = null;
+        a.pause();
+        try { a.currentTime = 0; } catch (e1) { /* ignore */ }
+        if (typeof ended === 'function') {
+            try { ended.call(a); } catch (e2) { /* ignore */ }
+        }
     } catch (e) { /* ignore */ }
 }
 
@@ -123,13 +135,13 @@ window._enqueueVoice = function (fn, interrupt) {
         window.stopSpeech();
     }
     var tokenAtStart = window._speechToken;
-    var run = window._voiceChain.then(function () {
-        if (tokenAtStart !== window._speechToken) return;
-        return fn();
-    }, function () {
-        if (tokenAtStart !== window._speechToken) return;
-        return fn();
-    });
+    function abortIfStale() {
+        if (tokenAtStart === window._speechToken) return fn();
+        var err = new Error('speech-abort');
+        err.name = 'AbortError';
+        throw err;
+    }
+    var run = window._voiceChain.then(abortIfStale, abortIfStale);
     window._voiceChain = run.then(function () {}, function () {});
     return run;
 };
@@ -389,6 +401,7 @@ async function speakAzureCantonese(text, settings) {
     var buf = await res.arrayBuffer();
     var blob = new Blob([buf], { type: 'audio/mpeg' });
     var url = URL.createObjectURL(blob);
+    window._requireLiveSpeech(window._speechToken);
     await playUrl(url, 'ui');
     URL.revokeObjectURL(url);
 }
@@ -489,25 +502,57 @@ window.googleTtsFetch = async function (opts) {
 };
 
 async function speakGoogleYue(text, settings) {
+    var token = window._speechToken;
     var url = await window.googleTtsFetch({
         text: text,
         lang: 'zh-HK',
         voices: yueVoiceList(settings.googleYueVoice)
     });
+    window._requireLiveSpeech(token);
     await playUrl(url, 'ui');
 }
 
 function playUrl(src, which) {
-    return new Promise(function (resolve) {
-        var slot = which === 'en' ? 'enAudio' : (which === 'magic' ? 'mAudio' : 'uiAudio');
-        window[slot] = window[slot] || new Audio();
-        var a = window[slot];
-        a.onended = function () { a.onended = null; resolve(); };
-        a.onerror = function () { a.onended = null; resolve(); };
+    var token = window._speechToken;
+    return new Promise(function (resolve, reject) {
+        var done = false;
+        var a;
+        function abortErr() {
+            var err = new Error('speech-abort');
+            err.name = 'AbortError';
+            return err;
+        }
+        function finish() {
+            if (done) return;
+            done = true;
+            if (a) {
+                a.onended = null;
+                a.onerror = null;
+            }
+            if (token !== window._speechToken) reject(abortErr());
+            else resolve();
+        }
+        try {
+            window._requireLiveSpeech(token);
+        } catch (e) {
+            reject(e);
+            return;
+        }
+        // One speaker: Cantonese + English must never play on two Audio tags at once.
+        if (window.enAudio) stopAudioEl(window.enAudio);
+        window.uiAudio = window.uiAudio || new Audio();
+        a = window.uiAudio;
+        stopAudioEl(a);
+        if (token !== window._speechToken) {
+            reject(abortErr());
+            return;
+        }
+        a.onended = finish;
+        a.onerror = finish;
         a.src = src;
         var p = a.play();
         if (p && typeof p.catch === 'function') {
-            p.catch(function () { resolve(); });
+            p.catch(function () { finish(); });
         }
     });
 }
@@ -568,15 +613,17 @@ window._speakCantoneseNow = async function (utter, options) {
     else order.push('google', 'iphone', 'azure');
 
     for (var i = 0; i < order.length; i++) {
-        if (token !== window._speechToken) return;
+        window._requireLiveSpeech(token);
         var p = order[i];
         try {
             if (p === 'azure' && settings.azureKey) {
                 await speakAzureCantonese(utter, settings);
+                window._requireLiveSpeech(token);
                 return;
             }
             if (p === 'google' && settings.googleKey) {
                 await speakGoogleYue(utter, settings);
+                window._requireLiveSpeech(token);
                 return;
             }
             if (p === 'iphone') {
@@ -584,15 +631,16 @@ window._speakCantoneseNow = async function (utter, options) {
                     cancel: false,
                     rate: isAppleWebKit() ? 1 : 0.92
                 });
+                window._requireLiveSpeech(token);
                 return;
             }
         } catch (e) {
-            if (e && e.name === 'AbortError') return;
+            if (e && e.name === 'AbortError') throw e;
             console.warn('voice provider failed', p, e);
         }
     }
 
-    if (token !== window._speechToken) return;
+    window._requireLiveSpeech(token);
     if (options.requireKey) {
         if (window.openSettings) window.openSettings();
         return;
@@ -629,24 +677,29 @@ window.speakEnglish = function (text, opts) {
     if (!utter) return Promise.resolve();
     return window._enqueueVoice(function () {
         return window._speakEnglishNow(utter, options);
-    }, options.interrupt === true);
+    }, options.interrupt !== false);
 };
 
 window._speakEnglishNow = async function (utter, options) {
     if (window.ZiziFX) window.ZiziFX.duckMusic(1.8);
+    var token = window._speechToken;
     var settings = window.getVoiceSettings();
     if (settings.googleKey && !options.forceBrowser) {
         try {
-            return await window._speakGoogleEnglish(utter, options);
+            await window._speakGoogleEnglish(utter, options);
+            window._requireLiveSpeech(token);
+            return;
         } catch (e) {
-            if (e && e.name === 'AbortError') return;
+            if (e && e.name === 'AbortError') throw e;
         }
     }
+    window._requireLiveSpeech(token);
     if (!window.speechSynthesis) return;
     var prepared = window.prepareSpokenText(utter, 'en-US');
     if (!prepared) return;
     await waitForVoices();
-    return new Promise(function (resolve) {
+    window._requireLiveSpeech(token);
+    return new Promise(function (resolve, reject) {
         try {
             var u = new SpeechSynthesisUtterance(prepared);
             var voice = pickEnglishVoice();
@@ -659,7 +712,15 @@ window._speakEnglishNow = async function (utter, options) {
             }
             u.rate = options.rate != null ? options.rate : (isAppleWebKit() ? 1 : 0.95);
             u.pitch = 1;
-            u.onend = function () { resolve(); };
+            u.onend = function () {
+                if (token !== window._speechToken) {
+                    var err = new Error('speech-abort');
+                    err.name = 'AbortError';
+                    reject(err);
+                    return;
+                }
+                resolve();
+            };
             u.onerror = function () { resolve(); };
             window.speechSynthesis.speak(u);
         } catch (e) {
@@ -671,12 +732,14 @@ window._speakEnglishNow = async function (utter, options) {
 
 window._speakGoogleEnglish = async function (text, opts) {
     var options = opts || {};
+    var token = window._speechToken;
     var url = await window.googleTtsFetch({
         text: text,
         lang: 'en-US',
         rate: options.rate,
         voices: GOOGLE_EN_VOICES
     });
+    window._requireLiveSpeech(token);
     await playUrl(url, 'en');
 };
 

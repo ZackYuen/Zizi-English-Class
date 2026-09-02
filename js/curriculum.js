@@ -138,10 +138,25 @@ window.Curriculum = {
         return Promise.resolve();
     },
 
-    speakEn: function (word) {
+    speakEn: function (word, opts) {
+        opts = opts || {};
         if (window.ZiziFX) window.ZiziFX.duckMusic(1.8);
-        if (window.speakEnglish) return window.speakEnglish(word, { rate: 0.88 });
+        if (window.speakEnglish) {
+            return window.speakEnglish(word, {
+                rate: opts.rate != null ? opts.rate : 0.88,
+                interrupt: opts.interrupt !== false
+            });
+        }
         return Promise.resolve();
+    },
+
+    /** Skip leftover lines when a newer voice cuts in. */
+    voiceCatch: function (p) {
+        if (!p || typeof p.catch !== 'function') return p;
+        return p.catch(function (err) {
+            if (err && err.name === 'AbortError') return;
+            throw err;
+        });
     },
 
     bootFx: function () {
