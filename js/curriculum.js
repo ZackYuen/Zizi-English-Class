@@ -191,6 +191,23 @@ window.Curriculum = {
         }
     },
 
+    cheer: function (word, coachId) {
+        var el = typeof coachId === 'string' ? document.getElementById(coachId) : coachId;
+        if (window.ZiziTeach && window.ZiziTeach.showWordStory && el) {
+            window.ZiziTeach.showWordStory(word, el, { speak: false });
+        }
+        var yue = this.yue(word);
+        var talk = this.speakEn(word).then(function () {
+            if (yue) return Curriculum.say(word + '！' + yue);
+        });
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                if (el && window.ZiziTeach) window.ZiziTeach.hideCoach(el);
+                resolve();
+            }, 1800);
+        }).then(function () { return talk; });
+    },
+
     teach: function (word, coachId) {
         var self = this;
         return this.speakEn(word).then(function () {

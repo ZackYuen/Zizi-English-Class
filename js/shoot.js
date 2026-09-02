@@ -32,10 +32,9 @@ function shootHud() {
     if (n) n.textContent = g.got + '/' + g.NEED;
     if (tgt) {
         if (g.target) {
-            var yue = Curriculum.yue(g.target.w);
-            tgt.textContent = '射 ' + g.target.w + (yue ? '（' + yue + '）' : '');
+            tgt.textContent = '🚀 射 ' + g.target.w;
         } else {
-            tgt.textContent = '聽英文，射爆啱嘅氣球';
+            tgt.textContent = '撳怪獸波，火箭射佢';
         }
     }
 }
@@ -54,7 +53,7 @@ function shootAsk() {
     shootHud();
     if (!g.target) return;
     shootFill();
-    Curriculum.say('射 ' + g.target.w + ' 嗰個氣球！').then(function () {
+    Curriculum.say('火箭射 ' + g.target.w + '！').then(function () {
         if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
     });
 }
@@ -63,7 +62,7 @@ function shootFill() {
     var g = window.ShootGame;
     var field = shEl('shoot-field');
     if (!field || !g.target) return;
-    field.innerHTML = '';
+    field.innerHTML = '<div class="shoot-ship" aria-hidden="true">🚀</div>';
     var decoys = Curriculum.decoys(g.target, 2);
     var items = Curriculum.shuffle([g.target].concat(decoys).slice(0, 3));
     var spots = [
@@ -93,9 +92,50 @@ function shootFill() {
     });
 }
 
+function shootBeam(toEl, done) {
+    var field = shEl('shoot-field');
+    var ship = field && field.querySelector('.shoot-ship');
+    if (!field || !ship || !toEl) {
+        if (done) done();
+        return;
+    }
+    var fr = field.getBoundingClientRect();
+    var a = ship.getBoundingClientRect();
+    var b = toEl.getBoundingClientRect();
+    var x1 = a.left + a.width / 2 - fr.left;
+    var y1 = a.top + 8 - fr.top;
+    var x2 = b.left + b.width / 2 - fr.left;
+    var y2 = b.top + b.height / 2 - fr.top;
+    var len = Math.hypot(x2 - x1, y2 - y1);
+    var ang = Math.atan2(y2 - y1, x2 - x1);
+    var beam = document.createElement('div');
+    beam.className = 'shoot-laser';
+    beam.style.left = x1 + 'px';
+    beam.style.top = y1 + 'px';
+    beam.style.width = len + 'px';
+    beam.style.transform = 'rotate(' + ang + 'rad)';
+    field.appendChild(beam);
+    if (window.ZiziFX) window.ZiziFX.play('slam');
+    setTimeout(function () {
+        if (beam.parentNode) beam.parentNode.removeChild(beam);
+        if (done) done();
+    }, 160);
+}
+
 function shootPop(el, item) {
     var g = window.ShootGame;
     if (!g.active || g.phase !== 'play' || g.pending || !g.target) return;
+    if (el.classList.contains('is-pop')) return;
+    g.pending = true;
+    shootBeam(el, function () {
+        g.pending = false;
+        shootResolve(el, item);
+    });
+}
+
+function shootResolve(el, item) {
+    var g = window.ShootGame;
+    if (!g.active || g.phase !== 'play' || !g.target) return;
     if (el.classList.contains('is-pop')) return;
     el.classList.add('is-pop');
     setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 160);
@@ -116,10 +156,8 @@ function shootPop(el, item) {
             reason: '射擊學到 ' + item.w
         });
         g.phase = 'teach';
-        var field = shEl('shoot-field');
-        if (field) field.innerHTML = '';
         Curriculum.say('射中 ' + item.w + '！').then(function () {
-            return Curriculum.teach(item.w, 'shoot-coach');
+            return Curriculum.cheer(item.w, 'shoot-coach');
         }).then(function () {
             if (!g.active) return;
             if (g.got >= g.NEED || g.timeLeft <= 0) {
@@ -130,7 +168,7 @@ function shootPop(el, item) {
             shootAsk();
         });
     } else {
-        Curriculum.missFx(shEl('shoot-overlay'), '-4s');
+        Curriculum.missFx(shEl('shoot-play'), '碰！');
         g.combo = 0;
         g.score = Math.max(0, g.score - 18);
         g.timeLeft = Math.max(0, g.timeLeft - 4);
@@ -169,7 +207,7 @@ function shootFinish(ok) {
     var overlay = shEl('shoot-overlay');
     if (overlay) overlay.classList.remove('is-urgent');
     Curriculum.finishFx({
-        emoji: '🎈',
+        emoji: '🚀',
         title: ok ? '射擊完成！' : '時間到！',
         sub: '分數 ' + g.score + ' · 射中 ' + g.got + ' 個',
         stars: stars
