@@ -7,7 +7,7 @@ window.HuntGame = {
     active: false,
     phase: 'play',
     clock: null,
-    TIME: 55,
+    TIME: 50,
     NEED: 5,
     timeLeft: 60,
     score: 0,
@@ -71,7 +71,7 @@ function huntPaintScene() {
             art.height = cs * 2;
             var ac = art.getContext('2d');
             ac.scale(2, 2);
-            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs);
+            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs, performance.now() / 1000);
         }
     });
 }

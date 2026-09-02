@@ -9,9 +9,9 @@ window.RaceGame = {
     phase: 'go',
     raf: 0,
     clock: null,
-    timeLeft: 55,
-    TIME: 55,
-    LAPS: 4,
+    timeLeft: 45,
+    TIME: 45,
+    LAPS: 5,
     score: 0,
     combo: 0,
     laps: 0,
@@ -23,6 +23,8 @@ window.RaceGame = {
     me: { x: 0.42, lane: 1 },
     rival: { x: 0.58, lane: 1 },
     roadOff: 0,
+    bob: 0,
+    blink: 0,
     W: 320,
     H: 420,
     ctx: null,
@@ -201,7 +203,8 @@ function raceDraw() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (window.ZiziArt) {
-            window.ZiziArt.drawWord(ctx, item.w, 0, -gh * 0.55, Math.round(26 + 24 * gz));
+            var pulse = 1 + Math.sin(g.bob * 1.4) * 0.08;
+            window.ZiziArt.drawWord(ctx, item.w, 0, -gh * 0.55, Math.round((26 + 24 * gz) * pulse), g.bob);
         } else {
             ctx.font = Math.round(18 + 18 * gz) + 'px serif';
             ctx.fillText(item.emoji, 0, -gh * 0.55);
@@ -212,10 +215,20 @@ function raceDraw() {
     }
 
     var roadT = Math.max(0, Math.min(1, (gy - roadTop) / (roadBot - roadTop)));
+    var bobY = Math.sin(g.bob) * 3;
+    var squash = (Math.floor(g.blink * 0.7) % 6 === 0) ? 0.9 : 1;
     var cyMe = roadTop + (roadBot - roadTop) * g.me.x;
     var cyRv = roadTop + (roadBot - roadTop) * g.rival.x;
-    drawCarSide(ctx, raceLaneX(g.me.lane), cyMe, '#e63946', false);
-    drawCarSide(ctx, raceLaneX(g.rival.lane), cyRv, '#4dabf7', true);
+    ctx.save();
+    ctx.translate(raceLaneX(g.me.lane), cyMe + bobY);
+    ctx.scale(1, squash);
+    drawCarSide(ctx, 0, 0, '#e63946', false);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(raceLaneX(g.rival.lane), cyRv - bobY);
+    ctx.scale(1, 1 / squash);
+    drawCarSide(ctx, 0, 0, '#4dabf7', true);
+    ctx.restore();
 
     ctx.fillStyle = 'rgba(18,59,99,0.8)';
     ctx.font = 'bold 14px Fredoka, sans-serif';
@@ -292,8 +305,10 @@ window.raceRight = function () { raceSteer(1); };
 function raceUpdate(dt) {
     var g = window.RaceGame;
     if (g.phase !== 'play' || g.pending) return;
-    g.roadOff += 240 * dt;
-    g.gateAt += 0.24 * dt;
+    g.roadOff += 260 * dt;
+    g.gateAt += 0.34 * dt;
+    g.bob += dt * 8;
+    g.blink += dt;
     g.rival.x += (0.5 + Math.sin(g.roadOff * 0.01) * 0.03 - g.rival.x) * dt * 0.4;
     g.rival.lane = Math.max(0, Math.min(2, g.rival.lane + (Math.random() < 0.01 ? (Math.random() < 0.5 ? -1 : 1) : 0)));
     if (g.gateAt >= 1) raceHit();

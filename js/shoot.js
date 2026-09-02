@@ -7,8 +7,8 @@ window.ShootGame = {
     active: false,
     phase: 'play',
     clock: null,
-    TIME: 50,
-    NEED: 5,
+    TIME: 45,
+    NEED: 6,
     timeLeft: 50,
     score: 0,
     combo: 0,
@@ -95,7 +95,7 @@ function shootFill() {
             art.height = cs * 2;
             var ac = art.getContext('2d');
             ac.scale(2, 2);
-            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs);
+            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs, performance.now() / 1000);
         }
     });
 }

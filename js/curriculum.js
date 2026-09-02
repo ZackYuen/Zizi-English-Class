@@ -204,7 +204,7 @@ window.Curriculum = {
             setTimeout(function () {
                 if (el && window.ZiziTeach) window.ZiziTeach.hideCoach(el);
                 resolve();
-            }, 1800);
+            }, 900);
         }).then(function () { return talk; });
     },
 

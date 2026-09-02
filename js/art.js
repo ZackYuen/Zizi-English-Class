@@ -145,15 +145,22 @@
     };
 
     window.ZiziArt = {
-        drawWord: function (ctx, word, x, y, s) {
-            var key = String(word || '').toLowerCase();
-            if (draw[key]) {
-                draw[key](ctx, x, y, s);
-            } else {
-                generic(ctx, x, y, s, key);
-                text(ctx, key.slice(0, 4), x, y + s * 0.02, s * 0.2);
-            }
-        },
+    drawWord: function (ctx, word, x, y, s, t) {
+        var key = String(word || '').toLowerCase();
+        var tt = t || 0;
+        var bob = Math.sin(tt * 3) * s * 0.03;
+        var blink = (Math.floor(tt * 0.8) + key.length) % 6 === 0;
+        ctx.save();
+        ctx.translate(x, y + bob);
+        ctx.scale(1, blink ? 0.92 : 1);
+        if (draw[key]) {
+            draw[key](ctx, 0, 0, s);
+        } else {
+            generic(ctx, 0, 0, s, key);
+            text(ctx, key.slice(0, 4), 0, s * 0.02, s * 0.2);
+        }
+        ctx.restore();
+    },
         color: col
     };
 })();
