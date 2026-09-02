@@ -1,15 +1,15 @@
 // ==========================================
-// 🖼️ 尋寶圖 — timed picture hunt on a busy scene
-// Hear English, tap the matching picture. Combo + clock.
+// 🖼️ 尋寶圖 — 3x3 grid, every picture stays on screen
+// Hear English, tap the matching cell.
 // ==========================================
 
 window.HuntGame = {
     active: false,
-    phase: 'rules',
+    phase: 'play',
     clock: null,
-    TIME: 70,
-    NEED: 8,
-    timeLeft: 70,
+    TIME: 60,
+    NEED: 6,
+    timeLeft: 60,
     score: 0,
     combo: 0,
     got: 0,
@@ -28,49 +28,24 @@ function huntHud() {
     var s = huntEl('hunt-score');
     var n = huntEl('hunt-need');
     var tgt = huntEl('hunt-target');
-    var bar = huntEl('hunt-time-fill');
     if (t) t.textContent = String(Math.max(0, Math.ceil(g.timeLeft)));
     if (s) s.textContent = String(g.score);
-    if (n) n.textContent = g.got + ' / ' + g.NEED;
-    if (bar) bar.style.width = Math.max(0, Math.min(100, (g.timeLeft / g.TIME) * 100)) + '%';
+    if (n) n.textContent = g.got + '/' + g.NEED;
     if (tgt) {
         if (g.target) {
-            tgt.innerHTML = '搵 <b>' + g.target.w + '</b>' +
+            tgt.textContent = '搵 ' + g.target.w +
                 (Curriculum.yue(g.target.w) ? '（' + Curriculum.yue(g.target.w) + '）' : '');
         } else {
-            tgt.textContent = '聽英文，喺圖入面搵佢！';
+            tgt.textContent = '聽英文，撳啱嗰格';
         }
     }
 }
 
-function huntShow(panel) {
-    ['hunt-rules', 'hunt-play', 'hunt-over'].forEach(function (id) {
-        var el = huntEl(id);
-        if (!el) return;
-        el.style.display = id === panel ? (id === 'hunt-play' ? 'flex' : 'block') : 'none';
-    });
-}
-
-function huntLayout(items) {
-    var spots = [];
-    var guard = 0;
-    items.forEach(function () {
-        var placed = false;
-        while (!placed && guard < 200) {
-            guard++;
-            var x = 6 + Math.random() * 76;
-            var y = 8 + Math.random() * 68;
-            var ok = spots.every(function (s) {
-                return Math.hypot(s.x - x, s.y - y) > 16;
-            });
-            if (ok) {
-                spots.push({ x: x, y: y });
-                placed = true;
-            }
-        }
-        if (!placed) spots.push({ x: 10 + spots.length * 12, y: 20 + (spots.length % 3) * 22 });
-    });
-    return spots;
+function huntShowOver(on) {
+    var el = huntEl('hunt-over');
+    if (!el) return;
+    el.style.display = on ? 'flex' : 'none';
+    el.classList.toggle('is-open', on);
 }
 
 function huntPaintScene() {
@@ -78,13 +53,10 @@ function huntPaintScene() {
     var scene = huntEl('hunt-scene');
     if (!scene) return;
     scene.innerHTML = '';
-    var spots = huntLayout(g.scene);
-    g.scene.forEach(function (item, i) {
+    g.scene.forEach(function (item) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'hunt-item' + (g.found.indexOf(item.w) !== -1 ? ' is-found' : '');
-        btn.style.left = spots[i].x + '%';
-        btn.style.top = spots[i].y + '%';
         btn.dataset.word = item.w;
         btn.setAttribute('aria-label', item.w);
         btn.innerHTML = '<span class="hunt-emoji">' + item.emoji + '</span>';
@@ -102,7 +74,7 @@ function huntAsk() {
         el.classList.remove('is-hint');
     });
     if (!g.target) return;
-    Curriculum.say('圖入面邊個係 ' + g.target.w + '？').then(function () {
+    Curriculum.say('邊格係 ' + g.target.w + '？').then(function () {
         if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
     });
 }
@@ -174,10 +146,10 @@ function huntFinish(ok) {
     var g = window.HuntGame;
     g.phase = 'over';
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
-    var stars = Curriculum.starsForScore(g.score, 600);
+    var stars = Curriculum.starsForScore(g.score, 500);
     Curriculum.award(stars, { reason: '完成尋寶圖', quest: 'match' });
     if (window.markQuest) window.markQuest('match');
-    huntShow('hunt-over');
+    huntShowOver(true);
     var overlay = huntEl('hunt-overlay');
     if (overlay) overlay.classList.remove('is-urgent');
     Curriculum.finishFx({
@@ -197,14 +169,15 @@ function huntFinish(ok) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>今轉未搵到，再聽英文試過！</li>';
     }
-    Curriculum.say(ok ? '尋寶成功！記住啲英文圖同字。' : '時間到！聽英文再入圖搵。');
+    Curriculum.say(ok ? '尋寶成功！記住啲英文圖同字。' : '時間到！聽英文再撳啱嗰格。');
 }
 
 window.stopHuntGame = function () {
     var g = window.HuntGame;
     g.active = false;
-    g.phase = 'rules';
+    g.phase = 'play';
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
+    huntShowOver(false);
     var overlay = huntEl('hunt-overlay');
     if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
     if (window.setDisplay) window.setDisplay('hunt-overlay', 'none');
@@ -219,19 +192,16 @@ window.startPictureHunt = function () {
     }
     var g = window.HuntGame;
     g.active = true;
-    g.phase = 'rules';
     g.score = 0;
     g.combo = 0;
     g.got = 0;
     g.found = [];
     g.queue = Curriculum.pickLesson(g.NEED);
     var extras = Curriculum.decoys(g.queue[0], 4);
-    g.scene = Curriculum.shuffle(g.queue.concat(extras)).slice(0, 12);
+    g.scene = Curriculum.shuffle(g.queue.concat(extras)).slice(0, 9);
     Curriculum.bootFx();
-    huntShow('hunt-rules');
-    var group = huntEl('hunt-group');
-    if (group) group.textContent = Curriculum.groupName();
-    Curriculum.say('尋寶圖。限時聽英文，喺圖入面撳啱嘅嘢。撳錯會扣時間。');
+    huntShowOver(false);
+    window.beginHuntPlay();
 };
 
 window.beginHuntPlay = function () {
@@ -239,7 +209,6 @@ window.beginHuntPlay = function () {
     g.phase = 'play';
     g.timeLeft = g.TIME;
     Curriculum.startFx();
-    huntShow('hunt-play');
     huntPaintScene();
     huntHud();
     if (g.clock) clearInterval(g.clock);
