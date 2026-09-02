@@ -2707,6 +2707,45 @@ button.stage-ask {
   border-radius: 18px;
   touch-action: none;
 }
+.shoot-energy {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.shoot-energy-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 2px solid #123b63;
+  border-radius: 999px;
+  padding: 5px 8px 5px 10px;
+}
+.shoot-drop {
+  width: 12px;
+  height: 16px;
+  flex: 0 0 auto;
+  background: #dbeafe;
+  border: 2px solid #123b63;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+}
+.shoot-drop.is-on {
+  background: #ffe066;
+  box-shadow: 0 0 7px #fcc419;
+}
+.shoot-energy-n {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #123b63;
+  letter-spacing: 0.02em;
+}
 .shoot-cvs {
   position: absolute;
   inset: 0;
