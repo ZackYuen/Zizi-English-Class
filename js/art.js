@@ -126,21 +126,58 @@
             eye(c, x - s * 0.09, y - s * 0.04, s * 0.05);
             eye(c, x + s * 0.09, y - s * 0.04, s * 0.05);
         },
+        bush: function (c, x, y, s) {
+            c.fillStyle = '#2d9a3f';
+            c.beginPath(); c.arc(x, y + s * 0.1, s * 0.42, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x - s * 0.22, y + s * 0.22, s * 0.3, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x + s * 0.22, y + s * 0.22, s * 0.3, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#247a33';
+            c.beginPath(); c.arc(x - s * 0.12, y, s * 0.08, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x + s * 0.14, y + s * 0.08, s * 0.08, 0, Math.PI * 2); c.fill();
+        },
         rocket: function (c, x, y, s) {
-            c.fillStyle = '#4dabf7';
-            c.beginPath();
-            c.moveTo(x, y - s * 0.46);
-            c.quadraticCurveTo(x + s * 0.26, y, x + s * 0.16, y + s * 0.3);
-            c.lineTo(x - s * 0.16, y + s * 0.3);
-            c.quadraticCurveTo(x - s * 0.26, y, x, y - s * 0.46);
-            c.fill();
             c.fillStyle = '#e63946';
             c.beginPath();
-            c.moveTo(x, y - s * 0.46);
-            c.quadraticCurveTo(x + s * 0.12, y - s * 0.22, x, y - s * 0.2);
-            c.quadraticCurveTo(x - s * 0.12, y - s * 0.22, x, y - s * 0.46);
+            c.moveTo(x, y - s * 0.5);
+            c.quadraticCurveTo(x + s * 0.28, y, x + s * 0.18, y + s * 0.34);
+            c.lineTo(x - s * 0.18, y + s * 0.34);
+            c.quadraticCurveTo(x - s * 0.28, y, x, y - s * 0.5);
             c.fill();
-            eye(c, x, y - s * 0.05, s * 0.08);
+            c.fillStyle = '#a8e4ff';
+            c.beginPath(); c.arc(x, y - s * 0.08, s * 0.1, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#4dabf7';
+            c.beginPath(); c.moveTo(x - s * 0.16, y + s * 0.34); c.lineTo(x - s * 0.3, y + s * 0.5); c.lineTo(x - s * 0.1, y + s * 0.34); c.closePath(); c.fill();
+            c.beginPath(); c.moveTo(x + s * 0.16, y + s * 0.34); c.lineTo(x + s * 0.3, y + s * 0.5); c.lineTo(x + s * 0.1, y + s * 0.34); c.closePath(); c.fill();
+            c.fillStyle = '#ffca3a';
+            c.beginPath();
+            c.moveTo(x, y + s * 0.34);
+            c.quadraticCurveTo(x + s * 0.08, y + s * 0.52, x, y + s * 0.62);
+            c.quadraticCurveTo(x - s * 0.08, y + s * 0.52, x, y + s * 0.34);
+            c.fill();
+        },
+        balloon: function (c, x, y, s) {
+            c.fillStyle = '#ff6b6b';
+            c.beginPath(); c.ellipse(x, y - s * 0.08, s * 0.3, s * 0.38, 0, 0, Math.PI * 2); c.fill();
+            c.fillStyle = 'rgba(255,255,255,0.5)';
+            c.beginPath(); c.ellipse(x - s * 0.08, y - s * 0.22, s * 0.08, s * 0.14, 0, 0, Math.PI * 2); c.fill();
+            c.strokeStyle = '#123b63';
+            c.lineWidth = s * 0.03;
+            c.beginPath();
+            c.moveTo(x, y + s * 0.3);
+            c.quadraticCurveTo(x + s * 0.05, y + s * 0.42, x, y + s * 0.52);
+            c.stroke();
+        },
+        star: function (c, x, y, s) {
+            c.fillStyle = '#ffc93c';
+            c.beginPath();
+            for (var i = 0; i < 5; i++) {
+                var a = -Math.PI / 2 + (i / 5) * Math.PI * 4;
+                c.lineTo(x + Math.cos(a) * s * 0.4, y + Math.sin(a) * s * 0.4);
+            }
+            c.closePath();
+            c.fill();
+            eye(c, x - s * 0.08, y - s * 0.02, s * 0.04);
+            eye(c, x + s * 0.08, y - s * 0.02, s * 0.04);
         }
     };
 
