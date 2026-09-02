@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-fast1">
+    <link rel="stylesheet" href="style.css?v=20260902-swipe1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -81,7 +81,7 @@
             <span class="home-btn-emoji" aria-hidden="true">🏎️</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">字母賽車</span>
-                <span class="home-btn-sub">同藍車鬥快，衝過綠色閘</span>
+                <span class="home-btn-sub">掃左掃右，快過藍車</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-puzzle" onclick="enterMode('puzzle')">
@@ -176,19 +176,15 @@
 <div id="race-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
-        <button type="button" id="race-target" class="stage-ask" onclick="replayRaceWord()">向左／右撳，衝過綠色閘！</button>
+        <button type="button" id="race-target" class="stage-ask" onclick="replayRaceWord()">掃左掃右，衝過綠色閘！</button>
         <div class="stage-stats">
             <span>⏱️<b id="race-time">60</b></span>
             <span>⭐<b id="race-score">0</b></span>
             <span id="race-need">0/5</span>
         </div>
     </div>
-    <div id="race-play" class="stage-field has-controls">
+    <div id="race-play" class="stage-field">
         <div id="race-canvas-wrap"><canvas id="race-cvs"></canvas></div>
-        <div class="race-steer">
-            <button type="button" class="race-steer-btn" onclick="raceLeft()">◀</button>
-            <button type="button" class="race-steer-btn" onclick="raceRight()">▶</button>
-        </div>
         <div id="race-count" class="arena-count" style="display:none;">3</div>
         <div id="race-coach" class="zizi-coach is-empty" hidden></div>
     </div>
@@ -365,25 +361,25 @@
 </div>
 
 <!-- Load order: data → stories → state → config/secrets → speech/progress → fx → writing → curriculum/games → camera → router -->
-<script src="js/data.js?v=20260902-fast1"></script>
-<script src="js/stories.js?v=20260902-fast1"></script>
-<script src="js/state.js?v=20260902-fast1"></script>
+<script src="js/data.js?v=20260902-swipe1"></script>
+<script src="js/stories.js?v=20260902-swipe1"></script>
+<script src="js/state.js?v=20260902-swipe1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260902-fast1"></script>
-<script src="js/speech.js?v=20260902-fast1"></script>
-<script src="js/progress.js?v=20260902-fast1"></script>
-<script src="js/fx.js?v=20260902-fast1"></script>
-<script src="js/teach.js?v=20260902-fast1"></script>
-<script src="js/writing.js?v=20260902-fast1"></script>
-<script src="js/ui.js?v=20260902-fast1"></script>
-<script src="js/canvas.js?v=20260902-fast1"></script>
-<script src="js/curriculum.js?v=20260902-fast1"></script>
-<script src="js/art.js?v=20260902-fast1"></script>
-<script src="js/race.js?v=20260902-fast1"></script>
-<script src="js/wordpuzzle.js?v=20260902-fast1"></script>
-<script src="js/hunt.js?v=20260902-fast1"></script>
-<script src="js/shoot.js?v=20260902-fast1"></script>
-<script src="js/camera.js?v=20260902-fast1"></script>
-<script src="js/router.js?v=20260902-fast1"></script>
+<script src="js/secrets.js?v=20260902-swipe1"></script>
+<script src="js/speech.js?v=20260902-swipe1"></script>
+<script src="js/progress.js?v=20260902-swipe1"></script>
+<script src="js/fx.js?v=20260902-swipe1"></script>
+<script src="js/teach.js?v=20260902-swipe1"></script>
+<script src="js/writing.js?v=20260902-swipe1"></script>
+<script src="js/ui.js?v=20260902-swipe1"></script>
+<script src="js/canvas.js?v=20260902-swipe1"></script>
+<script src="js/curriculum.js?v=20260902-swipe1"></script>
+<script src="js/art.js?v=20260902-swipe1"></script>
+<script src="js/race.js?v=20260902-swipe1"></script>
+<script src="js/wordpuzzle.js?v=20260902-swipe1"></script>
+<script src="js/hunt.js?v=20260902-swipe1"></script>
+<script src="js/shoot.js?v=20260902-swipe1"></script>
+<script src="js/camera.js?v=20260902-swipe1"></script>
+<script src="js/router.js?v=20260902-swipe1"></script>
 </body>
 </html>
