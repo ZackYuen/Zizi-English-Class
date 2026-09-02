@@ -91,8 +91,70 @@ function huntSeparate(flies) {
 
 function huntApplyFly(b) {
     if (!b.el) return;
-    var wob = Math.sin(window.HuntGame.bob * 2.4 + b.wob) * 6;
-    b.el.style.transform = 'translate(' + Math.round(b.x) + 'px,' + Math.round(b.y) + 'px) rotate(' + wob + 'deg)';
+    var extra = '';
+    if (!b.paused && !b.win && !b.poof) {
+        extra = ' rotate(' + (Math.sin(window.HuntGame.bob * 2.4 + b.wob) * 6) + 'deg)';
+    }
+    b.el.style.transform = 'translate(' + Math.round(b.x) + 'px,' + Math.round(b.y) + 'px)' + extra;
+}
+
+/** Flag the matching flyer as the winner and the rest as destroyed. */
+function huntMarkCatch(flies, word) {
+    var list = flies || [];
+    list.forEach(function (b) {
+        var ok = !!(b.item && b.item.w === word);
+        b.paused = true;
+        b.win = ok;
+        b.poof = !ok;
+    });
+    return list;
+}
+
+function huntBurstBits(el, kind) {
+    var scene = huntEl('hunt-scene');
+    if (!scene || !el || !el.getBoundingClientRect) return;
+    var box = scene.getBoundingClientRect();
+    var r = el.getBoundingClientRect();
+    var cx = r.left - box.left + r.width / 2;
+    var cy = r.top - box.top + r.height / 2;
+    var win = kind === 'win';
+    var glyphs = win ? ['⭐', '✨', '🎉', '🌟', '💛', '🎊'] : ['💨', '💥', '☁️'];
+    var n = win ? 12 : 7;
+    var i;
+    for (i = 0; i < n; i++) {
+        var bit = document.createElement('span');
+        bit.className = win ? 'hunt-cheer' : 'hunt-poofbit';
+        bit.textContent = glyphs[i % glyphs.length];
+        var ang = (i / n) * Math.PI * 2 + (win ? 0 : 0.4);
+        var dist = win ? (56 + (i % 3) * 18) : (36 + (i % 2) * 14);
+        bit.style.left = cx + 'px';
+        bit.style.top = cy + 'px';
+        bit.style.setProperty('--dx', Math.round(Math.cos(ang) * dist) + 'px');
+        bit.style.setProperty('--dy', Math.round(Math.sin(ang) * dist - (win ? 24 : 0)) + 'px');
+        scene.appendChild(bit);
+        setTimeout(function (node) {
+            if (node && node.parentNode) node.parentNode.removeChild(node);
+        }, win ? 1000 : 520, bit);
+    }
+}
+
+function huntCheerWinner(dt) {
+    var g = window.HuntGame;
+    var field = huntSceneSize();
+    g.fly.forEach(function (b) {
+        if (b.win) {
+            var tx = (field.w - b.s) / 2;
+            var ty = (field.h - b.s) / 2;
+            b.x += (tx - b.x) * Math.min(1, dt * 7);
+            b.y += (ty - b.y) * Math.min(1, dt * 7);
+        } else if (b.poof) {
+            var ox = (b.x + b.s / 2) - field.w / 2 || 1;
+            var oy = (b.y + b.s / 2) - field.h / 2 || 1;
+            b.x += ox * dt * 2.2;
+            b.y += oy * dt * 2.2;
+        }
+        huntApplyFly(b);
+    });
 }
 
 function huntPaintScene() {
@@ -116,7 +178,7 @@ function huntPaintScene() {
         btn.setAttribute('aria-label', item.w);
         btn.style.width = size + 'px';
         btn.style.height = size + 'px';
-        btn.innerHTML = '<canvas class="hunt-art"></canvas>';
+        btn.innerHTML = '<span class="hunt-fly-inner"><canvas class="hunt-art"></canvas></span>';
         btn.onclick = function () { huntTap(item, btn); };
         scene.appendChild(btn);
 
@@ -169,9 +231,17 @@ function huntPaintCanvases() {
 
 function huntUpdate(dt) {
     var g = window.HuntGame;
-    if (g.phase !== 'play' || g.busy) return;
+    if (g.phase !== 'play') return;
     g.bob += dt;
     g.paintT += dt;
+    if (g.busy) {
+        huntCheerWinner(dt);
+        if (g.paintT > 0.07) {
+            g.paintT = 0;
+            huntPaintCanvases();
+        }
+        return;
+    }
     var field = huntSceneSize();
     g.fly.forEach(function (b) { huntStepFly(b, field, dt); });
     huntSeparate(g.fly);
@@ -218,12 +288,36 @@ function huntTap(item, btn) {
     if (!g.active || g.phase !== 'play' || !g.target || g.busy) return;
     if (item.w === g.target.w) {
         g.busy = true;
-        g.fly.forEach(function (b) { b.paused = true; });
-        btn.classList.add('is-catch');
-        btn.style.zIndex = '6';
+        huntMarkCatch(g.fly, item.w);
+        btn.classList.add('is-win');
+        btn.style.zIndex = '8';
+        if (!btn.querySelector('.hunt-win-label')) {
+            var tag = document.createElement('span');
+            tag.className = 'hunt-win-label';
+            tag.textContent = item.w;
+            btn.appendChild(tag);
+        }
+        huntBurstBits(btn, 'win');
+        var poofDelay = 70;
+        g.fly.forEach(function (b) {
+            if (!b.poof || !b.el) return;
+            (function (el, wait) {
+                setTimeout(function () {
+                    if (!g.active) return;
+                    el.classList.add('is-poof');
+                    huntBurstBits(el, 'poof');
+                    if (window.ZiziFX) window.ZiziFX.play('pop');
+                }, wait);
+            })(b.el, poofDelay);
+            poofDelay += 110;
+        });
         g.got += 1;
         g.found.push(g.target);
         Curriculum.hitFx(huntEl('hunt-overlay'), null, g.got);
+        if (window.ZiziFX) {
+            window.ZiziFX.play(g.got >= g.STARS ? 'fanfare' : 'star');
+            if (window.ZiziFX.burst) window.ZiziFX.burst(huntEl('hunt-play'));
+        }
         Curriculum.award(0, {
             word: item.w,
             emoji: item.emoji,
@@ -239,7 +333,7 @@ function huntTap(item, btn) {
                 return;
             }
             huntAsk();
-        }, 750);
+        }, 1300);
     } else {
         btn.classList.add('is-miss');
         Curriculum.boom();
@@ -352,6 +446,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         huntStepFly: huntStepFly,
         huntSeparate: huntSeparate,
-        huntFlySize: huntFlySize
+        huntFlySize: huntFlySize,
+        huntMarkCatch: huntMarkCatch
     };
 }

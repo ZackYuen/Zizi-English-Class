@@ -46,5 +46,14 @@ var size = hunt.huntFlySize({ w: 390, h: 580 });
 eq('phone flyers are big', size >= 108 && size <= 156, true);
 eq('uses a third of the short side', size >= Math.floor(390 * 0.3), true);
 
+var marked = hunt.huntMarkCatch([
+    { item: { w: 'cat' }, paused: false, win: false, poof: false },
+    { item: { w: 'bus' }, paused: false, win: false, poof: false },
+    { item: { w: 'sun' }, paused: false, win: false, poof: false }
+], 'bus');
+eq('winner is the matching word', marked[1].win === true && marked[1].poof === false, true);
+eq('others are destroyed', marked[0].poof === true && marked[2].poof === true && marked[0].win === false, true);
+eq('all pause on catch', marked.every(function (b) { return b.paused; }), true);
+
 if (fails) process.exit(1);
 console.log('all hunt fly tests passed');
