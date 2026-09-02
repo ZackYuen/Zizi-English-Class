@@ -263,54 +263,194 @@ window.collectWord = function (word, emoji, letter) {
     return window.awardStars(0, { word: word, emoji: emoji, letter: letter });
 };
 
+function albumEscape(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function albumLetterOf(item) {
+    var L = String((item && item.letter) || '').toUpperCase();
+    if (/^[A-Z]$/.test(L)) return L;
+    if (window.ZiziTeach && window.ZiziTeach.info) {
+        L = String(window.ZiziTeach.info(item && item.word).letter || '').toUpperCase();
+        if (/^[A-Z]$/.test(L)) return L;
+    }
+    L = String((item && item.word) || '').charAt(0).toUpperCase();
+    return /^[A-Z]$/.test(L) ? L : '?';
+}
+
+function albumCaption(item) {
+    var info = (window.ZiziTeach && window.ZiziTeach.info)
+        ? window.ZiziTeach.info(item && item.word)
+        : null;
+    if (!info) return '';
+    if (info.loan) return info.loan;
+    var yue = String(info.yue || '');
+    var word = String((item && item.word) || '');
+    if (yue && yue.toLowerCase() !== word.toLowerCase()) return yue;
+    return '';
+}
+
+function albumGroupLetterSet() {
+    var groups = window.phonicsGroups || [];
+    var letterToGroup = {};
+    groups.forEach(function (g, gi) {
+        (g.letters || []).forEach(function (L) {
+            if (letterToGroup[L] == null) letterToGroup[L] = gi;
+        });
+    });
+    return { groups: groups, letterToGroup: letterToGroup };
+}
+
+window.buildAlbumModel = function (wordsMap) {
+    var map = wordsMap && typeof wordsMap === 'object' ? wordsMap : {};
+    var entries = Object.keys(map).map(function (k) { return map[k] || { word: k }; });
+    var pack = albumGroupLetterSet();
+    var groups = pack.groups;
+    var letterToGroup = pack.letterToGroup;
+    var sections = groups.map(function (g, gi) {
+        var buckets = {};
+        (g.letters || []).forEach(function (L) { buckets[L] = []; });
+        return {
+            id: 'album-group-' + gi,
+            className: 'album-group album-group--' + gi,
+            title: g.name || ('第 ' + (gi + 1) + ' 組'),
+            short: String(g.name || '').replace(/^第\s*\d+\s*組\s*/, '').replace(/[()]/g, '') || ('第' + (gi + 1) + '組'),
+            letters: g.letters || [],
+            buckets: buckets,
+            count: 0
+        };
+    });
+    var other = {
+        id: 'album-group-other',
+        className: 'album-group album-group--other',
+        title: '其他',
+        short: '其他',
+        letters: ['?'],
+        buckets: { '?': [] },
+        count: 0
+    };
+
+    entries.forEach(function (item) {
+        var L = albumLetterOf(item);
+        var gi = letterToGroup[L];
+        var section = (gi == null) ? other : sections[gi];
+        if (!section.buckets[L]) section.buckets[L] = [];
+        section.buckets[L].push(item);
+        section.count += 1;
+    });
+
+    sections.forEach(function (section) {
+        Object.keys(section.buckets).forEach(function (L) {
+            section.buckets[L].sort(function (a, b) {
+                return String(a.word || '').localeCompare(String(b.word || ''));
+            });
+        });
+    });
+    other.buckets['?'].sort(function (a, b) {
+        return String(a.word || '').localeCompare(String(b.word || ''));
+    });
+
+    var visible = sections.filter(function (s) { return s.count > 0; });
+    if (other.count) visible.push(other);
+    return { total: entries.length, sections: visible };
+};
+
+function albumCardHtml(item) {
+    var yue = albumCaption(item);
+    var count = Number(item.count) || 1;
+    return '<button type="button" class="album-card" data-word="' + albumEscape(item.word) + '">' +
+        '<span class="album-emoji">' + albumEscape(item.emoji || '⭐') + '</span>' +
+        '<span class="album-word">' + albumEscape(item.word) + '</span>' +
+        (yue ? '<span class="album-yue">' + albumEscape(yue) + '</span>' : '') +
+        (count > 1 ? '<span class="album-count">×' + count + '</span>' : '') +
+        '</button>';
+}
+
 window.openWordAlbum = function () {
     const data = loadProgress();
     const modal = document.getElementById('album-overlay');
-    const grid = document.getElementById('album-grid');
+    const scroll = document.getElementById('album-scroll');
     const empty = document.getElementById('album-empty');
-    if (!modal || !grid) return;
+    const jumps = document.getElementById('album-jumps');
+    const hint = document.getElementById('album-hint');
+    if (!modal || !scroll) return;
 
-    const entries = Object.keys(data.words)
-        .map(function (k) { return data.words[k]; })
-        .sort(function (a, b) { return (b.lastAt || 0) - (a.lastAt || 0); });
+    const model = window.buildAlbumModel(data.words);
+    scroll.innerHTML = '';
+    if (jumps) {
+        jumps.innerHTML = '';
+        jumps.hidden = true;
+    }
 
-    grid.innerHTML = '';
-    if (entries.length === 0) {
+    if (model.total === 0) {
         if (empty) empty.style.display = 'block';
+        if (hint) hint.textContent = '撳張卡聽英文。字按 SATIPN 組同字母排好。';
     } else {
         if (empty) empty.style.display = 'none';
-        entries.forEach(function (item) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'album-card';
-            var info = window.ZiziTeach ? window.ZiziTeach.info(item.word) : null;
-            var loan = info ? info.loan : '';
-            var yue = info ? info.yue : '';
-            var parts = (info && info.parts && info.parts.length > 1)
-                ? info.parts.map(function (p) { return p.en; }).join('+')
-                : '';
-            var from = info ? info.from : '';
-            var story = info ? info.story : '';
-            btn.innerHTML =
-                '<span class="album-emoji">' + (item.emoji || '⭐') + '</span>' +
-                '<span class="album-word">' + item.word + '</span>' +
-                (loan ? '<span class="album-yue">香港叫 ' + loan + '</span>' : '') +
-                (yue && yue !== loan ? '<span class="album-yue">' + yue + '</span>' : '') +
-                (parts ? '<span class="album-parts">' + parts + '</span>' : '') +
-                (from ? '<span class="album-from">' + from + '</span>' : '') +
-                (story ? '<span class="album-story">' + story + '</span>' : '') +
-                '<span class="album-count">×' + (item.count || 1) + '</span>';
-            btn.onclick = async function () {
-                if (window.ZiziFX) window.ZiziFX.play('pop');
-                if (window.speakEnglish) await window.speakEnglish(item.word);
-                if (window.ZiziTeach && window.ZiziTeach.speakStory) {
-                    await window.ZiziTeach.speakStory(item.word);
-                } else if (window.playCantoneseTTS) {
-                    window.playCantoneseTTS('呢個係 ' + item.word);
-                }
-            };
-            grid.appendChild(btn);
+        if (hint) hint.textContent = '已經識咗 ' + model.total + ' 個字 · 撳卡聽英文';
+
+        var groupBtns = '';
+        var letterBtns = '';
+        var html = '';
+
+        model.sections.forEach(function (section) {
+            groupBtns += '<button type="button" class="album-jump is-group" data-jump="' +
+                section.id + '">' + albumEscape(section.short) + '</button>';
+            html += '<section class="' + section.className + '" id="' + section.id + '">';
+            html += '<h3 class="album-group-title">' + albumEscape(section.title) +
+                ' · ' + section.count + ' 個</h3>';
+
+            var letterOrder = section.letters.slice();
+            Object.keys(section.buckets).forEach(function (L) {
+                if (letterOrder.indexOf(L) === -1) letterOrder.push(L);
+            });
+            letterOrder.forEach(function (L) {
+                var list = section.buckets[L] || [];
+                if (!list.length) return;
+                var lid = 'album-letter-' + L;
+                letterBtns += '<button type="button" class="album-jump" data-jump="' + lid + '">' +
+                    albumEscape(L) + '</button>';
+                html += '<div class="album-letter-block" id="' + lid + '">';
+                html += '<div class="album-letter-head">' + albumEscape(L) + '</div>';
+                html += '<div class="album-grid">';
+                list.forEach(function (item) { html += albumCardHtml(item); });
+                html += '</div></div>';
+            });
+            html += '</section>';
         });
+
+        if (jumps) {
+            jumps.innerHTML =
+                (groupBtns ? '<div class="album-jump-row">' + groupBtns + '</div>' : '') +
+                (letterBtns ? '<div class="album-jump-row">' + letterBtns + '</div>' : '');
+            jumps.hidden = false;
+            jumps.onclick = function (e) {
+                var t = e.target.closest('[data-jump]');
+                if (!t) return;
+                var el = document.getElementById(t.getAttribute('data-jump'));
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
+
+        scroll.innerHTML = html;
+        scroll.scrollTop = 0;
+        scroll.onclick = async function (e) {
+            var btn = e.target.closest('.album-card');
+            if (!btn) return;
+            var word = btn.getAttribute('data-word');
+            if (!word) return;
+            if (window.ZiziFX) window.ZiziFX.play('pop');
+            if (window.speakEnglish) await window.speakEnglish(word);
+            if (window.ZiziTeach && window.ZiziTeach.speakStory) {
+                await window.ZiziTeach.speakStory(word);
+            } else if (window.playCantoneseTTS) {
+                window.playCantoneseTTS('呢個係 ' + word);
+            }
+        };
     }
 
     modal.style.display = 'flex';
@@ -322,6 +462,8 @@ window.closeWordAlbum = function () {
     if (!modal) return;
     modal.style.display = 'none';
     modal.classList.remove('is-open');
+    var scroll = document.getElementById('album-scroll');
+    if (scroll) scroll.scrollTop = 0;
 };
 
 window.addEventListener('load', function () {
