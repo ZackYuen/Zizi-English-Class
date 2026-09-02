@@ -223,6 +223,8 @@ window.LETTER_HINTS = {
             list[i].story = s.story;
             list[i].parts = s.parts;
             list[i].from = s.from;
+        } else if (list[i].yue) {
+            list[i].story = list[i].w + ' 就係' + list[i].yue + '。';
         }
     }
 })();

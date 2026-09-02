@@ -22,8 +22,19 @@ window.Curriculum = {
 
     groupLetters: function (gi) {
         var groups = window.phonicsGroups || [];
-        var g = groups[gi != null ? gi : this.groupIndex()] || groups[0];
-        return (g && g.letters) ? g.letters.slice() : ['S', 'A', 'T', 'I', 'P', 'N'];
+        var idx = gi != null ? gi : this.groupIndex();
+        var letters = [];
+        var seen = {};
+        for (var i = 0; i <= idx && i < groups.length; i++) {
+            var g = groups[i];
+            var ls = (g && g.letters) ? g.letters : [];
+            for (var j = 0; j < ls.length; j++) {
+                if (seen[ls[j]]) continue;
+                seen[ls[j]] = true;
+                letters.push(ls[j]);
+            }
+        }
+        return letters.length ? letters : ['S', 'A', 'T', 'I', 'P', 'N'];
     },
 
     groupName: function (gi) {
@@ -47,6 +58,18 @@ window.Curriculum = {
         return a;
     },
 
+    _recent: [],
+
+    remember: function (words) {
+        var self = this;
+        (words || []).forEach(function (w) {
+            var key = String(typeof w === 'string' ? w : (w && w.w) || '').toLowerCase();
+            if (!key) return;
+            self._recent.push(key);
+        });
+        if (this._recent.length > 28) this._recent = this._recent.slice(-28);
+    },
+
     pickLesson: function (n, except) {
         except = except || [];
         var gi = this.groupIndex();
@@ -55,16 +78,23 @@ window.Curriculum = {
         var out = [];
         var seen = {};
         except.forEach(function (w) { seen[String(w).toLowerCase()] = true; });
-        function take(list) {
+        var recent = {};
+        this._recent.forEach(function (w) { recent[String(w).toLowerCase()] = true; });
+        var self = this;
+        function take(list, skipRecent) {
             for (var i = 0; i < list.length && out.length < n; i++) {
                 var item = list[i];
                 if (!item || seen[item.w]) continue;
+                if (skipRecent && recent[item.w]) continue;
                 seen[item.w] = true;
                 out.push(item);
             }
         }
-        take(primary);
-        take(extra);
+        take(primary, true);
+        take(extra, true);
+        if (out.length < n) take(primary, false);
+        if (out.length < n) take(extra, false);
+        this.remember(out);
         return out;
     },
 
@@ -83,8 +113,14 @@ window.Curriculum = {
     },
 
     yue: function (word) {
-        var s = window.WORD_STORIES && window.WORD_STORIES[String(word || '').toLowerCase()];
-        return s && s.yue ? s.yue : '';
+        word = String(word || '').toLowerCase();
+        var s = window.WORD_STORIES && window.WORD_STORIES[word];
+        if (s && s.yue) return s.yue;
+        var list = window.D || [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i] && list[i].w === word && list[i].yue) return list[i].yue;
+        }
+        return '';
     },
 
     info: function (word) {
