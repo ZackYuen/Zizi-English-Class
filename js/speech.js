@@ -706,13 +706,13 @@ window.announceHomeMenu = function () {
     var info = window.getLevelInfo && window.getProgress
         ? window.getLevelInfo(window.getProgress().stars)
         : null;
-    var levelBit = info
+        var levelBit = info
         ? ('你而家係第 ' + info.level + ' 級，' + info.title + '。')
         : '';
     window.announce(
         '歡迎嚟到孜孜學英文天空島！' + levelBit +
         '今日想玩咩？綠色嘅睇圖識字最啱開始。' +
-        '仲有手指描字、聽音大挑戰、探索魔鏡、同單詞冊。' +
+        '仲有描字賽車、音爆射擊、魔鏡捉迷藏、搵唔同、同單詞冊。' +
         '做完今日任務會升得更快！'
     , { force: true });
 };

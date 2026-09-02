@@ -31,6 +31,7 @@ window.openCamera = async function() {
     safeDisplay('app', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('match-overlay', 'none');
+    safeDisplay('play-overlay', 'none');
     safeDisplay('standard-top-bar', 'none');
     safeDisplay('back-to-home-btn', 'none');
     safeDisplay('standard-ui', 'none');
@@ -314,6 +315,7 @@ window.enterCameraWritingFlow = function(word) {
     safeDisplay('camera-overlay', 'none');
     safeDisplay('game-overlay', 'none');
     safeDisplay('match-overlay', 'none');
+    safeDisplay('play-overlay', 'none');
     const cam = getEl('camera-overlay');
     if (cam) {
         cam.classList.remove('is-open');
@@ -523,7 +525,15 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
                 setTimeout(() => {
                     window.closeCamera();
-                    window.enterCameraWritingFlow(finalWord);
+                    if (window.startHideSeek) {
+                        window.startHideSeek({
+                            word: finalWord,
+                            photo: window.lastCapturedImg,
+                            source: 'camera'
+                        });
+                    } else {
+                        window.enterCameraWritingFlow(finalWord);
+                    }
                 }, 500);
 
                 window.currentAborter = null;

@@ -136,7 +136,7 @@ window.getDailyQuest = function () {
     const data = ensureQuestDay(loadProgress());
     const items = [
         { key: 'match', label: '玩一局睇圖識字', emoji: '🖼️', done: !!data.questDone.match },
-        { key: 'listen', label: '玩一局聽音挑戰', emoji: '🎧', done: !!data.questDone.listen },
+        { key: 'listen', label: '玩一局音爆射擊', emoji: '🎈', done: !!data.questDone.listen },
         { key: 'stars3', label: '今日攞 3 粒星', emoji: '⭐', done: (data.todayStars || 0) >= 3 || !!data.questDone.stars3 },
         { key: 'newword', label: '學一個新單詞', emoji: '📚', done: !!data.questDone.newword }
     ];

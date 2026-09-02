@@ -47,6 +47,18 @@ window.WritingSession = {
             cam.style.display = 'none';
             cam.setAttribute('aria-hidden', 'true');
         }
+        var play = document.getElementById('play-overlay');
+        if (play) {
+            play.classList.remove('is-open');
+            play.style.display = 'none';
+            play.setAttribute('aria-hidden', 'true');
+        }
+        var home = document.getElementById('home-menu');
+        if (home) {
+            home.classList.remove('is-open');
+            home.style.display = 'none';
+            home.setAttribute('aria-hidden', 'true');
+        }
 
         if (app) {
             app.style.display = 'block';
