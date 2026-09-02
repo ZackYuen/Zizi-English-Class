@@ -10,8 +10,9 @@ function eq(name, got, want) {
     }
 }
 
-eq('bullet is a big ball', shoot.shootBulletRadius(320, 420) >= 18, true);
-eq('phone-width bullet stays chunky', shoot.shootBulletRadius(390, 700) >= 18, true);
+eq('bullet is a small ball', shoot.shootBulletRadius(320, 420) >= 8 && shoot.shootBulletRadius(320, 420) <= 11, true);
+eq('phone-width bullet is not huge', shoot.shootBulletRadius(390, 700) <= 11, true);
+eq('still bigger than a 4px laser', shoot.shootBulletRadius(320, 420) > 4, true);
 
 var start = shoot.shootBulletPos({ x: 100, y: 40, t: 0.28, life: 0.28 }, 160, 380);
 eq('starts at rocket', start && Math.round(start.x) === 160 && Math.round(start.y) === 380, true);

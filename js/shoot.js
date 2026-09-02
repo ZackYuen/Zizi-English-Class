@@ -157,7 +157,7 @@ function shootBulletLife() {
 }
 
 function shootBulletRadius(W, H) {
-    return Math.max(18, Math.min(28, (W || 320) * 0.07));
+    return Math.max(8, Math.min(11, (W || 320) * 0.028));
 }
 
 function shootBulletPos(beam, rocketX, rocketY) {
@@ -188,7 +188,7 @@ function shootDrawBullet(ctx, beam, rocketX, rocketY, W, H) {
         var ty = rocketY + (beam.y - rocketY) * tp;
         ctx.fillStyle = 'rgba(255, 180, 40, ' + (0.28 - i * 0.06) + ')';
         ctx.beginPath();
-        ctx.arc(tx, ty, r * (0.55 - i * 0.08), 0, Math.PI * 2);
+        ctx.arc(tx, ty, r * (0.42 - i * 0.08), 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.fillStyle = '#ff9f1c';
@@ -204,7 +204,7 @@ function shootDrawBullet(ctx, beam, rocketX, rocketY, W, H) {
     ctx.arc(pos.x - r * 0.22, pos.y - r * 0.22, r * 0.38, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#e85d04';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     ctx.stroke();
