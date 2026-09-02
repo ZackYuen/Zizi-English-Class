@@ -202,16 +202,15 @@ function raceDraw() {
     g.cards.forEach(function (card) {
         var x = raceLaneX(card.lane);
         var y = H * card.y;
-        var good = g.target && card.item.w === g.target.w;
         var word = card.item.w;
         var w = W * 0.26;
         var h = Math.max(128, H * 0.26);
         var hasArt = window.ZiziArt && window.ZiziArt.has(word);
         ctx.save();
         ctx.translate(x, y);
-        ctx.fillStyle = good ? '#d8f3dc' : '#fff';
-        ctx.strokeStyle = good ? '#2ecc71' : '#123b63';
-        ctx.lineWidth = good ? 6 : 4;
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#123b63';
+        ctx.lineWidth = 4;
         roundRect(ctx, -w / 2, -h / 2, w, h, 18);
         ctx.fill();
         ctx.stroke();
@@ -219,8 +218,7 @@ function raceDraw() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (hasArt) {
-            var pulse = good ? 1 + Math.sin(g.bob * 2) * 0.08 : 1;
-            window.ZiziArt.drawWord(ctx, word, 0, -h * 0.22, Math.round(h * 0.4 * pulse), g.bob, true);
+            window.ZiziArt.drawWord(ctx, word, 0, -h * 0.22, Math.round(h * 0.4), g.bob, true);
             var fs = window.ZiziArt.fitWord(ctx, word, w * 0.88, h * 0.32);
             ctx.fillStyle = '#123b63';
             ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
