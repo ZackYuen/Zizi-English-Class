@@ -1,7 +1,9 @@
 // ==========================================
-// Fun layer for age ~5: SFX, soft BGM, big celebrations
+// Fun layer for age ~5: SFX, VFX, soft BGM
 // Pure Web Audio — no asset downloads required
 // ==========================================
+
+var ZIZI_MUSIC_VOL = 0.06;
 
 window.ZiziFX = {
     _ctx: null,
@@ -23,7 +25,16 @@ window.ZiziFX = {
         return this._ctx;
     },
 
+    unlock: function () {
+        this.ensureCtx();
+    },
+
     isMusicOn: function () { return this._musicOn; },
+
+    ensureMusic: function () {
+        this.ensureCtx();
+        if (this._musicOn && !this._bgmTimer) this.startMusic();
+    },
 
     setMusicOn: function (on) {
         this._musicOn = !!on;
@@ -53,30 +64,37 @@ window.ZiziFX = {
         if (!ctx) return;
         this.stopMusic(true);
         this._bgmGain = ctx.createGain();
-        this._bgmGain.gain.value = 0.045;
+        this._bgmGain.gain.value = ZIZI_MUSIC_VOL;
         this._bgmGain.connect(ctx.destination);
 
-        var notes = [262, 294, 330, 392, 440, 392, 330, 294];
+        var melody = [262, 294, 330, 392, 440, 392, 330, 294, 330, 392, 523, 392, 330, 294, 262, 247];
+        var bass = [131, 131, 165, 165, 196, 196, 147, 147];
         var self = this;
         this._step = 0;
         this._bgmTimer = setInterval(function () {
             if (!self._musicOn || !self._bgmGain || !self._ctx) return;
             var c = self._ctx;
             var t = c.currentTime;
-            var freq = notes[self._step % notes.length];
+            var freq = melody[self._step % melody.length];
+            var low = bass[Math.floor(self._step / 2) % bass.length];
             self._step++;
-            var o = c.createOscillator();
-            var g = c.createGain();
-            o.type = 'triangle';
-            o.frequency.value = freq;
-            g.gain.setValueAtTime(0.0001, t);
-            g.gain.exponentialRampToValueAtTime(0.35, t + 0.03);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
-            o.connect(g);
-            g.connect(self._bgmGain);
-            o.start(t);
-            o.stop(t + 0.45);
-        }, 480);
+
+            function note(hz, type, vol, dur) {
+                var o = c.createOscillator();
+                var g = c.createGain();
+                o.type = type;
+                o.frequency.value = hz;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                o.connect(g);
+                g.connect(self._bgmGain);
+                o.start(t);
+                o.stop(t + dur + 0.02);
+            }
+            note(freq, 'triangle', 0.38, 0.42);
+            if (self._step % 2 === 1) note(low, 'sine', 0.22, 0.55);
+        }, 460);
     },
 
     stopMusic: function (keepFlag) {
@@ -101,7 +119,7 @@ window.ZiziFX = {
             g.cancelScheduledValues(t);
             g.setValueAtTime(g.value, t);
             g.linearRampToValueAtTime(0.012, t + 0.08);
-            g.linearRampToValueAtTime(0.045, t + Math.max(0.4, seconds || 1.2));
+            g.linearRampToValueAtTime(ZIZI_MUSIC_VOL, t + Math.max(0.4, seconds || 1.2));
         } catch (e) { /* ignore */ }
     },
 
@@ -123,6 +141,23 @@ window.ZiziFX = {
         o.stop(t + (dur || 0.25) + 0.02);
     },
 
+    noise: function (dur, vol) {
+        if (!this._sfxOn) return;
+        var ctx = this.ensureCtx();
+        if (!ctx) return;
+        var n = Math.max(1, Math.floor(ctx.sampleRate * (dur || 0.12)));
+        var buf = ctx.createBuffer(1, n, ctx.sampleRate);
+        var data = buf.getChannelData(0);
+        for (var i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+        var src = ctx.createBufferSource();
+        var g = ctx.createGain();
+        src.buffer = buf;
+        g.gain.value = vol != null ? vol : 0.08;
+        src.connect(g);
+        g.connect(ctx.destination);
+        src.start();
+    },
+
     play: function (name) {
         var self = this;
         switch (name) {
@@ -135,6 +170,7 @@ window.ZiziFX = {
                 break;
             case 'wrong':
                 this.tone(180, 'sawtooth', 0.22, 0.1);
+                this.noise(0.08, 0.04);
                 break;
             case 'star':
                 [659, 784, 988, 1319].forEach(function (f, i) {
@@ -147,19 +183,93 @@ window.ZiziFX = {
                 });
                 break;
             case 'whoosh':
-                this.tone(420, 'sine', 0.15, 0.08);
+                this.noise(0.16, 0.07);
+                this.tone(420, 'sine', 0.18, 0.08);
                 break;
             case 'pop':
-                this.tone(880, 'square', 0.06, 0.08);
+                this.noise(0.05, 0.07);
+                this.tone(980, 'square', 0.06, 0.1);
                 break;
             case 'fanfare':
                 [523, 659, 784, 1046].forEach(function (f, i) {
                     setTimeout(function () { self.tone(f, 'triangle', 0.28, 0.2); }, i * 100);
                 });
                 break;
+            case 'countdown':
+                this.tone(784, 'square', 0.12, 0.16);
+                break;
+            case 'go':
+                this.tone(523, 'triangle', 0.1, 0.18);
+                setTimeout(function () { self.tone(784, 'triangle', 0.16, 0.2); }, 70);
+                setTimeout(function () { self.tone(1046, 'triangle', 0.22, 0.22); }, 140);
+                break;
+            case 'tick':
+                this.tone(1100, 'square', 0.045, 0.09);
+                break;
+            case 'combo':
+                [659, 784, 988, 1175].forEach(function (f, i) {
+                    setTimeout(function () { self.tone(f, 'triangle', 0.14, 0.18); }, i * 60);
+                });
+                break;
+            case 'engine':
+                this.noise(0.07, 0.03);
+                this.tone(88, 'sawtooth', 0.08, 0.045);
+                break;
+            case 'slam':
+                this.tone(120, 'sine', 0.16, 0.16);
+                this.tone(880, 'triangle', 0.1, 0.1);
+                break;
             default:
                 this.tone(520, 'sine', 0.1, 0.1);
         }
+    },
+
+    flash: function (color) {
+        var el = document.createElement('div');
+        el.className = 'z-fx-flash';
+        el.style.background = color || 'rgba(255,255,255,.35)';
+        document.body.appendChild(el);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 280);
+    },
+
+    floatScore: function (host, text, kind) {
+        var wrap = host || document.body;
+        var el = document.createElement('div');
+        el.className = 'z-fx-score' + (kind === 'bad' ? ' is-bad' : '');
+        el.textContent = text;
+        wrap.appendChild(el);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900);
+    },
+
+    burst: function (host) {
+        var wrap = host || document.body;
+        var colors = ['#ff6b6b', '#ffc93c', '#2ecc71', '#4dabf7', '#845ef7', '#ff8fab'];
+        for (var i = 0; i < 12; i++) {
+            var p = document.createElement('span');
+            p.className = 'z-fx-bit';
+            p.style.left = (38 + Math.random() * 24) + '%';
+            p.style.top = (36 + Math.random() * 22) + '%';
+            p.style.background = colors[i % colors.length];
+            p.style.setProperty('--dx', (Math.random() * 180 - 90) + 'px');
+            p.style.setProperty('--dy', (Math.random() * 180 - 110) + 'px');
+            wrap.appendChild(p);
+            setTimeout((function (el) {
+                return function () { if (el.parentNode) el.parentNode.removeChild(el); };
+            })(p), 700);
+        }
+    },
+
+    shake: function (el) {
+        if (!el) return;
+        el.classList.remove('z-fx-shake');
+        void el.offsetWidth;
+        el.classList.add('z-fx-shake');
+        setTimeout(function () { el.classList.remove('z-fx-shake'); }, 420);
+    },
+
+    boomConfetti: function (n) {
+        if (typeof confetti !== 'function') return;
+        confetti({ particleCount: n || 80, spread: 70, origin: { y: 0.58 } });
     },
 
     /**
@@ -187,11 +297,13 @@ window.ZiziFX = {
         overlay.style.display = 'flex';
         overlay.classList.add('is-open');
         this.play(opts.stars ? 'star' : 'fanfare');
+        this.flash('rgba(255,201,58,.28)');
+        this.burst(overlay);
         if (typeof confetti === 'function') {
-            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+            confetti({ particleCount: 140, spread: 85, origin: { y: 0.6 } });
             setTimeout(function () {
-                confetti({ particleCount: 70, spread: 100, origin: { y: 0.3 }, angle: 60 });
-                confetti({ particleCount: 70, spread: 100, origin: { y: 0.3 }, angle: 120 });
+                confetti({ particleCount: 80, spread: 100, origin: { y: 0.3 }, angle: 60 });
+                confetti({ particleCount: 80, spread: 100, origin: { y: 0.3 }, angle: 120 });
             }, 200);
         }
 

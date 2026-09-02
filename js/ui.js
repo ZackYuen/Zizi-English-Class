@@ -8,6 +8,7 @@ if (typeof D === 'undefined') {
 
 window.startApp = function (mode) {
     window.ensureAudioContext();
+    if (window.Curriculum && window.Curriculum.bootFx) window.Curriculum.bootFx();
     if (typeof D === 'undefined' || !D.length) return;
 
     renderTabs();

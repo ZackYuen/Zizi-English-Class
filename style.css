@@ -2448,3 +2448,70 @@ button:disabled {
   .hunt-emoji { font-size: 28px; line-height: 54px; }
   #race-canvas-wrap { min-height: 240px; }
 }
+
+/* ---------- Arena SFX / VFX overlays ---------- */
+.z-fx-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 11900;
+  pointer-events: none;
+  animation: z-fx-flash-out 0.28s ease-out forwards;
+}
+@keyframes z-fx-flash-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.z-fx-score {
+  position: absolute;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-weight: 800;
+  font-size: 32px;
+  color: #2ecc71;
+  text-shadow: 0 3px 0 rgba(18, 59, 99, 0.2);
+  pointer-events: none;
+  animation: z-fx-score-up 0.85s ease-out forwards;
+}
+.z-fx-score.is-bad { color: #e63946; }
+@keyframes z-fx-score-up {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -48px) scale(1); }
+}
+.z-fx-bit {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 21;
+  animation: z-fx-bit-fly 0.65s ease-out forwards;
+}
+@keyframes z-fx-bit-fly {
+  to {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+  }
+}
+.z-fx-shake {
+  animation: z-fx-shake 0.4s ease;
+}
+@keyframes z-fx-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+.arena-overlay.is-urgent .arena-hud,
+.arena-overlay.is-urgent .arena-target {
+  box-shadow: 0 0 0 4px rgba(255, 90, 95, 0.45);
+  animation: hint-pulse 0.7s ease-in-out infinite;
+}
+#hunt-time-fill.is-urgent,
+#shoot-time-fill.is-urgent,
+.arena-overlay.is-urgent #hunt-time-fill,
+.arena-overlay.is-urgent #shoot-time-fill {
+  background: #ff2d55;
+}
