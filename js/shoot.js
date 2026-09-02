@@ -455,7 +455,7 @@ window.replayShootWord = function () {
     }
     function bind() {
         var field = shEl('shoot-field');
-        if (!field || field._shootBound) return;
+        if (!field || field._shootBound || !field.addEventListener) return;
         field._shootBound = true;
         field.addEventListener('pointerdown', down);
         field.addEventListener('touchstart', down, { passive: false });
@@ -478,5 +478,10 @@ window.exitGame = function () {
 };
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { shootApplyCorrect: shootApplyCorrect };
+    module.exports = {
+        shootApplyCorrect: shootApplyCorrect,
+        shootPickItem: shootPickItem,
+        shootFillSky: shootFillSky,
+        shootCountCorrect: shootCountCorrect
+    };
 }
