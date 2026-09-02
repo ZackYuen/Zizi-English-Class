@@ -2573,9 +2573,9 @@ button.stage-ask {
   border-radius: 18px;
   padding: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   animation: hunt-wobble 1.8s ease-in-out infinite;
 }
 .hunt-bush:nth-child(2) { animation-delay: 0.3s; }
@@ -2584,25 +2584,39 @@ button.stage-ask {
   0%, 100% { transform: rotate(-1.5deg); }
   50% { transform: rotate(1.5deg); }
 }
-.hunt-cover {
+.hunt-cover,
+.hunt-art {
   position: absolute;
-  inset: 8%;
-  width: 84%;
-  height: 84%;
+  left: 50%;
+  bottom: 6%;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 92%;
+  max-height: 52%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  image-rendering: auto;
+}
+.hunt-cover {
   z-index: 2;
+  transform: translateX(-50%);
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
 .hunt-art {
-  position: relative;
   z-index: 1;
-  width: 70%;
-  height: 70%;
+  transform: translateX(-50%);
+  max-width: 78%;
+  max-height: 42%;
+  bottom: 14%;
 }
 .hunt-bush.is-open .hunt-cover {
-  transform: translateY(-70%) scale(0.7);
+  transform: translate(-50%, -90%) scale(0.65);
   opacity: 0;
 }
-.hunt-bush.is-open .hunt-art { transform: scale(1.1); }
+.hunt-bush.is-open .hunt-art {
+  transform: translateX(-50%) scale(1.12);
+}
 
 #shoot-overlay .shoot-field {
   position: absolute;

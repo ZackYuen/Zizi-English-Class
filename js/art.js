@@ -190,14 +190,38 @@
             eye(c, x + s * 0.09, y - s * 0.04, s * 0.05);
         },
         bush: function (c, x, y, s) {
+            c.fillStyle = '#6b3e26';
+            c.fillRect(x - s * 0.06, y + s * 0.22, s * 0.12, s * 0.22);
             c.fillStyle = '#2d9a3f';
-            c.beginPath(); c.arc(x, y + s * 0.1, s * 0.42, 0, Math.PI * 2); c.fill();
-            c.beginPath(); c.arc(x - s * 0.22, y + s * 0.22, s * 0.3, 0, Math.PI * 2); c.fill();
-            c.beginPath(); c.arc(x + s * 0.22, y + s * 0.22, s * 0.3, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x, y - s * 0.02, s * 0.36, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x - s * 0.22, y + s * 0.12, s * 0.26, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x + s * 0.22, y + s * 0.12, s * 0.26, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#3cb54a';
+            c.beginPath(); c.arc(x - s * 0.08, y - s * 0.16, s * 0.18, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x + s * 0.12, y - s * 0.1, s * 0.16, 0, Math.PI * 2); c.fill();
             c.fillStyle = '#247a33';
-            c.beginPath(); c.arc(x - s * 0.12, y, s * 0.08, 0, Math.PI * 2); c.fill();
-            c.beginPath(); c.arc(x + s * 0.14, y + s * 0.08, s * 0.08, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x - s * 0.1, y + s * 0.04, s * 0.07, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(x + s * 0.14, y + s * 0.08, s * 0.07, 0, Math.PI * 2); c.fill();
         },
+        quilt: function (c, x, y, s) {
+            c.fillStyle = '#6b3e26';
+            c.fillRect(x - s * 0.4, y - s * 0.28, s * 0.12, s * 0.56);
+            c.fillStyle = '#8d5524';
+            c.fillRect(x - s * 0.38, y, s * 0.76, s * 0.28);
+            c.fillStyle = '#eef6ff';
+            c.beginPath();
+            c.ellipse(x - s * 0.12, y - s * 0.06, s * 0.16, s * 0.1, 0, 0, Math.PI * 2);
+            c.fill();
+            var cols = ['#e63946', '#4dabf7', '#ffc93c', '#2ecc71', '#9b5de5', '#f4a261'];
+            var n = 0;
+            for (var row = 0; row < 2; row++) {
+                for (var col = 0; col < 3; col++) {
+                    c.fillStyle = cols[n++];
+                    c.fillRect(x - s * 0.02 + col * s * 0.13, y + s * 0.02 + row * s * 0.11, s * 0.12, s * 0.1);
+                }
+            }
+        },
+        bed: function (c, x, y, s) { draw.quilt(c, x, y, s); },
         rocket: function (c, x, y, s) {
             c.fillStyle = '#e63946';
             c.beginPath();
