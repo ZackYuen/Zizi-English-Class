@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-real1">
+    <link rel="stylesheet" href="style.css?v=20260902-shoot1">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -35,7 +35,7 @@
             <div class="zizi-cap">Z</div>
         </div>
         <h1>孜孜學英文</h1>
-        <p class="home-tagline">揸車、砌圖、搵寶，用遊戲學 SATIPN 單詞。聽英文、認圖、砌字母。</p>
+        <p class="home-tagline">揸車、砌圖、搵寶、射氣球，用遊戲學 SATIPN 單詞。</p>
         <div class="home-level" id="home-level">
             <div class="home-level-top">
                 <span class="home-level-badge">Lv.<span id="home-level-num">1</span></span>
@@ -96,6 +96,13 @@
             <span class="home-btn-text">
                 <span class="home-btn-title">尋寶圖</span>
                 <span class="home-btn-sub">聽英文，限時喺圖搵佢</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
+            <span class="home-btn-emoji" aria-hidden="true">🎈</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">音爆射擊</span>
+                <span class="home-btn-sub">聽英文，射爆啱嘅氣球</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-write" onclick="enterMode('standard')">
@@ -280,6 +287,44 @@
     </div>
 </div>
 
+<!-- Balloon shooting -->
+<div id="shoot-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
+    <div class="mode-header">
+        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+        <h2>🎈 音爆射擊</h2>
+        <span class="top-bar-spacer" aria-hidden="true"></span>
+    </div>
+    <div id="shoot-rules" class="arena-card">
+        <p class="arena-kicker" id="shoot-group">第 1 組</p>
+        <h3>遊戲規則</h3>
+        <ol>
+            <li>聽英文單詞，射爆有嗰個圖同字嘅氣球。</li>
+            <li>60 秒內射中 6 個課程單詞。</li>
+            <li>射錯會扣分同扣 4 秒。連中有 combo 分。</li>
+            <li>射中之後聽英文同字點解。</li>
+        </ol>
+        <button type="button" class="arena-go" onclick="beginShootPlay()">🎈 開始射擊</button>
+    </div>
+    <div id="shoot-play" class="arena-play" style="display:none;">
+        <div class="arena-hud">
+            <span>⏱️ <span id="shoot-time">60</span>s</span>
+            <span>⭐ <span id="shoot-score">0</span></span>
+            <span>🎈 <span id="shoot-need">0 / 6</span></span>
+        </div>
+        <div class="hunt-timebar" aria-hidden="true"><div id="shoot-time-fill"></div></div>
+        <button type="button" id="shoot-target" class="arena-target" onclick="replayShootWord()">聽英文，射爆啱嘅氣球！</button>
+        <div id="shoot-field" class="shoot-field"></div>
+        <div id="shoot-coach" class="zizi-coach is-empty" hidden></div>
+    </div>
+    <div id="shoot-over" class="arena-card" style="display:none;">
+        <h3 id="shoot-over-title">射擊完成！</h3>
+        <p id="shoot-over-sub"></p>
+        <ul id="shoot-over-words" class="arena-words"></ul>
+        <button type="button" class="arena-go" onclick="startShootGame()">再射一轉</button>
+        <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+    </div>
+</div>
+
 <!-- Word album -->
 <div id="album-overlay" style="display:none;">
     <div class="album-card-wrap">
@@ -361,23 +406,24 @@
 </div>
 
 <!-- Load order: data → stories → state → config/secrets → speech/progress → fx → writing → curriculum/games → camera → router -->
-<script src="js/data.js?v=20260902-real1"></script>
-<script src="js/stories.js?v=20260902-real1"></script>
-<script src="js/state.js?v=20260902-real1"></script>
+<script src="js/data.js?v=20260902-shoot1"></script>
+<script src="js/stories.js?v=20260902-shoot1"></script>
+<script src="js/state.js?v=20260902-shoot1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260902-real1"></script>
-<script src="js/speech.js?v=20260902-real1"></script>
-<script src="js/progress.js?v=20260902-real1"></script>
-<script src="js/fx.js?v=20260902-real1"></script>
-<script src="js/teach.js?v=20260902-real1"></script>
-<script src="js/writing.js?v=20260902-real1"></script>
-<script src="js/ui.js?v=20260902-real1"></script>
-<script src="js/canvas.js?v=20260902-real1"></script>
-<script src="js/curriculum.js?v=20260902-real1"></script>
-<script src="js/race.js?v=20260902-real1"></script>
-<script src="js/wordpuzzle.js?v=20260902-real1"></script>
-<script src="js/hunt.js?v=20260902-real1"></script>
-<script src="js/camera.js?v=20260902-real1"></script>
-<script src="js/router.js?v=20260902-real1"></script>
+<script src="js/secrets.js?v=20260902-shoot1"></script>
+<script src="js/speech.js?v=20260902-shoot1"></script>
+<script src="js/progress.js?v=20260902-shoot1"></script>
+<script src="js/fx.js?v=20260902-shoot1"></script>
+<script src="js/teach.js?v=20260902-shoot1"></script>
+<script src="js/writing.js?v=20260902-shoot1"></script>
+<script src="js/ui.js?v=20260902-shoot1"></script>
+<script src="js/canvas.js?v=20260902-shoot1"></script>
+<script src="js/curriculum.js?v=20260902-shoot1"></script>
+<script src="js/race.js?v=20260902-shoot1"></script>
+<script src="js/wordpuzzle.js?v=20260902-shoot1"></script>
+<script src="js/hunt.js?v=20260902-shoot1"></script>
+<script src="js/shoot.js?v=20260902-shoot1"></script>
+<script src="js/camera.js?v=20260902-shoot1"></script>
+<script src="js/router.js?v=20260902-shoot1"></script>
 </body>
 </html>

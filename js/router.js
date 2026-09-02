@@ -47,6 +47,7 @@ function hideAllOverlays() {
     setDisplay('race-overlay', 'none');
     setDisplay('puzzle-overlay', 'none');
     setDisplay('hunt-overlay', 'none');
+    setDisplay('shoot-overlay', 'none');
     setDisplay('app', 'none');
     setDisplay('standard-ui', 'none');
     setDisplay('standard-top-bar', 'none');
@@ -159,6 +160,7 @@ window.enterMode = function (mode) {
     if (window.stopRaceGame) window.stopRaceGame();
     if (window.stopPuzzleGame) window.stopPuzzleGame();
     if (window.stopHuntGame) window.stopHuntGame();
+    if (window.stopShootGame) window.stopShootGame();
 
     if (mode === 'race') {
         setDisplay('app', 'none');
@@ -175,6 +177,11 @@ window.enterMode = function (mode) {
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
         if (window.startPictureHunt) window.startPictureHunt();
+    } else if (mode === 'game') {
+        setDisplay('app', 'none');
+        setDisplay('standard-ui', 'none');
+        setDisplay('camera-overlay', 'none');
+        if (window.startShootGame) window.startShootGame();
     } else if (mode === 'standard') {
         setDisplay('camera-overlay', 'none');
         setDisplay('standard-top-bar', 'flex');
@@ -211,6 +218,7 @@ window.backToHome = function () {
     if (window.stopRaceGame) window.stopRaceGame();
     if (window.stopPuzzleGame) window.stopPuzzleGame();
     if (window.stopHuntGame) window.stopHuntGame();
+    if (window.stopShootGame) window.stopShootGame();
 
     window.isGamePlaying = false;
     window.isGameProcessing = false;
@@ -253,6 +261,7 @@ window.addEventListener('pageshow', function () {
         setDisplay('race-overlay', 'none');
         setDisplay('puzzle-overlay', 'none');
         setDisplay('hunt-overlay', 'none');
+        setDisplay('shoot-overlay', 'none');
         setDisplay('settings-modal', 'none');
         setDisplay('home-menu', 'block');
         setDisplay('back-to-home-btn', 'none');
