@@ -2214,7 +2214,7 @@ p.stage-ask {
   align-items: center;
   justify-content: center;
 }
-.stage-stats {
+.stage-stars {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2227,7 +2227,7 @@ p.stage-ask {
   border-radius: 12px;
   padding: 6px 8px;
 }
-.stage-stats b { font-size: 15px; }
+.stage-stars b { font-size: 15px; }
 
 .stage-stars {
   flex: 0 0 auto;
@@ -2559,14 +2559,6 @@ p.stage-ask {
   60% { transform: translateX(-5px); }
   80% { transform: translateX(5px); }
 }
-.arena-overlay.is-urgent .arena-hud,
-.arena-overlay.is-urgent .arena-target {
-  box-shadow: 0 0 0 4px rgba(255, 90, 95, 0.45);
-  animation: hint-pulse 0.7s ease-in-out infinite;
-}
-#hunt-time-fill.is-urgent,
-#shoot-time-fill.is-urgent,
-.arena-overlay.is-urgent #hunt-time-fill,
-.arena-overlay.is-urgent #shoot-time-fill {
-  background: #ff2d55;
+.arena-overlay.is-urgent .stage-ask {
+  box-shadow: 0 0 0 3px rgba(255, 90, 95, 0.45);
 }
