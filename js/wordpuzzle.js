@@ -21,9 +21,9 @@ function pzHud() {
     var prompt = pzEl('pz-prompt');
     if (prompt) {
         if (g.item) {
-            prompt.textContent = '撈字母砌 ' + g.item.w;
+            prompt.textContent = '撳下面砌 ' + g.item.w;
         } else {
-            prompt.textContent = '撈字母填格仔，揭開幅畫';
+            prompt.textContent = '撳下面啲字母填格仔';
         }
     }
 }
@@ -87,10 +87,17 @@ function pzStartWord() {
         var s = document.createElement('div');
         s.className = 'pz-letter-slot' + (i === 0 ? ' is-next' : '');
         s.dataset.i = String(i);
-        s.textContent = ch;
+        s.dataset.ch = ch;
         slots.appendChild(s);
     });
+    slots.addEventListener('click', pzHintTapBelow);
     spell.appendChild(slots);
+
+    var arrow = document.createElement('div');
+    arrow.className = 'pz-tap-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '▼ 撳呢啲';
+    spell.appendChild(arrow);
 
     var row = document.createElement('div');
     row.className = 'pz-pop-row';
@@ -98,16 +105,28 @@ function pzStartWord() {
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'pz-pop';
-        b.style.animationDelay = (i * 0.13) + 's';
+        b.style.animationDelay = (i * 0.12) + 's';
         b.textContent = ch;
         b.onclick = function () { pzTapLetter(ch, b); };
         row.appendChild(b);
     });
     spell.appendChild(row);
     pzPaintReveal();
-    Curriculum.say('撈啱字母砌 ' + g.item.w + '！').then(function () {
+    Curriculum.say('撳下面啲字母砌 ' + g.item.w + '！').then(function () {
         if (g.active) return Curriculum.speakEn(g.item.w);
     });
+}
+
+function pzHintTapBelow() {
+    var g = window.PuzzleGame;
+    if (!g.active || g.phase !== 'play') return;
+    var row = document.querySelector('.pz-pop-row');
+    if (row) {
+        row.classList.remove('is-nudge');
+        void row.offsetWidth;
+        row.classList.add('is-nudge');
+    }
+    Curriculum.say('撳下面啲字母！');
 }
 
 function pzPaintReveal() {
@@ -140,7 +159,11 @@ function pzTapLetter(ch, btn) {
     btn.disabled = true;
     btn.classList.add('is-used');
     var slot = document.querySelector('.pz-letter-slot[data-i="' + g.next + '"]');
-    if (slot) slot.classList.add('is-done');
+    if (slot) {
+        slot.textContent = need;
+        slot.classList.add('is-done');
+        slot.classList.remove('is-next');
+    }
     g.next += 1;
     document.querySelectorAll('.pz-letter-slot.is-next').forEach(function (s) { s.classList.remove('is-next'); });
     var nxt = document.querySelector('.pz-letter-slot[data-i="' + g.next + '"]');
