@@ -30,6 +30,53 @@
         ctx.arc(x + r * 0.2, y, r * 0.45, 0, Math.PI * 2);
         ctx.fill();
     }
+    function limb(ctx, x1, y1, x2, y2, w, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = w;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+    function jogger(c, x, y, s) {
+        c.strokeStyle = '#c4a574';
+        c.lineWidth = Math.max(2, s * 0.04);
+        c.beginPath();
+        c.moveTo(x - s * 0.42, y + s * 0.44);
+        c.lineTo(x + s * 0.42, y + s * 0.44);
+        c.stroke();
+        limb(c, x - s * 0.02, y + s * 0.06, x - s * 0.2, y + s * 0.28, s * 0.08, '#3d5a80');
+        limb(c, x - s * 0.2, y + s * 0.28, x - s * 0.3, y + s * 0.4, s * 0.08, '#3d5a80');
+        limb(c, x + s * 0.02, y + s * 0.06, x + s * 0.18, y + s * 0.22, s * 0.08, '#3d5a80');
+        limb(c, x + s * 0.18, y + s * 0.22, x + s * 0.34, y + s * 0.16, s * 0.08, '#3d5a80');
+        c.fillStyle = '#e63946';
+        c.beginPath();
+        c.ellipse(x - s * 0.32, y + s * 0.42, s * 0.09, s * 0.045, 0, 0, Math.PI * 2);
+        c.fill();
+        c.beginPath();
+        c.ellipse(x + s * 0.38, y + s * 0.16, s * 0.09, s * 0.045, 0.25, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#4dabf7';
+        c.beginPath();
+        c.ellipse(x, y - s * 0.02, s * 0.15, s * 0.2, -0.25, 0, Math.PI * 2);
+        c.fill();
+        limb(c, x - s * 0.06, y - s * 0.08, x - s * 0.24, y - s * 0.2, s * 0.07, '#f4c7a1');
+        limb(c, x + s * 0.08, y - s * 0.02, x + s * 0.26, y + s * 0.1, s * 0.07, '#f4c7a1');
+        c.fillStyle = '#f4c7a1';
+        c.beginPath();
+        c.arc(x + s * 0.08, y - s * 0.28, s * 0.13, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#5c3d2e';
+        c.beginPath();
+        c.ellipse(x + s * 0.06, y - s * 0.34, s * 0.12, s * 0.08, 0, Math.PI, 0);
+        c.fill();
+        eye(c, x + s * 0.12, y - s * 0.28, s * 0.035);
+        c.fillStyle = '#fff';
+        c.beginPath();
+        c.arc(x + s * 0.16, y - s * 0.22, s * 0.035, 0, Math.PI);
+        c.fill();
+    }
     function emojiOf(word) {
         var key = String(word || '').toLowerCase();
         var list = window.D || [];
@@ -194,7 +241,10 @@
             c.fill();
             eye(c, x - s * 0.08, y - s * 0.02, s * 0.04);
             eye(c, x + s * 0.08, y - s * 0.02, s * 0.04);
-        }
+        },
+        jog: function (c, x, y, s) { jogger(c, x, y, s); },
+        run: function (c, x, y, s) { jogger(c, x, y, s); },
+        hop: function (c, x, y, s) { jogger(c, x, y, s); }
     };
 
     window.ZiziArt = {
@@ -224,6 +274,7 @@
             } else {
                 var em = emojiOf(key);
                 if (em) {
+                    ctx.fillStyle = '#000';
                     ctx.font = Math.round(s * 0.78) + 'px serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
