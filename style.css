@@ -1942,10 +1942,13 @@ body.tracing-mode #write-coach {
   display: none !important;
 }
 body.tracing-mode #canvas-wrapper {
-  flex: 1 1 auto;
-  width: min(260px, 72vw, calc(100dvh - 310px));
-  height: min(260px, 72vw, calc(100dvh - 310px));
-  max-height: calc(100dvh - 310px);
+  flex: 0 0 auto;
+  align-self: center;
+  aspect-ratio: 1 / 1;
+  width: min(260px, 72vw, calc(100dvh - 320px));
+  height: auto;
+  max-width: 100%;
+  max-height: min(260px, calc(100dvh - 320px));
   margin: 0 auto;
 }
 body.tracing-mode .controls {
