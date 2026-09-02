@@ -56,7 +56,11 @@ function pzPaintCard(item, size) {
     ctx.font = Math.round(size * 0.42) + 'px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(item.emoji, size / 2, size * 0.40);
+    if (window.ZiziArt) {
+        window.ZiziArt.drawWord(ctx, item.w, size / 2, size * 0.40, size * 0.4);
+    } else {
+        ctx.fillText(item.emoji, size / 2, size * 0.40);
+    }
     ctx.fillStyle = '#123b63';
     ctx.font = 'bold ' + Math.round(size * 0.16) + 'px Fredoka, sans-serif';
     ctx.fillText(item.w, size / 2, size * 0.78);

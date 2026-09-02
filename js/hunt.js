@@ -61,9 +61,18 @@ function huntPaintScene() {
         btn.dataset.word = item.w;
         btn.setAttribute('aria-label', item.w);
         btn.innerHTML = '<span class="hunt-prop">' + props[i % props.length] + '</span>' +
-            '<span class="hunt-emoji">' + item.emoji + '</span>';
+            '<canvas class="hunt-art"></canvas>';
         btn.onclick = function () { huntTap(item, btn); };
         scene.appendChild(btn);
+        var art = btn.querySelector('.hunt-art');
+        if (art && window.ZiziArt) {
+            var cs = Math.max(48, Math.floor(btn.clientHeight * 0.62));
+            art.width = cs * 2;
+            art.height = cs * 2;
+            var ac = art.getContext('2d');
+            ac.scale(2, 2);
+            window.ZiziArt.drawWord(ac, item.w, cs / 2, cs / 2, cs);
+        }
     });
 }
 

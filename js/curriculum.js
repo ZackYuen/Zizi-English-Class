@@ -220,6 +220,17 @@ window.Curriculum = {
         });
     },
 
+    drawWord: function (ctx, item, x, y, s) {
+        if (window.ZiziArt) {
+            window.ZiziArt.drawWord(ctx, item.w, x, y, s);
+            return;
+        }
+        ctx.font = Math.round(s * 0.7) + 'px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.emoji, x, y);
+    },
+
     award: function (stars, meta) {
         if (typeof window.awardStars !== 'function') return;
         window.awardStars(stars, meta || {});
