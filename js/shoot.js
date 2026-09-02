@@ -23,7 +23,9 @@ window.ShootGame = {
     ctx: null,
     busy: false,
     bob: 0,
-    beam: null
+    beam: null,
+    shots: [],
+    bursts: []
 };
 
 function shEl(id) { return document.getElementById(id); }
@@ -134,6 +136,8 @@ function shootNewRound(announce) {
     g.power = 0;
     g.busy = false;
     g.beam = null;
+    g.shots = [];
+    g.bursts = [];
     shootFillSky(true);
     shootHud();
     if (announce && g.phase === 'play' && g.target) {
@@ -143,6 +147,77 @@ function shootNewRound(announce) {
             })
         );
     }
+}
+
+/** Pure hit math: one correct pop. Returns 'energy' | 'word' | 'finish'. */
+function shootMakeBurst(x, y, color) {
+    var bits = [];
+    var n = 11;
+    var i;
+    for (i = 0; i < n; i++) {
+        var a = (i / n) * Math.PI * 2 + Math.random() * 0.35;
+        var sp = 120 + Math.random() * 160;
+        bits.push({
+            px: 0,
+            py: 0,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp - 50,
+            rot: Math.random() * Math.PI,
+            spin: (Math.random() - 0.5) * 10,
+            w: 7 + Math.random() * 9,
+            h: 4 + Math.random() * 7,
+            color: i % 4 === 0 ? '#fff8e1' : color
+        });
+    }
+    return { x: x, y: y, color: color, t: 0.46, life: 0.46, bits: bits };
+}
+
+function shootDrawBurst(ctx, burst) {
+    if (!burst || burst.t <= 0) return;
+    var u = 1 - burst.t / burst.life;
+    var ring = 12 + u * 46;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 0.85 - u);
+    ctx.strokeStyle = burst.color;
+    ctx.lineWidth = 5 - u * 3;
+    ctx.beginPath();
+    ctx.arc(burst.x, burst.y, ring, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(burst.x, burst.y, ring * 0.62, 0, Math.PI * 2);
+    ctx.stroke();
+    burst.bits.forEach(function (bit) {
+        ctx.save();
+        ctx.translate(burst.x + bit.px, burst.y + bit.py);
+        ctx.rotate(bit.rot);
+        ctx.globalAlpha = Math.max(0, 1 - u * 1.05);
+        ctx.fillStyle = bit.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, bit.w, bit.h, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#123b63';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+    });
+    ctx.restore();
+}
+
+function shootUpdateBursts(dt) {
+    var g = window.ShootGame;
+    var list = g.bursts || [];
+    list.forEach(function (burst) {
+        burst.t -= dt;
+        burst.bits.forEach(function (bit) {
+            bit.px += bit.vx * dt;
+            bit.py += bit.vy * dt;
+            bit.vy += 420 * dt;
+            bit.rot += bit.spin * dt;
+        });
+    });
+    g.bursts = list.filter(function (burst) { return burst.t > 0; });
 }
 
 /** Pure hit math: one correct pop. Returns 'energy' | 'word' | 'finish'. */
@@ -157,7 +232,7 @@ function shootBulletLife() {
 }
 
 function shootBulletRadius(W, H) {
-    return Math.max(18, Math.min(28, (W || 320) * 0.07));
+    return Math.max(8, Math.min(11, (W || 320) * 0.028));
 }
 
 function shootBulletPos(beam, rocketX, rocketY) {
@@ -188,7 +263,7 @@ function shootDrawBullet(ctx, beam, rocketX, rocketY, W, H) {
         var ty = rocketY + (beam.y - rocketY) * tp;
         ctx.fillStyle = 'rgba(255, 180, 40, ' + (0.28 - i * 0.06) + ')';
         ctx.beginPath();
-        ctx.arc(tx, ty, r * (0.55 - i * 0.08), 0, Math.PI * 2);
+        ctx.arc(tx, ty, r * (0.42 - i * 0.08), 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.fillStyle = '#ff9f1c';
@@ -204,7 +279,7 @@ function shootDrawBullet(ctx, beam, rocketX, rocketY, W, H) {
     ctx.arc(pos.x - r * 0.22, pos.y - r * 0.22, r * 0.38, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#e85d04';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     ctx.stroke();
@@ -240,26 +315,27 @@ function shootDraw() {
 
     var rocketX = W / 2;
     var rocketY = H - H * 0.11;
-    if (g.beam && g.beam.t > 0) {
-        shootDrawBullet(ctx, g.beam, rocketX, rocketY - 18, W, H);
-    }
 
     g.balloons.forEach(function (b) {
         var x = b.x * W;
         var y = b.y * H + Math.sin(g.bob * 2 + b.wob) * 5;
+        var scale = b.shot ? 1.1 + Math.sin(g.bob * 18) * 0.08 : 1;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
         ctx.fillStyle = b.color;
         ctx.beginPath();
-        ctx.ellipse(x, y, r, r * 1.22, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, r, r * 1.22, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,0.45)';
         ctx.beginPath();
-        ctx.ellipse(x - r * 0.32, y - r * 0.38, r * 0.22, r * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(-r * 0.32, -r * 0.38, r * 0.22, r * 0.3, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#123b63';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(x, y + r * 1.22);
-        ctx.lineTo(x, y + r * 1.22 + H * 0.035);
+        ctx.moveTo(0, r * 1.22);
+        ctx.lineTo(0, r * 1.22 + H * 0.035);
         ctx.stroke();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -270,9 +346,18 @@ function shootDraw() {
         ctx.lineJoin = 'round';
         ctx.strokeStyle = '#123b63';
         ctx.lineWidth = 5;
-        ctx.strokeText(b.item.w, x, y);
+        ctx.strokeText(b.item.w, 0, 0);
         ctx.fillStyle = '#fff';
-        ctx.fillText(b.item.w, x, y);
+        ctx.fillText(b.item.w, 0, 0);
+        ctx.restore();
+    });
+
+    (g.shots || []).forEach(function (shot) {
+        if (shot.t > 0) shootDrawBullet(ctx, shot, rocketX, rocketY - 18, W, H);
+    });
+
+    (g.bursts || []).forEach(function (burst) {
+        shootDrawBurst(ctx, burst);
     });
 
     if (window.ZiziArt) {
@@ -291,6 +376,7 @@ function shootPopFx(label) {
 
 function shootClearWord() {
     var g = window.ShootGame;
+    g.shots = [];
     var item = g.target;
     var word = item && item.w;
     g.found.push(item);
@@ -318,20 +404,34 @@ function shootClearWord() {
 
 function shootHit(b) {
     var g = window.ShootGame;
-    if (g.busy || g.phase !== 'play' || !g.target) return;
-    var word = g.target.w;
+    if (g.busy || g.phase !== 'play' || !g.target || !b || b.shot) return;
     var W = g.W;
     var H = g.H;
-    g.beam = {
+    b.shot = true;
+    var shot = {
         x: b.x * W,
         y: b.y * H + Math.sin(g.bob * 2 + b.wob) * 5,
         t: shootBulletLife(),
-        life: shootBulletLife()
+        life: shootBulletLife(),
+        target: b
     };
-    if (b.item.w === word) {
+    g.shots = g.shots || [];
+    g.shots.push(shot);
+    g.beam = shot;
+}
+
+function shootExplodeShot(shot) {
+    var g = window.ShootGame;
+    var b = shot && shot.target;
+    if (!g.active || g.phase !== 'play' || !b) return;
+    if (g.balloons.indexOf(b) < 0) return;
+    g.bursts = g.bursts || [];
+    g.bursts.push(shootMakeBurst(shot.x, shot.y, b.color));
+    g.balloons = g.balloons.filter(function (x) { return x !== b; });
+    var word = g.target && g.target.w;
+    if (b.item && word && b.item.w === word) {
         var result = shootApplyCorrect(g);
         shootHud();
-        g.balloons = g.balloons.filter(function (x) { return x !== b; });
         if (result === 'energy') {
             shootPopFx('+💧');
             g.balloons.push(shootMakeBalloon(shootPickItem(), true));
@@ -347,8 +447,7 @@ function shootHit(b) {
     } else {
         Curriculum.missFx(shEl('shoot-play'), '碰！');
     }
-    Curriculum.speakEn(b.item.w);
-    g.balloons = g.balloons.filter(function (x) { return x !== b; });
+    if (b.item) Curriculum.speakEn(b.item.w);
     g.balloons.push(shootMakeBalloon(shootPickItem(), true));
 }
 
@@ -356,12 +455,19 @@ function shootUpdate(dt) {
     var g = window.ShootGame;
     if (g.phase !== 'play') return;
     g.bob += dt * 4;
-    if (g.beam) {
-        g.beam.t -= dt;
-        if (g.beam.t <= 0) g.beam = null;
-    }
+    var arrived = [];
+    g.shots = (g.shots || []).filter(function (shot) {
+        shot.t -= dt;
+        if (shot.t > 0) return true;
+        arrived.push(shot);
+        return false;
+    });
+    arrived.forEach(shootExplodeShot);
+    if (g.beam && g.beam.t <= 0) g.beam = g.shots.length ? g.shots[g.shots.length - 1] : null;
+    shootUpdateBursts(dt);
     if (g.busy) return;
     g.balloons.forEach(function (b) {
+        if (b.shot) return;
         b.y -= b.vy * dt;
         b.x += Math.sin(g.bob + b.wob) * 0.012 * dt;
         if (b.x < 0.08) b.x = 0.08;
@@ -424,6 +530,8 @@ window.stopShootGame = function () {
     g.phase = 'play';
     g.busy = false;
     g.beam = null;
+    g.shots = [];
+    g.bursts = [];
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     shootShowOver(false);
     var overlay = shEl('shoot-overlay');
@@ -494,6 +602,7 @@ window.replayShootWord = function () {
         var bestD = hitR;
         for (var i = 0; i < g.balloons.length; i++) {
             var b = g.balloons[i];
+            if (b.shot) continue;
             var bx = b.x * W;
             var by = b.y * H + Math.sin(g.bob * 2 + b.wob) * 5;
             var d = Math.hypot(p.x - bx, p.y - by);
@@ -536,6 +645,9 @@ if (typeof module !== 'undefined' && module.exports) {
         shootCountCorrect: shootCountCorrect,
         shootBulletLife: shootBulletLife,
         shootBulletRadius: shootBulletRadius,
-        shootBulletPos: shootBulletPos
+        shootBulletPos: shootBulletPos,
+        shootMakeBurst: shootMakeBurst,
+        shootExplodeShot: shootExplodeShot,
+        shootHit: shootHit
     };
 }
