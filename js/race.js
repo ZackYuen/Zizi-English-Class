@@ -1,7 +1,7 @@
 // ==========================================
-// 🏎️ 字母賽車 — side-on race vs a rival car
-// Real race: two cars, one road. Steer left/mid/right,
-// overtake when the English gate glows green.
+// 🏎️ 字母賽車 — drag the car, catch the rival
+// One road, two cars. Finger sticks to your red car.
+// Chase the blue car; drive through the glowing gate.
 // ==========================================
 
 window.RaceGame = {
@@ -9,23 +9,21 @@ window.RaceGame = {
     phase: 'go',
     raf: 0,
     clock: null,
-    timeLeft: 45,
-    TIME: 45,
-    LAPS: 5,
+    timeLeft: 50,
+    TIME: 50,
+    NEED: 4,
     score: 0,
     combo: 0,
-    laps: 0,
+    got: 0,
     words: [],
     collected: [],
     target: null,
     gates: [],
-    gateAt: 0.62,
-    me: { x: 0.42, lane: 1 },
-    rival: { x: 0.58, lane: 1 },
+    gateAt: 0.5,
+    me: { x: 0.5 },
+    rival: { x: 0.34 },
     roadOff: 0,
     bob: 0,
-    blink: 0,
-    laneTouch: null,
     W: 320,
     H: 420,
     ctx: null,
@@ -33,12 +31,6 @@ window.RaceGame = {
 };
 
 function raceEl(id) { return document.getElementById(id); }
-
-function raceLaneX(lane) {
-    var g = window.RaceGame;
-    var pad = g.W * 0.1;
-    return pad + (g.W - pad * 2) * (lane / 2);
-}
 
 function raceHud() {
     var g = window.RaceGame;
@@ -48,12 +40,12 @@ function raceHud() {
     var tgt = raceEl('race-target');
     if (t) t.textContent = String(Math.max(0, Math.ceil(g.timeLeft)));
     if (s) s.textContent = String(g.score);
-    if (n) n.textContent = g.laps + '/' + g.LAPS;
+    if (n) n.textContent = g.got + '/' + g.NEED;
     if (tgt) {
         if (g.target) {
-            tgt.textContent = '快！' + g.target.emoji + ' ' + g.target.w;
+            tgt.textContent = '🚗 ' + g.target.w;
         } else {
-            tgt.textContent = '向左／右撳，衝過綠色閘！';
+            tgt.textContent = '拖住架車去發光嗰度';
         }
     }
 }
@@ -76,16 +68,16 @@ function raceSizeCanvas() {
 
 function raceSpawnGates() {
     var g = window.RaceGame;
-    if (!g.words.length) g.words = Curriculum.pickLesson(g.LAPS + 4, g.collected.map(function (w) { return w.w; }));
-    g.target = g.words[g.laps] || Curriculum.pickLesson(1)[0];
-    var decoys = Curriculum.decoys(g.target, 2);
-    var items = Curriculum.shuffle([g.target].concat(decoys).slice(0, 3));
-    while (items.length < 3) items.push(Curriculum.decoys(g.target, 1)[0] || g.target);
+    if (!g.words.length) g.words = Curriculum.pickLesson(g.NEED + 3, g.collected.map(function (w) { return w.w; }));
+    g.target = g.words[g.got] || Curriculum.pickLesson(1)[0];
+    var decoys = Curriculum.decoys(g.target, 1);
+    var items = Curriculum.shuffle([g.target].concat(decoys).slice(0, 2));
+    while (items.length < 2) items.push(Curriculum.decoys(g.target, 1)[0] || g.target);
     g.gates = items;
-    g.gateAt = 0.62;
+    g.gateAt = 0.5;
     raceHud();
     if (g.phase === 'play' && g.target) {
-        Curriculum.say('過 ' + g.target.w + ' 閘！').then(function () {
+        Curriculum.say('入 ' + g.target.w + ' 閘！').then(function () {
             if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
         });
     }
@@ -101,38 +93,30 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
-function drawCarSide(ctx, x, y, color, flip) {
+function drawCarTop(ctx, x, y, color, glow) {
     ctx.save();
     ctx.translate(x, y);
-    if (flip) ctx.scale(-1, 1);
+    if (glow) {
+        ctx.shadowColor = '#fff59d';
+        ctx.shadowBlur = 18;
+    }
     ctx.fillStyle = color;
-    roundRect(ctx, -34, -20, 68, 26, 10);
+    roundRect(ctx, -26, -44, 52, 88, 16);
     ctx.fill();
-    ctx.fillStyle = shade(color, -18);
-    roundRect(ctx, -20, -34, 38, 20, 8);
+    ctx.fillStyle = '#123b63';
+    roundRect(ctx, -18, -26, 36, 22, 8);
     ctx.fill();
     ctx.fillStyle = '#a8e4ff';
-    roundRect(ctx, -14, -30, 26, 13, 5);
+    roundRect(ctx, -14, -22, 28, 14, 5);
     ctx.fill();
     ctx.fillStyle = '#1f1f1f';
-    ctx.beginPath();
-    ctx.arc(-18, 8, 11, 0, Math.PI * 2);
-    ctx.arc(20, 8, 11, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#cfd8dc';
-    ctx.beginPath();
-    ctx.arc(-18, 8, 5, 0, Math.PI * 2);
-    ctx.arc(20, 8, 5, 0, Math.PI * 2);
-    ctx.fill();
+    [-20, 20].forEach(function (wx) {
+        ctx.beginPath();
+        ctx.arc(wx, -24, 9, 0, Math.PI * 2);
+        ctx.arc(wx, 24, 9, 0, Math.PI * 2);
+        ctx.fill();
+    });
     ctx.restore();
-}
-
-function shade(hex, pct) {
-    var n = parseInt(hex.slice(1), 16);
-    var r = Math.max(0, Math.min(255, (n >> 16) + pct));
-    var g = Math.max(0, Math.min(255, ((n >> 8) & 255) + pct));
-    var b = Math.max(0, Math.min(255, (n & 255) + pct));
-    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 function raceDraw() {
@@ -141,113 +125,80 @@ function raceDraw() {
     if (!ctx) return;
     var W = g.W;
     var H = g.H;
-    var horizon = H * 0.3;
-
-    var sky = ctx.createLinearGradient(0, 0, 0, horizon);
-    sky.addColorStop(0, '#7ec8ff');
-    sky.addColorStop(1, '#d9f3ff');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, horizon);
-
-    ctx.fillStyle = '#fff59d';
-    ctx.beginPath();
-    ctx.arc(W * 0.86, H * 0.09, H * 0.05, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.fillStyle = '#8ed87a';
-    ctx.fillRect(0, horizon, W, H - horizon);
+    ctx.fillRect(0, 0, W, H);
 
-    var roadTop = horizon;
-    var roadBot = H * 0.94;
     ctx.fillStyle = '#4d4d4d';
-    ctx.beginPath();
-    ctx.moveTo(W * 0.12, roadTop);
-    ctx.lineTo(W * 0.88, roadTop);
-    ctx.lineTo(W, roadBot);
-    ctx.lineTo(0, roadBot);
-    ctx.closePath();
+    roundRect(ctx, W * 0.06, -20, W * 0.88, H + 40, 24);
     ctx.fill();
-
     ctx.strokeStyle = '#f4d35e';
-    ctx.lineWidth = 4;
-    ctx.setLineDash([20, 18]);
+    ctx.lineWidth = 5;
+    ctx.setLineDash([22, 18]);
     ctx.lineDashOffset = -g.roadOff;
-    for (var lane = 0; lane < 3; lane++) {
-        var xTop = W * 0.12 + (W * 0.76) * (lane + 0.5) / 3;
-        var xBot = W * (lane + 0.5) / 3;
-        ctx.beginPath();
-        ctx.moveTo(xTop, roadTop);
-        ctx.lineTo(xBot, roadBot);
-        ctx.stroke();
-    }
+    ctx.beginPath();
+    ctx.moveTo(W * 0.5, 0);
+    ctx.lineTo(W * 0.5, H);
+    ctx.stroke();
     ctx.setLineDash([]);
 
     var gz = g.gateAt;
-    var gy = roadTop + (roadBot - roadTop) * gz;
-    var gh = 26 + 90 * gz;
-    var laneW = (W - W * 0.1 * 2) / 3;
-    for (var gi = 0; gi < 3; gi++) {
-        var item = g.gates[gi];
-        if (!item) continue;
+    var gy = H * 0.12 + H * 0.7 * gz;
+    var gw = W * 0.32;
+    var gh = H * 0.13;
+    var xs = [W * 0.3, W * 0.7];
+    g.gates.forEach(function (item, i) {
+        if (!item) return;
         var good = g.target && item.w === g.target.w;
-        var gx = raceLaneX(gi);
+        var gx = xs[i];
         ctx.save();
         ctx.translate(gx, gy);
         ctx.fillStyle = good ? '#2ecc71' : '#ffffff';
-        ctx.strokeStyle = good ? '#0b7a3b' : '#123b63';
-        ctx.lineWidth = good ? 5 : 3;
-        var hw = laneW * 0.4;
-        roundRect(ctx, -hw, -gh, hw * 2, gh, 10);
+        ctx.strokeStyle = good ? '#fff59d' : '#123b63';
+        ctx.lineWidth = good ? 6 : 3;
+        roundRect(ctx, -gw / 2, -gh, gw, gh, 12);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = '#123b63';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (window.ZiziArt) {
-            var pulse = 1 + Math.sin(g.bob * 1.4) * 0.08;
-            window.ZiziArt.drawWord(ctx, item.w, 0, -gh * 0.55, Math.round((26 + 24 * gz) * pulse), g.bob);
+            var pulse = good ? 1 + Math.sin(g.bob * 2) * 0.1 : 1;
+            window.ZiziArt.drawWord(ctx, item.w, 0, -gh * 0.55, Math.round(30 * pulse), g.bob);
         } else {
-            ctx.font = Math.round(18 + 18 * gz) + 'px serif';
+            ctx.font = '26px serif';
             ctx.fillText(item.emoji, 0, -gh * 0.55);
         }
-        ctx.font = 'bold ' + Math.round(11 + 8 * gz) + 'px Fredoka, sans-serif';
-        ctx.fillText(item.w, 0, -gh * 0.14);
+        ctx.font = 'bold 15px Fredoka, sans-serif';
+        ctx.fillStyle = good ? '#fff' : '#123b63';
+        ctx.fillText(item.w, 0, -gh * 0.12);
         ctx.restore();
-    }
+    });
 
-    var roadT = Math.max(0, Math.min(1, (gy - roadTop) / (roadBot - roadTop)));
     var bobY = Math.sin(g.bob) * 3;
-    var squash = (Math.floor(g.blink * 0.7) % 6 === 0) ? 0.9 : 1;
-    var cyMe = roadTop + (roadBot - roadTop) * g.me.x;
-    var cyRv = roadTop + (roadBot - roadTop) * g.rival.x;
-    ctx.save();
-    ctx.translate(raceLaneX(g.me.lane), cyMe + bobY);
-    ctx.scale(1, squash);
-    drawCarSide(ctx, 0, 0, '#e63946', false);
-    ctx.restore();
-    ctx.save();
-    ctx.translate(raceLaneX(g.rival.lane), cyRv - bobY);
-    ctx.scale(1, 1 / squash);
-    drawCarSide(ctx, 0, 0, '#4dabf7', true);
-    ctx.restore();
+    var cyMe = H * 0.82;
+    var cyRv = H * 0.82 - (g.me.x - g.rival.x) * H * 0.5;
+    drawCarTop(ctx, W * 0.5, cyRv, '#4dabf7', false);
+    drawCarTop(ctx, g.me.x * W, cyMe + bobY, '#e63946', true);
 
-    ctx.fillStyle = 'rgba(18,59,99,0.8)';
-    ctx.font = 'bold 14px Fredoka, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold 15px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('手指向左／向右掃', W / 2, H - 14);
+    ctx.fillText('拖住紅車，入綠色閘', W / 2, 22);
 }
 
 function raceHit() {
     var g = window.RaceGame;
     if (g.pending || g.phase !== 'play') return;
     g.pending = true;
-    var item = g.gates[g.me.lane];
+    var idx = g.me.x < 0.5 ? 0 : 1;
+    var item = g.gates[idx];
     if (item && g.target && item.w === g.target.w) {
         g.combo += 1;
-        var bonus = 120 + g.combo * 20 + Math.ceil(g.timeLeft);
+        var bonus = 120 + g.combo * 20;
         g.score += bonus;
         Curriculum.hitFx(raceEl('race-overlay'), bonus, g.combo);
-        g.laps += 1;
+        g.got += 1;
         g.collected.push(g.target);
         Curriculum.award(0, {
             word: g.target.w,
@@ -255,120 +206,41 @@ function raceHit() {
             letter: g.target.l,
             reason: '賽車學到 ' + g.target.w
         });
-        g.me.x = Math.min(0.9, g.me.x + 0.12);
-        g.rival.x = Math.max(0.1, g.rival.x - 0.05);
+        g.rival.x = Math.max(0.1, g.rival.x + 0.03);
         raceHud();
-        var word = g.target.w;
-        Curriculum.say('快過佢！' + word);
-        Curriculum.speakEn(word);
-        g.pending = false;
-        if (!g.active) return;
-        if (g.laps >= g.LAPS || g.timeLeft <= 0) {
-            raceFinish(true);
-            return;
-        }
-        raceSpawnGates();
+        Curriculum.speakEn(g.target.w);
+        setTimeout(function () {
+            g.pending = false;
+            if (!g.active) return;
+            if (g.got >= g.NEED || g.timeLeft <= 0) {
+                raceFinish(true);
+                return;
+            }
+            raceSpawnGates();
+        }, 450);
     } else {
         Curriculum.boom();
         if (window.ZiziFX) {
             window.ZiziFX.flash('rgba(255,80,80,.22)');
-            window.ZiziFX.floatScore(raceEl('race-overlay'), '-4s', 'bad');
+            window.ZiziFX.floatScore(raceEl('race-overlay'), '碰！', 'bad');
         }
         g.combo = 0;
-        g.score = Math.max(0, g.score - 30);
-        g.timeLeft = Math.max(0, g.timeLeft - 4);
-        g.rival.x = Math.min(0.94, g.rival.x + 0.1);
+        g.score = Math.max(0, g.score - 20);
+        g.rival.x = Math.min(0.9, g.rival.x + 0.1);
         raceHud();
-        Curriculum.say('入錯閘！藍車追過嚟喇。');
+        Curriculum.say('碰！入綠色嗰個。');
+        g.gateAt = 0.5;
         g.pending = false;
-        if (!g.active) return;
-        raceSpawnGates();
     }
 }
-
-function raceSteer(dir) {
-    var g = window.RaceGame;
-    if (!g.active) return;
-    g.me.lane = Math.max(0, Math.min(2, g.me.lane + dir));
-    if (window.ZiziFX) window.ZiziFX.play('tap');
-}
-
-function raceLaneFromClient(clientX) {
-    var wrap = raceEl('race-canvas-wrap');
-    if (!wrap) return;
-    var r = wrap.getBoundingClientRect();
-    var x = clientX - r.left;
-    var t = x / r.width;
-    var g = window.RaceGame;
-    g.me.lane = t < 0.34 ? 0 : (t > 0.66 ? 2 : 1);
-    if (window.ZiziFX) window.ZiziFX.play('tap');
-}
-
-window.raceLeft = function () { raceSteer(-1); };
-window.raceRight = function () { raceSteer(1); };
-
-(function bindRaceInput() {
-    function x(e) {
-        if (e.touches && e.touches[0]) return e.touches[0].clientX;
-        if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
-        return e.clientX;
-    }
-    function down(e) {
-        var wrap = raceEl('race-canvas-wrap');
-        if (!wrap || !window.RaceGame.active) return;
-        if (e.cancelable) e.preventDefault();
-        if (e.pointerId != null && wrap.setPointerCapture) {
-            try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-        }
-        var g = window.RaceGame;
-        g.laneTouch = x(e);
-        raceLaneFromClient(g.laneTouch);
-    }
-    function move(e) {
-        var g = window.RaceGame;
-        if (g.laneTouch == null) return;
-        var wrap = raceEl('race-canvas-wrap');
-        if (!wrap) return;
-        if (e.cancelable) e.preventDefault();
-        raceLaneFromClient(x(e));
-    }
-    function up(e) {
-        if (e && e.cancelable) e.preventDefault();
-        window.RaceGame.laneTouch = null;
-    }
-    function bind() {
-        var wrap = raceEl('race-canvas-wrap');
-        if (!wrap || wrap._raceBound) return;
-        wrap._raceBound = true;
-        wrap.addEventListener('pointerdown', down);
-        wrap.addEventListener('pointermove', move);
-        wrap.addEventListener('pointerup', up);
-        wrap.addEventListener('pointercancel', up);
-        wrap.addEventListener('touchstart', down, { passive: false });
-        wrap.addEventListener('touchmove', move, { passive: false });
-        wrap.addEventListener('touchend', up, { passive: false });
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-    else bind();
-    window.addEventListener('load', bind);
-    window.addEventListener('resize', function () {
-        if (window.RaceGame.active) {
-            raceSizeCanvas();
-            raceDraw();
-        }
-    });
-})();
 
 function raceUpdate(dt) {
     var g = window.RaceGame;
-    if (g.phase !== 'play' || g.pending) return;
+    if (g.phase !== 'play') return;
     g.roadOff += 260 * dt;
-    g.gateAt += 0.34 * dt;
     g.bob += dt * 8;
-    g.blink += dt;
-    g.rival.x += (0.5 + Math.sin(g.roadOff * 0.01) * 0.03 - g.rival.x) * dt * 0.4;
-    g.rival.lane = Math.max(0, Math.min(2, g.rival.lane + (Math.random() < 0.01 ? (Math.random() < 0.5 ? -1 : 1) : 0)));
-    if (g.gateAt >= 1) raceHit();
+    g.gateAt += 0.38 * dt;
+    if (!g.pending && g.gateAt >= 1) raceHit();
 }
 
 function raceTickClock() {
@@ -380,7 +252,7 @@ function raceTickClock() {
         Curriculum.warnLowTime(g.timeLeft, raceEl('race-overlay'));
         if (g.timeLeft <= 0) {
             g.timeLeft = 0;
-            raceFinish(g.laps > 0);
+            raceFinish(g.got > 0);
         }
     }
 }
@@ -406,8 +278,8 @@ function raceFinish(ok) {
     g.phase = 'over';
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-    var won = g.me.x >= g.rival.x;
-    var stars = Curriculum.starsForScore(g.score, 500);
+    var won = g.got >= g.NEED;
+    var stars = Curriculum.starsForScore(g.score, 450);
     Curriculum.award(stars, { reason: '完成字母賽車', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
     raceShowOver(true);
@@ -416,22 +288,22 @@ function raceFinish(ok) {
     Curriculum.finishFx({
         emoji: '🏁',
         title: won ? '贏咗！' : (ok ? '衝線喇！' : '時間到！'),
-        sub: '分數 ' + g.score + ' · 過咗 ' + g.laps + ' 閘',
+        sub: '分數 ' + g.score + ' · 入咗 ' + g.got + ' 閘',
         stars: stars
     });
     var title = raceEl('race-over-title');
     var sub = raceEl('race-over-sub');
     var list = raceEl('race-over-words');
     if (title) title.textContent = won ? '贏咗架藍車！' : (ok ? '衝線喇！' : '時間到！');
-    if (sub) sub.textContent = '分數 ' + g.score + ' · 過咗 ' + g.laps + ' 閘 · +' + stars + '⭐';
+    if (sub) sub.textContent = '分數 ' + g.score + ' · 入咗 ' + g.got + ' 閘 · +' + stars + '⭐';
     if (list) {
         list.innerHTML = g.collected.map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
-        }).join('') || '<li>未過到閘，再追過！</li>';
+        }).join('') || '<li>未入到閘，再拖車入綠色嗰個！</li>';
     }
     Curriculum.say(won
         ? '贏咗！紅車快過藍車。'
-        : '時間到！要入啱閘先快過藍車。');
+        : '時間到！拖住紅車入綠色閘。');
 }
 
 window.stopRaceGame = function () {
@@ -464,12 +336,12 @@ window.startRaceGame = function () {
     g.timeLeft = g.TIME;
     g.score = 0;
     g.combo = 0;
-    g.laps = 0;
+    g.got = 0;
     g.collected = [];
-    g.words = Curriculum.pickLesson(g.LAPS + 3);
+    g.words = Curriculum.pickLesson(g.NEED + 2);
     g.target = null;
-    g.me = { x: 0.42, lane: 1 };
-    g.rival = { x: 0.58, lane: 1 };
+    g.me.x = 0.5;
+    g.rival.x = 0.34;
     g.pending = false;
     Curriculum.bootFx();
     raceShowOver(false);
@@ -485,7 +357,7 @@ window.beginRaceDrive = function () {
     if (count) { count.style.display = 'flex'; count.textContent = '3'; }
     Curriculum.startFx();
     Curriculum.countFx(3);
-    Curriculum.say('拖住掃左掃右，入綠色閘。三、二、一！');
+    Curriculum.say('拖住紅車入綠色閘，追過藍車。三、二、一！');
 
     function layout() {
         raceSizeCanvas();
@@ -523,20 +395,50 @@ window.replayRaceWord = function () {
 };
 
 (function bindRaceInput() {
+    function x(e) {
+        if (e.touches && e.touches[0]) return e.touches[0].clientX;
+        if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
+        return e.clientX;
+    }
+    function setCar(clientX) {
+        var wrap = raceEl('race-canvas-wrap');
+        if (!wrap) return;
+        var r = wrap.getBoundingClientRect();
+        var t = (clientX - r.left) / (r.width || 1);
+        window.RaceGame.me.x = Math.max(0.14, Math.min(0.86, t));
+    }
     function down(e) {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || !window.RaceGame.active) return;
         if (e.cancelable) e.preventDefault();
-        var r = wrap.getBoundingClientRect();
-        var x = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX) - r.left;
-        raceSteer(x < r.width / 2 ? -1 : 1);
+        if (e.pointerId != null && wrap.setPointerCapture) {
+            try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        }
+        window.RaceGame.laneTouch = x(e);
+        setCar(window.RaceGame.laneTouch);
+    }
+    function move(e) {
+        var g = window.RaceGame;
+        if (g.laneTouch == null) return;
+        if (e.cancelable) e.preventDefault();
+        g.laneTouch = x(e);
+        setCar(g.laneTouch);
+    }
+    function up(e) {
+        if (e && e.cancelable) e.preventDefault();
+        window.RaceGame.laneTouch = null;
     }
     function bind() {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || wrap._raceBound) return;
         wrap._raceBound = true;
         wrap.addEventListener('pointerdown', down);
+        wrap.addEventListener('pointermove', move);
+        wrap.addEventListener('pointerup', up);
+        wrap.addEventListener('pointercancel', up);
         wrap.addEventListener('touchstart', down, { passive: false });
+        wrap.addEventListener('touchmove', move, { passive: false });
+        wrap.addEventListener('touchend', up, { passive: false });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
     else bind();
