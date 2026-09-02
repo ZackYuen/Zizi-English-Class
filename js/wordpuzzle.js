@@ -16,6 +16,7 @@ window.PuzzleGame = {
     item: null,
     order: [0, 1, 2, 3],
     picked: -1,
+    drag: null,
     spell: [],
     spellNext: 0
 };
@@ -82,7 +83,7 @@ function pzStartJigsaw() {
     var prompt = pzEl('pz-prompt');
     if (spell) { spell.style.display = 'none'; spell.innerHTML = ''; }
     if (board) board.style.display = 'grid';
-    if (prompt) prompt.textContent = '撳兩塊對調 · ' + g.item.emoji + ' ' + g.item.w;
+    if (prompt) prompt.textContent = '拖塊圖對調 · ' + g.item.emoji + ' ' + g.item.w;
     if (!board) return;
     board.innerHTML = '';
     var size = 280;
@@ -101,10 +102,13 @@ function pzStartJigsaw() {
         var row = Math.floor(idx / 2);
         tile.getContext('2d').drawImage(src, col * size / 2, row * size / 2, size / 2, size / 2, 0, 0, size / 2, size / 2);
         piece.appendChild(tile);
-        piece.addEventListener('click', function () { pzTapSlot(slot); });
+        piece.addEventListener('pointerdown', function (e) { pzDragStart(e, piece, slot); });
+        piece.addEventListener('pointermove', function (e) { pzDragMove(e, piece); });
+        piece.addEventListener('pointerup', function (e) { pzDragEnd(e, piece); });
+        piece.addEventListener('pointercancel', function (e) { pzDragEnd(e, piece); });
         board.appendChild(piece);
     });
-    Curriculum.say('撳兩塊對調，砌返 ' + g.item.w + '。').then(function () {
+    Curriculum.say('拖塊圖去另一塊上面，砌返 ' + g.item.w + '。').then(function () {
         if (g.active) return Curriculum.speakEn(g.item.w);
     });
 }
@@ -125,6 +129,53 @@ function pzRedrawPieces() {
         tile.getContext('2d').drawImage(src, col * size / 2, row * size / 2, size / 2, size / 2, 0, 0, size / 2, size / 2);
         piece.classList.toggle('is-picked', g.picked === slot);
     });
+}
+
+function pzDragStart(e, piece, slot) {
+    var g = window.PuzzleGame;
+    if (!g.active || g.phase !== 'jigsaw') return;
+    if (e.cancelable) e.preventDefault();
+    try { piece.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    g.drag = { slot: slot, piece: piece, x: e.clientX, y: e.clientY };
+    piece.classList.add('is-drag');
+    Curriculum.tapFx();
+}
+
+function pzDragMove(e, piece) {
+    var g = window.PuzzleGame;
+    if (!g.drag || g.drag.piece !== piece) return;
+    if (e.cancelable) e.preventDefault();
+    var dx = e.clientX - g.drag.x;
+    var dy = e.clientY - g.drag.y;
+    piece.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.08)';
+    piece.style.zIndex = '5';
+}
+
+function pzDragEnd(e, piece) {
+    var g = window.PuzzleGame;
+    if (!g.drag || g.drag.piece !== piece) return;
+    piece.style.transform = '';
+    piece.style.zIndex = '';
+    piece.classList.remove('is-drag');
+    var from = g.drag.slot;
+    g.drag = null;
+    piece.style.visibility = 'hidden';
+    var over = document.elementFromPoint(e.clientX, e.clientY);
+    piece.style.visibility = '';
+    var other = over && over.closest ? over.closest('.pz-piece') : null;
+    if (!other || other === piece) return;
+    var to = Number(other.dataset.slot);
+    if (isNaN(to) || to === from) return;
+    var tmp = g.order[from];
+    g.order[from] = g.order[to];
+    g.order[to] = tmp;
+    pzRedrawPieces();
+    if (pzSolved()) {
+        g.score += 80 + Math.ceil(g.timeLeft);
+        Curriculum.hitFx(pzEl('puzzle-overlay'), 80, 2);
+        pzHud();
+        pzStartSpell();
+    }
 }
 
 function pzTapSlot(slot) {
@@ -172,12 +223,12 @@ function pzStartSpell() {
     var spell = pzEl('pz-spell');
     var prompt = pzEl('pz-prompt');
     if (board) board.style.display = 'none';
-    if (prompt) prompt.textContent = '砌字母 · ' + g.item.w;
+    if (prompt) prompt.textContent = '爆字母 · ' + g.item.w;
     if (!spell) return;
     spell.style.display = 'flex';
     spell.innerHTML = '<div class="pz-spell-pic">' + g.item.emoji + '</div>' +
         '<div class="pz-slots-row" id="pz-letter-slots"></div>' +
-        '<div class="pz-tiles-row" id="pz-letter-tiles"></div>';
+        '<div class="pz-pop-row" id="pz-letter-tiles"></div>';
     var slots = pzEl('pz-letter-slots');
     var row = pzEl('pz-letter-tiles');
     letters.forEach(function (_, i) {
@@ -190,7 +241,7 @@ function pzStartSpell() {
     tiles.forEach(function (ch) {
         var b = document.createElement('button');
         b.type = 'button';
-        b.className = 'pz-letter-tile';
+        b.className = 'pz-letter-tile pz-pop';
         b.textContent = ch;
         b.onclick = function () { pzTapLetter(ch, b); };
         row.appendChild(b);
@@ -245,7 +296,7 @@ function pzWordDone() {
         window.ZiziFX.boomConfetti(80);
     }
     Curriculum.say('拼到 ' + g.item.w + '！').then(function () {
-        return Curriculum.teach(g.item.w, 'pz-coach');
+        return Curriculum.cheer(g.item.w, 'pz-coach');
     }).then(function () {
         if (!g.active) return;
         g.round += 1;
@@ -296,7 +347,7 @@ function pzFinish(ok) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>今轉未砌完，再試過！</li>';
     }
-    Curriculum.say(ok ? '拼圖完成！記得啲英文點砌。' : '時間到！撳兩塊對調再砌字母。');
+    Curriculum.say(ok ? '拼圖完成！記得啲英文點砌。' : '時間到！拖塊圖對調，再爆字母。');
 }
 
 window.stopPuzzleGame = function () {

@@ -7,8 +7,8 @@ window.HuntGame = {
     active: false,
     phase: 'play',
     clock: null,
-    TIME: 60,
-    NEED: 6,
+    TIME: 55,
+    NEED: 5,
     timeLeft: 60,
     score: 0,
     combo: 0,
@@ -33,10 +33,10 @@ function huntHud() {
     if (n) n.textContent = g.got + '/' + g.NEED;
     if (tgt) {
         if (g.target) {
-            tgt.textContent = '搵 ' + g.target.w +
+            tgt.textContent = '揭開草叢搵 ' + g.target.w +
                 (Curriculum.yue(g.target.w) ? '（' + Curriculum.yue(g.target.w) + '）' : '');
         } else {
-            tgt.textContent = '聽英文，撳啱嗰格';
+            tgt.textContent = '揭開草叢，搵啱嗰樣';
         }
     }
 }
@@ -53,13 +53,15 @@ function huntPaintScene() {
     var scene = huntEl('hunt-scene');
     if (!scene) return;
     scene.innerHTML = '';
-    g.scene.forEach(function (item) {
+    var props = ['🌳', '🪨', '📦', '🚗', '🏠', '🌲'];
+    g.scene.forEach(function (item, i) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'hunt-item' + (g.found.indexOf(item.w) !== -1 ? ' is-found' : '');
         btn.dataset.word = item.w;
         btn.setAttribute('aria-label', item.w);
-        btn.innerHTML = '<span class="hunt-emoji">' + item.emoji + '</span>';
+        btn.innerHTML = '<span class="hunt-prop">' + props[i % props.length] + '</span>' +
+            '<span class="hunt-emoji">' + item.emoji + '</span>';
         btn.onclick = function () { huntTap(item, btn); };
         scene.appendChild(btn);
     });
@@ -74,7 +76,7 @@ function huntAsk() {
         el.classList.remove('is-hint');
     });
     if (!g.target) return;
-    Curriculum.say('邊格係 ' + g.target.w + '？').then(function () {
+    Curriculum.say('邊啲草叢後面係 ' + g.target.w + '？').then(function () {
         if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
     });
 }
@@ -101,7 +103,7 @@ function huntTap(item, btn) {
         g.phase = 'teach';
         var yue = Curriculum.yue(item.w);
         Curriculum.say('搵到 ' + item.w + (yue ? '，即係 ' + yue : '')).then(function () {
-            return Curriculum.teach(item.w, 'hunt-coach');
+            return Curriculum.cheer(item.w, 'hunt-coach');
         }).then(function () {
             if (!g.active) return;
             if (g.got >= g.NEED || g.timeLeft <= 0) {
@@ -198,7 +200,7 @@ window.startPictureHunt = function () {
     g.found = [];
     g.queue = Curriculum.pickLesson(g.NEED);
     var extras = Curriculum.decoys(g.queue[0], 4);
-    g.scene = Curriculum.shuffle(g.queue.concat(extras)).slice(0, 9);
+    g.scene = Curriculum.shuffle(g.queue.concat(extras)).slice(0, 6);
     Curriculum.bootFx();
     huntShowOver(false);
     window.beginHuntPlay();
