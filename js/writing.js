@@ -61,10 +61,11 @@ window.WritingSession = {
         }
 
         if (app) {
-            app.style.display = 'block';
+            app.style.display = 'flex';
             app.style.position = 'relative';
             app.style.zIndex = '20';
         }
+        document.body.classList.add('tracing-mode');
         if (canvasWrapper) canvasWrapper.style.display = 'block';
         if (topBar) topBar.style.display = 'flex';
         if (backBtn) backBtn.style.display = 'inline-block';
