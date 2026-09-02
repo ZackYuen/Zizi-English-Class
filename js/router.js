@@ -146,7 +146,14 @@ window.enterMode = function (mode) {
     if (window.stopSpeech) window.stopSpeech();
     if (window.ZiziFX) {
         window.ZiziFX.play('tap');
-        window.ZiziFX.ensureMusic();
+        var theme = 'home';
+        if (mode === 'race') theme = 'race';
+        else if (mode === 'puzzle') theme = 'puzzle';
+        else if (mode === 'match') theme = 'hunt';
+        else if (mode === 'game') theme = 'shoot';
+        else if (mode === 'standard') theme = 'write';
+        else if (mode === 'camera') theme = 'camera';
+        window.ZiziFX.setTheme(theme);
     }
 
     window.currentMode = mode;
@@ -246,6 +253,10 @@ window.backToHome = function () {
     window.currentMode = 'none';
     document.body.classList.remove('tracing-mode');
     setDisplay('home-menu', 'block');
+    if (window.ZiziFX) {
+        window.ZiziFX.stopEngine();
+        window.ZiziFX.setTheme('home');
+    }
     if (window.refreshHomeProgress) window.refreshHomeProgress();
     if (window.announce) {
         window.announce('返到主選單喇。想聽選單可以撳黃色喇叭掣。', { force: true });
