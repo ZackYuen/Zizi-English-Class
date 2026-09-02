@@ -50,7 +50,7 @@ function pzPaintHidden(item, size) {
     ctx.lineWidth = 8;
     ctx.strokeRect(6, 6, size - 12, size - 12);
     if (window.ZiziArt) {
-        window.ZiziArt.drawWord(ctx, item.w, size / 2, size / 2, size * 0.62, performance.now() / 1000);
+        window.ZiziArt.drawWord(ctx, item.w, size / 2, size / 2, size * 0.78, performance.now() / 1000);
     }
     return c;
 }
