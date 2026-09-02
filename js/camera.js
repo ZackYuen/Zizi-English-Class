@@ -369,110 +369,258 @@ window.closeCamera = function() {
     if (cam) cam.classList.remove('is-open');
 };
 
+var IDENTIFY_JUNK = {
+    a: 1, an: 1, and: 1, analysis: 1, cannot: 1, error: 1, identified: 1,
+    identification: 1, identify: 1, image: 1, in: 1, is: 1, it: 1, item: 1, main: 1,
+    no: 1, none: 1, noun: 1, object: 1, of: 1, ok: 1, okay: 1, on: 1, or: 1,
+    please: 1, photo: 1, picture: 1, response: 1, result: 1, retry: 1, safe: 1, safety: 1, sorry: 1,
+    that: 1, the: 1, thing: 1, this: 1, to: 1, unknown: 1, user: 1, word: 1,
+    yes: 1, with: 1, for: 1
+};
+
+/** Pull one English noun from a vision-model reply. Prefer curriculum vocab. */
+function parseIdentifyNoun(raw, vocab) {
+    raw = String(raw || '').replace(/```/g, ' ').trim().toLowerCase();
+    if (!raw) return '';
+    vocab = vocab || [];
+    var bestIdx = Infinity;
+    var best = '';
+    for (var i = 0; i < vocab.length; i++) {
+        var w = String(vocab[i] || '').toLowerCase();
+        if (!w) continue;
+        var escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var idx = raw.search(new RegExp('\\b' + escaped + '\\b'));
+        if (idx !== -1 && idx < bestIdx) {
+            bestIdx = idx;
+            best = w;
+        }
+    }
+    if (best) return best;
+
+    var parts = [];
+    try {
+        parts = raw.split(/[^\p{L}]+/u);
+    } catch (e) {
+        parts = raw.split(/[^a-z]+/);
+    }
+    var kept = [];
+    for (var j = 0; j < parts.length; j++) {
+        var t = parts[j];
+        if (!t || t.length < 2 || t.length > 20) continue;
+        if (!/^[a-z]+$/.test(t)) continue;
+        if (IDENTIFY_JUNK[t]) continue;
+        kept.push(t);
+    }
+    if (!kept.length) return '';
+    return kept[kept.length - 1];
+}
+
+function readIdentifyMessage(data) {
+    if (!data) return '';
+    try {
+        var choice = data.choices && data.choices[0];
+        var msg = choice && choice.message;
+        var bits = [];
+        if (msg) {
+            var content = msg.content;
+            if (typeof content === 'string') bits.push(content);
+            else if (Array.isArray(content)) {
+                bits.push(content.map(function (p) {
+                    return p && (p.text || p.content || p);
+                }).join(' '));
+            }
+        }
+        if (data.output) {
+            bits.push(Array.isArray(data.output)
+                ? data.output.join(' ')
+                : (data.output.text || String(data.output)));
+        }
+        return bits.join(' ').trim();
+    } catch (e) {
+        return '';
+    }
+}
+
+function shrinkImageDataUrl(dataUrl, maxSide) {
+    maxSide = maxSide || 768;
+    return new Promise(function (resolve) {
+        if (typeof Image === 'undefined') {
+            resolve(dataUrl);
+            return;
+        }
+        var img = new Image();
+        img.onload = function () {
+            var w = img.width || 1;
+            var h = img.height || 1;
+            var scale = Math.min(1, maxSide / Math.max(w, h));
+            if (scale >= 0.98 && dataUrl.length < 400000) {
+                resolve(dataUrl);
+                return;
+            }
+            var c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(w * scale));
+            c.height = Math.max(1, Math.round(h * scale));
+            try {
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                resolve(c.toDataURL('image/jpeg', 0.72));
+            } catch (e) {
+                resolve(dataUrl);
+            }
+        };
+        img.onerror = function () { resolve(dataUrl); };
+        img.src = dataUrl;
+    });
+}
+
+function identifyFailKeepPhoto(loadingMsg) {
+    if (window.Curriculum && window.Curriculum.missFx) {
+        window.Curriculum.missFx(document.getElementById('camera-overlay'), '再試');
+    }
+    if (window.playCantoneseTTS) {
+        window.playCantoneseTTS('認唔到呀，相片留住，再撳綠色認呢樣試多次。');
+    }
+    if (loadingMsg) loadingMsg.innerText = '❌ 認唔到，再撳「認呢樣」試多次。';
+    setTimeout(function () {
+        if (loadingMsg) loadingMsg.style.display = 'none';
+        safeDisplay('camera-controls', 'flex');
+        safeDisplay('confirm-crop-btn', 'inline-block');
+        safeDisplay('capture-btn', 'none');
+        var crop = getEl('crop-canvas');
+        if (crop) crop.style.display = 'block';
+        var ctrl = getEl('canvas-controls');
+        if (ctrl) ctrl.style.display = 'flex';
+        var vid = getEl('camera-video');
+        if (vid) vid.style.display = 'none';
+        setCameraControlsEnabled(true);
+    }, 1600);
+}
+
 window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
     window.isAnalyzing = true;
 
-    const models = [
-        "nvidia/nemotron-nano-12b-v2-vl:free",
-        "qwen/qwen-2-vl-7b-instruct:free",
-        "google/gemini-1.5-flash:free"
+    // Current OpenRouter free vision models (old :free IDs 404 forever).
+    var models = [
+        'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+        'minimax/minimax-m3:free',
+        'google/gemma-4-31b-it:free',
+        'google/gemma-4-26b-a4b-it:free'
     ];
 
-    let apiKey = window.getApiKey ? window.getApiKey('openrouter_api_key') : localStorage.getItem('openrouter_api_key');
+    var apiKey = window.getApiKey ? window.getApiKey('openrouter_api_key') : localStorage.getItem('openrouter_api_key');
     if (!apiKey) {
-        apiKey = prompt("請輸入 OpenRouter API Key:");
+        apiKey = prompt('請輸入 OpenRouter API Key:');
         if (apiKey) localStorage.setItem('openrouter_api_key', apiKey);
         else { window.closeCamera(); return; }
     }
 
-    const loadingMsg = getEl('loading-msg');
+    var loadingMsg = getEl('loading-msg');
     if (loadingMsg) {
-        loadingMsg.style.zIndex = "100";
+        loadingMsg.style.display = 'block';
+        loadingMsg.style.zIndex = '100';
         loadingMsg.style.pointerEvents = 'none';
+        loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 分析緊相...';
     }
 
-    const cancelBtn = getEl('cancel-analyze-btn');
+    var cancelBtn = getEl('cancel-analyze-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
 
-    // 超時提示（顯示取消按鈕）
-    let cancelTimer = setTimeout(() => {
+    var cancelTimer = setTimeout(function () {
         if (window.isAnalyzing) {
             if (cancelBtn) {
                 cancelBtn.style.display = 'block';
-                cancelBtn.onclick = () => {
+                cancelBtn.onclick = function () {
                     if (window.currentAborter) {
                         try { window.currentAborter.abort(); } catch (e) { /* ignore */ }
                     }
                     window.isAnalyzing = false;
                     if (loadingMsg) loadingMsg.style.display = 'none';
                     safeDisplay('camera-controls', 'flex');
+                    safeDisplay('confirm-crop-btn', 'inline-block');
                 };
             }
             if (window.playCantoneseTTS) {
-                window.playCantoneseTTS("諗得太耐喇，你可以撳紅色掣取消，影過第二樣。");
+                window.playCantoneseTTS('諗得太耐喇，你可以撳紅色掣取消，或者等陣再試。');
             }
         }
     }, 10000);
 
-    let vocabList = '';
+    var vocab = [];
     try {
-        const dict = window.D || (typeof D !== 'undefined' ? D : null);
-        vocabList = dict ? dict.map(d => d.w).join(', ') : '';
+        var dict = window.D || (typeof D !== 'undefined' ? D : null);
+        if (dict) vocab = dict.map(function (d) { return d.w; }).filter(Boolean);
     } catch (e) {
-        vocabList = '';
+        vocab = [];
     }
+    var vocabList = vocab.join(', ');
 
-    // Normalize input: accept either data URL or base64
-    const imageDataUrl = (typeof croppedBase64OrDataUrl === 'string' && croppedBase64OrDataUrl.startsWith('data:'))
+    var imageDataUrl = (typeof croppedBase64OrDataUrl === 'string' && croppedBase64OrDataUrl.startsWith('data:'))
         ? croppedBase64OrDataUrl
-        : `data:image/jpeg;base64,${croppedBase64OrDataUrl}`;
+        : 'data:image/jpeg;base64,' + croppedBase64OrDataUrl;
+    try {
+        imageDataUrl = await shrinkImageDataUrl(imageDataUrl, 768);
+    } catch (e) { /* keep original */ }
 
-    for (const model of models) {
+    var referer = 'https://zackyuen.github.io/Zizi-English-Class/';
+    try {
+        if (window.location && window.location.origin) {
+            referer = window.location.origin + (window.location.pathname || '/');
+        }
+    } catch (e) { /* keep default */ }
+
+    for (var mi = 0; mi < models.length; mi++) {
+        var model = models[mi];
         if (!window.isAnalyzing) break;
 
         if (loadingMsg) {
-            try {
-                loadingMsg.innerHTML = `<span class="thinking-anim">🧠</span> 分析緊... (${model.split('/')[1]})`;
-            } catch (e) { /* ignore */ }
+            loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 分析緊相...';
         }
 
-        const aborter = new AbortController();
+        var aborter = new AbortController();
         window.currentAborter = aborter;
-        const REQUEST_TIMEOUT = 30000;
-        const reqTimeoutId = setTimeout(() => {
+        var REQUEST_TIMEOUT = 30000;
+        var reqTimeoutId = setTimeout(function () {
             try { aborter.abort(); } catch (e) { /* ignore */ }
         }, REQUEST_TIMEOUT);
 
         if (cancelBtn) {
-            cancelBtn.onclick = () => {
+            cancelBtn.onclick = function () {
                 try { aborter.abort(); } catch (e) { /* ignore */ }
                 window.isAnalyzing = false;
                 if (loadingMsg) loadingMsg.style.display = 'none';
                 safeDisplay('camera-controls', 'flex');
+                safeDisplay('confirm-crop-btn', 'inline-block');
             };
         }
 
         try {
-            const payload = {
+            var payload = {
                 model: model,
                 messages: [{
-                    role: "user",
+                    role: 'user',
                     content: [
                         {
-                            type: "text",
-                            text: `Identify the object in this image. If it is one of these: [${vocabList}], use that word. Otherwise, provide a simple 1-word noun. Reply with ONLY the single noun (one word).`
+                            type: 'text',
+                            text: 'Look at this photo of a real object. ' +
+                                'Reply with ONLY one simple English noun a 5-year-old can write. ' +
+                                (vocabList ? ('Prefer one of: ' + vocabList + '. ') : '') +
+                                'No sentence. One word.'
                         },
                         {
-                            type: "image_url",
+                            type: 'image_url',
                             image_url: { url: imageDataUrl }
                         }
                     ]
                 }]
             };
 
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            var response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': 'Bearer ' + apiKey,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': referer,
+                    'X-Title': 'Zizi English Class'
+                },
                 body: JSON.stringify(payload),
                 signal: aborter.signal
             });
@@ -480,70 +628,38 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
             clearTimeout(reqTimeoutId);
 
             if (!response.ok) {
-                const txt = await response.text().catch(() => '');
-                console.warn(`${model} returned ${response.status}:`, txt);
+                var txt = await response.text().catch(function () { return ''; });
+                console.warn(model + ' returned ' + response.status + ':', txt);
                 continue;
             }
 
-            const data = await response.json().catch(() => null);
-            if (!data) {
-                console.warn(`${model} returned invalid JSON`);
+            var data = await response.json().catch(function () { return null; });
+            var rawContent = readIdentifyMessage(data);
+            var finalWord = parseIdentifyNoun(rawContent, vocab);
+            if (!finalWord) {
+                console.warn(model + ' had no usable noun:', rawContent);
                 continue;
             }
 
-            let rawContent = '';
-            try {
-                const choice = data.choices && data.choices[0];
-                if (choice && choice.message) {
-                    const msgContent = choice.message.content;
-                    if (typeof msgContent === 'string') rawContent = msgContent;
-                    else if (Array.isArray(msgContent)) {
-                        rawContent = msgContent.map(p => (p && (p.text || p)).toString()).join(' ');
-                    } else if (typeof msgContent === 'object') {
-                        rawContent = JSON.stringify(msgContent);
-                    }
-                } else if (data.output) {
-                    rawContent = Array.isArray(data.output)
-                        ? data.output.join(' ')
-                        : (data.output.text || String(data.output));
-                }
-            } catch (e) {
-                rawContent = '';
+            clearTimeout(cancelTimer);
+            window.isAnalyzing = false;
+            if (loadingMsg) loadingMsg.innerText = '✨ 搵到喇！係 ' + finalWord + '！';
+            if (window.Curriculum && window.Curriculum.hitFx) {
+                window.Curriculum.hitFx(document.getElementById('camera-overlay'), null, 1);
             }
 
-            rawContent = (rawContent || '').trim().toLowerCase();
-            if (!rawContent) continue;
+            setTimeout(function () {
+                window.closeCamera();
+                window.enterCameraWritingFlow(finalWord);
+            }, 500);
 
-            let words = [];
-            try {
-                words = rawContent.split(/[^\p{L}]+/u).filter(w => w && w.length > 0);
-            } catch (e) {
-                words = rawContent.split(/[^a-z]+/).filter(w => w && w.length > 0);
-            }
-            if (words.length === 0) continue;
-
-            const finalWord = words[words.length - 1];
-            if (finalWord && finalWord.length > 0) {
-                clearTimeout(cancelTimer);
-                window.isAnalyzing = false;
-                if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
-                if (window.Curriculum && window.Curriculum.hitFx) {
-                    window.Curriculum.hitFx(document.getElementById('camera-overlay'), null, 1);
-                }
-
-                setTimeout(() => {
-                    window.closeCamera();
-                    window.enterCameraWritingFlow(finalWord);
-                }, 500);
-
-                window.currentAborter = null;
-                return;
-            }
+            window.currentAborter = null;
+            return;
         } catch (err) {
             if (err && err.name === 'AbortError') {
-                console.warn(`${model} fetch aborted`);
+                console.warn(model + ' fetch aborted');
             } else {
-                console.error(`${model} 失敗:`, err);
+                console.error(model + ' 失敗:', err);
             }
         } finally {
             clearTimeout(reqTimeoutId);
@@ -555,22 +671,10 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
     if (window.isAnalyzing) {
         window.isAnalyzing = false;
-        if (window.Curriculum && window.Curriculum.missFx) {
-            window.Curriculum.missFx(document.getElementById('camera-overlay'), '再試');
-        }
-        if (window.playCantoneseTTS) window.playCantoneseTTS("哎呀，認唔到呀，不如影過第二樣啦。");
-        if (loadingMsg) loadingMsg.innerText = "❌ 認唔到，請重試。";
-        setTimeout(() => {
-            if (loadingMsg) loadingMsg.style.display = 'none';
-            safeDisplay('camera-controls', 'flex');
-            safeDisplay('confirm-crop-btn', 'none');
-            safeDisplay('capture-btn', 'inline-block');
-            const crop = getEl('crop-canvas');
-            if (crop) crop.style.display = 'none';
-            const ctrl = getEl('canvas-controls');
-            if (ctrl) ctrl.style.display = 'none';
-            const vid = getEl('camera-video');
-            if (vid) vid.style.display = 'block';
-        }, 2000);
+        identifyFailKeepPhoto(loadingMsg);
     }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { parseIdentifyNoun: parseIdentifyNoun };
+}
