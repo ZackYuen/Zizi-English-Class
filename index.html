@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-album">
+    <link rel="stylesheet" href="style.css?v=20260902-alpopup">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -268,12 +268,18 @@
     <div class="album-card-wrap">
         <header class="album-top">
             <h2>📒 我嘅單詞冊</h2>
-            <p class="album-hint" id="album-hint">撳張卡聽英文。字按 SATIPN 組同字母排好。</p>
+            <p class="album-hint" id="album-hint">撳張卡睇點解咁寫，同聽英文。</p>
             <nav class="album-jumps" id="album-jumps" hidden></nav>
         </header>
         <div id="album-empty" class="album-empty">仲未有單詞呀！去賽車、拼圖或者尋寶學新字啦！</div>
         <div class="album-scroll" id="album-scroll"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
+        <div id="album-detail" class="album-detail" hidden>
+            <div class="album-detail-card" role="dialog" aria-modal="true" aria-labelledby="album-detail-word">
+                <div id="album-detail-body"></div>
+                <button type="button" class="album-detail-close" onclick="closeAlbumDetail()">返單詞冊</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -353,7 +359,7 @@
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
 <script src="js/secrets.js?v=20260902-write1"></script>
 <script src="js/speech.js?v=20260902-pzvoice"></script>
-<script src="js/progress.js?v=20260902-album"></script>
+<script src="js/progress.js?v=20260902-alpopup"></script>
 <script src="js/fx.js?v=20260902-boostbgm"></script>
 <script src="js/teach.js?v=20260902-write1"></script>
 <script src="js/writing.js?v=20260902-write1"></script>
