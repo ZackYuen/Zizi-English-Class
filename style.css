@@ -2180,7 +2180,8 @@ button:disabled {
 }
 #puzzle-overlay.is-open,
 #hunt-overlay.is-open,
-#shoot-overlay.is-open {
+#shoot-overlay.is-open,
+#race-overlay.is-open:not(.is-playing) {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -2285,21 +2286,72 @@ button:disabled {
   pointer-events: none;
   z-index: 5;
 }
-#race-play { position: relative; }
+#race-play { position: relative; width: 100%; }
 #race-canvas-wrap {
   flex: 1;
   width: min(440px, 96vw);
-  min-height: 280px;
+  min-height: 220px;
   border-radius: 18px;
   overflow: hidden;
   border: 4px solid #fff;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 #race-cvs {
   display: block;
   width: 100%;
   height: 100%;
   touch-action: none;
+}
+.race-howto {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.race-howto span {
+  flex: 1;
+  padding: 8px 4px;
+  background: #fff3b0;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #123b63;
+  text-align: center;
+}
+.race-hint {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #123b63;
+}
+.race-steer {
+  display: flex;
+  gap: 8px;
+  width: min(420px, 96vw);
+  margin: 8px 0 0;
+}
+.race-steer-btn {
+  flex: 1;
+  min-height: 48px;
+  border: none;
+  border-radius: 14px;
+  background: #ffc93c;
+  color: #123b63;
+  font-size: 18px;
+  font-weight: 800;
+}
+.race-steer-btn:active { transform: translateY(2px); }
+#race-play #race-coach {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 62px;
+  max-height: 22%;
+  overflow-y: auto;
+  z-index: 6;
+  margin: 0;
 }
 .pz-board {
   display: grid;

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-fx1">
+    <link rel="stylesheet" href="style.css?v=20260902-race2">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -181,12 +181,16 @@
     </div>
     <div id="race-rules" class="arena-card">
         <p class="arena-kicker" id="race-group">第 1 組</p>
-        <h3>遊戲規則</h3>
+        <h3>點玩？</h3>
+        <div class="race-howto" aria-hidden="true">
+            <span>🚗 自己跑圈</span>
+            <span>👉 掃左／右</span>
+            <span>🟩 入綠色閘</span>
+        </div>
         <ol>
-            <li>用手指揸紅色小車，要留喺灰色賽道。</li>
-            <li>聽英文單詞，揸入寫住嗰個字嘅閘。</li>
-            <li>75 秒內入 5 個閘。入錯扣分同時間。</li>
-            <li>入到閘會聽英文同字點解。</li>
+            <li>架車會自己沿住賽道跑，唔使拖架車。</li>
+            <li>聽英文，撳下面 <b>左 / 中 / 右</b>，或者用手指掃，揀一條線。</li>
+            <li>經過閘嘅時候要喺<b>綠色</b>嗰條線。入錯扣時間。</li>
         </ol>
         <button type="button" class="arena-go" onclick="beginRaceDrive()">🏁 開始賽車</button>
     </div>
@@ -196,8 +200,14 @@
             <span>⭐ <span id="race-score">0</span></span>
             <span>🏁 <span id="race-need">0 / 5</span></span>
         </div>
-        <button type="button" id="race-target" class="arena-target" onclick="replayRaceWord()">聽英文，揸車入啱嘅閘！</button>
+        <button type="button" id="race-target" class="arena-target" onclick="replayRaceWord()">掃左掃右揀線，入綠色閘！</button>
+        <p class="race-hint">手指掃左／右，或者撳下面掣揀線</p>
         <div id="race-canvas-wrap"><canvas id="race-cvs"></canvas></div>
+        <div class="race-steer">
+            <button type="button" class="race-steer-btn" onclick="raceSteer(-1)">⬅️ 左</button>
+            <button type="button" class="race-steer-btn" onclick="raceSteer(0)">● 中</button>
+            <button type="button" class="race-steer-btn" onclick="raceSteer(1)">右 ➡️</button>
+        </div>
         <div id="race-count" class="arena-count" style="display:none;">3</div>
         <div id="race-coach" class="zizi-coach is-empty" hidden></div>
     </div>
@@ -406,24 +416,24 @@
 </div>
 
 <!-- Load order: data → stories → state → config/secrets → speech/progress → fx → writing → curriculum/games → camera → router -->
-<script src="js/data.js?v=20260902-fx1"></script>
-<script src="js/stories.js?v=20260902-fx1"></script>
-<script src="js/state.js?v=20260902-fx1"></script>
+<script src="js/data.js?v=20260902-race2"></script>
+<script src="js/stories.js?v=20260902-race2"></script>
+<script src="js/state.js?v=20260902-race2"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
-<script src="js/secrets.js?v=20260902-fx1"></script>
-<script src="js/speech.js?v=20260902-fx1"></script>
-<script src="js/progress.js?v=20260902-fx1"></script>
-<script src="js/fx.js?v=20260902-fx1"></script>
-<script src="js/teach.js?v=20260902-fx1"></script>
-<script src="js/writing.js?v=20260902-fx1"></script>
-<script src="js/ui.js?v=20260902-fx1"></script>
-<script src="js/canvas.js?v=20260902-fx1"></script>
-<script src="js/curriculum.js?v=20260902-fx1"></script>
-<script src="js/race.js?v=20260902-fx1"></script>
-<script src="js/wordpuzzle.js?v=20260902-fx1"></script>
-<script src="js/hunt.js?v=20260902-fx1"></script>
-<script src="js/shoot.js?v=20260902-fx1"></script>
-<script src="js/camera.js?v=20260902-fx1"></script>
-<script src="js/router.js?v=20260902-fx1"></script>
+<script src="js/secrets.js?v=20260902-race2"></script>
+<script src="js/speech.js?v=20260902-race2"></script>
+<script src="js/progress.js?v=20260902-race2"></script>
+<script src="js/fx.js?v=20260902-race2"></script>
+<script src="js/teach.js?v=20260902-race2"></script>
+<script src="js/writing.js?v=20260902-race2"></script>
+<script src="js/ui.js?v=20260902-race2"></script>
+<script src="js/canvas.js?v=20260902-race2"></script>
+<script src="js/curriculum.js?v=20260902-race2"></script>
+<script src="js/race.js?v=20260902-race2"></script>
+<script src="js/wordpuzzle.js?v=20260902-race2"></script>
+<script src="js/hunt.js?v=20260902-race2"></script>
+<script src="js/shoot.js?v=20260902-race2"></script>
+<script src="js/camera.js?v=20260902-race2"></script>
+<script src="js/router.js?v=20260902-race2"></script>
 </body>
 </html>
