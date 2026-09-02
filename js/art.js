@@ -30,6 +30,14 @@
         ctx.arc(x + r * 0.2, y, r * 0.45, 0, Math.PI * 2);
         ctx.fill();
     }
+    function emojiOf(word) {
+        var key = String(word || '').toLowerCase();
+        var list = window.D || [];
+        for (var i = 0; i < list.length; i++) {
+            if (String(list[i].w || '').toLowerCase() === key) return list[i].emoji || '';
+        }
+        return '';
+    }
     function generic(ctx, x, y, s, word, withText) {
         ctx.fillStyle = col(hash(word) % 8);
         ctx.beginPath();
@@ -191,7 +199,8 @@
 
     window.ZiziArt = {
         has: function (word) {
-            return !!draw[String(word || '').toLowerCase()];
+            var key = String(word || '').toLowerCase();
+            return !!draw[key] || !!emojiOf(key);
         },
         fitWord: function (ctx, word, maxW, maxPx) {
             var fs = Math.round(maxPx);
@@ -213,7 +222,15 @@
             if (draw[key]) {
                 draw[key](ctx, 0, 0, s);
             } else {
-                generic(ctx, 0, 0, s, key, !skipLabel);
+                var em = emojiOf(key);
+                if (em) {
+                    ctx.font = Math.round(s * 0.78) + 'px serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(em, 0, s * 0.04);
+                } else {
+                    generic(ctx, 0, 0, s, key, !skipLabel);
+                }
             }
             ctx.restore();
         },
