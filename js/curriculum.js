@@ -171,10 +171,7 @@ window.Curriculum = {
         if (this._lastWarnSec === sec) return;
         this._lastWarnSec = sec;
         if (overlay) overlay.classList.add('is-urgent');
-        if (window.ZiziFX) {
-            window.ZiziFX.play('tick');
-            if (sec <= 5) window.ZiziFX.flash('rgba(255,90,95,.16)');
-        }
+        if (window.ZiziFX) window.ZiziFX.play('tick');
     },
 
     finishFx: function (opts) {
@@ -229,6 +226,14 @@ window.Curriculum = {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(item.emoji, x, y);
+    },
+
+    stars: function (el, n, total) {
+        if (!el) return;
+        total = total || 5;
+        var s = '';
+        for (var i = 0; i < total; i++) s += i < n ? '⭐' : '☆';
+        el.textContent = s;
     },
 
     award: function (stars, meta) {
