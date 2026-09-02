@@ -47,13 +47,6 @@ window.resetCanvas = function() {
     if(wrapper) wrapper.style.transform = "scale(1) rotate(0deg)";
     if (window.ZiziTeach) window.ZiziTeach.fillWriteChip();
     updateMsg();
-
-    var app = document.getElementById('app');
-    var writing = app && app.style.display !== 'none' && app.getAttribute('aria-hidden') !== 'true';
-    if (writing && window.Arcade && typeof window.Arcade.startRace === 'function' &&
-        (window.currentMode === 'standard' || window.currentMode === 'camera')) {
-        window.Arcade.startRace();
-    }
 };
 
 window.initWaypoints = function() {
@@ -542,9 +535,6 @@ function commitCurrentStroke(pointerId, pos) {
     var finishedStrokeIdx = strokeIdx;
     strokeIdx++;
     initWaypoints();
-    if (window.Arcade && typeof window.Arcade.onStrokeDone === 'function') {
-        window.Arcade.onStrokeDone();
-    }
 
     if (typeof D !== 'undefined' && D[idx] && strokeIdx >= D[idx].st.length) {
         finishLetterComplete(pointerId);

@@ -32,6 +32,9 @@ window.openCamera = async function() {
     safeDisplay('game-overlay', 'none');
     safeDisplay('match-overlay', 'none');
     safeDisplay('play-overlay', 'none');
+    safeDisplay('race-overlay', 'none');
+    safeDisplay('puzzle-overlay', 'none');
+    safeDisplay('hunt-overlay', 'none');
     safeDisplay('standard-top-bar', 'none');
     safeDisplay('back-to-home-btn', 'none');
     safeDisplay('standard-ui', 'none');
@@ -525,15 +528,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
                 setTimeout(() => {
                     window.closeCamera();
-                    if (window.startHideSeek) {
-                        window.startHideSeek({
-                            word: finalWord,
-                            photo: window.lastCapturedImg,
-                            source: 'camera'
-                        });
-                    } else {
-                        window.enterCameraWritingFlow(finalWord);
-                    }
+                    window.enterCameraWritingFlow(finalWord);
                 }, 500);
 
                 window.currentAborter = null;
