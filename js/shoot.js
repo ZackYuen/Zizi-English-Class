@@ -103,12 +103,13 @@ function shootPop(el, item) {
     setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 160);
 
     if (item.w === g.target.w) {
-        Curriculum.pop();
         g.combo += 1;
         g.got += 1;
         g.collected.push(g.target);
-        g.score += 90 + g.combo * 15 + Math.ceil(g.timeLeft / 2);
+        var bonus = 90 + g.combo * 15 + Math.ceil(g.timeLeft / 2);
+        g.score += bonus;
         g.pending = true;
+        Curriculum.popBalloon(shEl('shoot-overlay'), bonus, g.combo);
         shootHud();
         Curriculum.award(0, {
             word: item.w,
@@ -116,7 +117,6 @@ function shootPop(el, item) {
             letter: item.l,
             reason: '射擊學到 ' + item.w
         });
-        if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60, origin: { y: 0.55 } });
         g.phase = 'teach';
         var field = shEl('shoot-field');
         if (field) field.innerHTML = '';
@@ -132,7 +132,7 @@ function shootPop(el, item) {
             shootAsk();
         });
     } else {
-        Curriculum.boom();
+        Curriculum.missFx(shEl('shoot-overlay'), '-4s');
         g.combo = 0;
         g.score = Math.max(0, g.score - 18);
         g.timeLeft = Math.max(0, g.timeLeft - 4);
@@ -148,6 +148,7 @@ function shootTick() {
     if (!g.active || g.phase !== 'play') return;
     g.timeLeft -= 0.25;
     shootHud();
+    Curriculum.warnLowTime(g.timeLeft, shEl('shoot-overlay'));
     if (g.timeLeft <= 0) {
         g.timeLeft = 0;
         shootFinish(g.got > 0);
@@ -162,11 +163,18 @@ function shootFinish(ok) {
     if (g.spawnTimer) { clearInterval(g.spawnTimer); g.spawnTimer = null; }
     var field = shEl('shoot-field');
     if (field) field.innerHTML = '';
-    Curriculum.win();
     var stars = Curriculum.starsForScore(g.score, 550);
     Curriculum.award(stars, { reason: '完成音爆射擊', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
     shootShow('shoot-over');
+    var overlay = shEl('shoot-overlay');
+    if (overlay) overlay.classList.remove('is-urgent');
+    Curriculum.finishFx({
+        emoji: '🎈',
+        title: ok ? '射擊完成！' : '時間到！',
+        sub: '分數 ' + g.score + ' · 射中 ' + g.got + ' 個',
+        stars: stars
+    });
     var title = shEl('shoot-over-title');
     var sub = shEl('shoot-over-sub');
     var list = shEl('shoot-over-words');
@@ -189,6 +197,8 @@ window.stopShootGame = function () {
     if (g.spawnTimer) { clearInterval(g.spawnTimer); g.spawnTimer = null; }
     var field = shEl('shoot-field');
     if (field) field.innerHTML = '';
+    var overlay = shEl('shoot-overlay');
+    if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
     if (window.setDisplay) window.setDisplay('shoot-overlay', 'none');
 };
 
@@ -208,6 +218,7 @@ window.startShootGame = function () {
     g.collected = [];
     g.queue = Curriculum.pickLesson(g.NEED);
     g.target = null;
+    Curriculum.bootFx();
     shootShow('shoot-rules');
     var group = shEl('shoot-group');
     if (group) group.textContent = Curriculum.groupName();
@@ -218,6 +229,7 @@ window.beginShootPlay = function () {
     var g = window.ShootGame;
     g.phase = 'play';
     g.timeLeft = g.TIME;
+    Curriculum.startFx();
     shootShow('shoot-play');
     shootHud();
     if (g.clock) clearInterval(g.clock);

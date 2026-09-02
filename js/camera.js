@@ -27,6 +27,7 @@ function getEl(id) { return document.getElementById(id); }
 window.openCamera = async function() {
     if (window.stopAllAudio) window.stopAllAudio();
     window.isAnalyzing = false;
+    if (window.Curriculum && window.Curriculum.bootFx) window.Curriculum.bootFx();
 
     safeDisplay('app', 'none');
     safeDisplay('game-overlay', 'none');
@@ -526,6 +527,9 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
                 clearTimeout(cancelTimer);
                 window.isAnalyzing = false;
                 if (loadingMsg) loadingMsg.innerText = `✨ 搵到喇！係 ${finalWord}！`;
+                if (window.Curriculum && window.Curriculum.hitFx) {
+                    window.Curriculum.hitFx(document.getElementById('camera-overlay'), null, 1);
+                }
 
                 setTimeout(() => {
                     window.closeCamera();
@@ -551,6 +555,9 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
     if (window.isAnalyzing) {
         window.isAnalyzing = false;
+        if (window.Curriculum && window.Curriculum.missFx) {
+            window.Curriculum.missFx(document.getElementById('camera-overlay'), '再試');
+        }
         if (window.playCantoneseTTS) window.playCantoneseTTS("哎呀，認唔到呀，不如影過第二樣啦。");
         if (loadingMsg) loadingMsg.innerText = "❌ 認唔到，請重試。";
         setTimeout(() => {

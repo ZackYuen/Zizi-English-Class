@@ -146,7 +146,7 @@ window.enterMode = function (mode) {
     if (window.stopSpeech) window.stopSpeech();
     if (window.ZiziFX) {
         window.ZiziFX.play('tap');
-        if (window.ZiziFX.isMusicOn() && !window.ZiziFX._bgmTimer) window.ZiziFX.startMusic();
+        window.ZiziFX.ensureMusic();
     }
 
     window.currentMode = mode;

@@ -130,7 +130,7 @@ function pzPickPiece(piece) {
     }
     pzClearPick();
     piece.classList.add('is-picked');
-    Curriculum.pop();
+    Curriculum.tapFx();
 }
 
 function pzDropOnSlot(slot) {
@@ -138,16 +138,17 @@ function pzDropOnSlot(slot) {
     if (!g.active || g.phase !== 'jigsaw') return;
     var piece = document.querySelector('.pz-piece.is-picked');
     if (!piece) {
+        Curriculum.tapFx();
         Curriculum.say('先撳下面一塊圖，再放上去。');
         return;
     }
     if (slot.classList.contains('is-filled')) {
-        Curriculum.boom();
+        Curriculum.missFx(pzEl('puzzle-overlay'), 'already');
         return;
     }
     var idx = piece.dataset.idx;
     if (slot.dataset.slot !== idx) {
-        Curriculum.boom();
+        Curriculum.missFx(pzEl('puzzle-overlay'), '-2s');
         g.score = Math.max(0, g.score - 6);
         g.timeLeft = Math.max(0, g.timeLeft - 2);
         pzHud();
@@ -161,8 +162,8 @@ function pzDropOnSlot(slot) {
     piece.disabled = true;
     piece.classList.add('is-locked');
     g.placed += 1;
-    Curriculum.pop();
     g.score += 20;
+    Curriculum.hitFx(pzEl('puzzle-overlay'), 20, g.placed);
     pzHud();
     if (g.placed >= 4) {
         g.score += Math.ceil(g.timeLeft) * 2;
@@ -212,7 +213,7 @@ function pzTapLetter(ch, btn) {
     if (!g.active || g.phase !== 'spell') return;
     var need = g.spell[g.spellNext];
     if (ch !== need) {
-        Curriculum.boom();
+        Curriculum.missFx(pzEl('puzzle-overlay'), '-3s');
         g.score = Math.max(0, g.score - 8);
         g.timeLeft = Math.max(0, g.timeLeft - 3);
         pzHud();
@@ -221,7 +222,7 @@ function pzTapLetter(ch, btn) {
         });
         return;
     }
-    Curriculum.pop();
+    Curriculum.hitFx(pzEl('puzzle-overlay'), 25, g.spellNext + 1);
     btn.disabled = true;
     btn.classList.add('is-used');
     var slot = document.querySelector('.pz-letter-slot[data-i="' + g.spellNext + '"]');
@@ -248,6 +249,11 @@ function pzWordDone() {
     });
     var prompt = pzEl('pz-prompt');
     if (prompt) prompt.innerHTML = '拼到喇！<b>' + g.item.w + '</b> ' + (Curriculum.yue(g.item.w) || '');
+    if (window.ZiziFX) {
+        window.ZiziFX.play('combo');
+        window.ZiziFX.burst(pzEl('puzzle-overlay'));
+        window.ZiziFX.boomConfetti(80);
+    }
     Curriculum.say('拼到 ' + g.item.w + '！').then(function () {
         return Curriculum.teach(g.item.w, 'pz-coach');
     }).then(function () {
@@ -266,6 +272,7 @@ function pzTick() {
     if (!g.active || g.phase === 'rules' || g.phase === 'over' || g.phase === 'teach') return;
     g.timeLeft -= 0.25;
     pzHud();
+    Curriculum.warnLowTime(g.timeLeft, pzEl('puzzle-overlay'));
     if (g.timeLeft <= 0) {
         g.timeLeft = 0;
         pzFinish(g.round > 0 || g.placed > 0);
@@ -276,11 +283,18 @@ function pzFinish(ok) {
     var g = window.PuzzleGame;
     g.phase = 'over';
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
-    Curriculum.win();
     var stars = Curriculum.starsForScore(g.score, 400);
     Curriculum.award(stars, { reason: '完成單詞拼圖', quest: 'write' });
     if (window.markQuest) window.markQuest('write');
     pzShow('pz-over');
+    var overlay = pzEl('puzzle-overlay');
+    if (overlay) overlay.classList.remove('is-urgent');
+    Curriculum.finishFx({
+        emoji: '🧩',
+        title: ok ? '拼圖完成！' : '時間到！',
+        sub: '分數 ' + g.score,
+        stars: stars
+    });
     var title = pzEl('pz-over-title');
     var sub = pzEl('pz-over-sub');
     var list = pzEl('pz-over-words');
@@ -301,6 +315,8 @@ window.stopPuzzleGame = function () {
     g.active = false;
     g.phase = 'rules';
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
+    var overlay = pzEl('puzzle-overlay');
+    if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
     if (window.setDisplay) window.setDisplay('puzzle-overlay', 'none');
 };
 
@@ -318,6 +334,7 @@ window.startWordPuzzle = function () {
     g.round = 0;
     g.words = Curriculum.pickLesson(g.ROUNDS);
     g.item = null;
+    Curriculum.bootFx();
     pzShow('pz-rules');
     var group = pzEl('pz-group');
     if (group) group.textContent = Curriculum.groupName();
@@ -326,6 +343,7 @@ window.startWordPuzzle = function () {
 
 window.beginPuzzlePlay = function () {
     var g = window.PuzzleGame;
+    Curriculum.startFx();
     pzShow('pz-play');
     if (g.clock) clearInterval(g.clock);
     g.clock = setInterval(pzTick, 250);

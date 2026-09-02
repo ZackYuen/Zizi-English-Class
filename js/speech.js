@@ -633,6 +633,7 @@ window.speakEnglish = function (text, opts) {
 };
 
 window._speakEnglishNow = async function (utter, options) {
+    if (window.ZiziFX) window.ZiziFX.duckMusic(1.8);
     var settings = window.getVoiceSettings();
     if (settings.googleKey && !options.forceBrowser) {
         try {

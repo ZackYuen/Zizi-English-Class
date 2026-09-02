@@ -103,8 +103,92 @@ window.Curriculum = {
     },
 
     speakEn: function (word) {
+        if (window.ZiziFX) window.ZiziFX.duckMusic(1.8);
         if (window.speakEnglish) return window.speakEnglish(word, { rate: 0.88 });
         return Promise.resolve();
+    },
+
+    bootFx: function () {
+        if (window.unlockAudio) window.unlockAudio();
+        if (!window.ZiziFX) return;
+        window.ZiziFX.unlock();
+        window.ZiziFX.ensureMusic();
+        this._lastWarnSec = null;
+    },
+
+    startFx: function () {
+        this.bootFx();
+        if (window.ZiziFX) window.ZiziFX.play('whoosh');
+    },
+
+    countFx: function (n) {
+        if (window.ZiziFX) window.ZiziFX.play(n > 0 ? 'countdown' : 'go');
+    },
+
+    tapFx: function () {
+        if (window.ZiziFX) window.ZiziFX.play('tap');
+        else this.pop();
+    },
+
+    hitFx: function (host, pts, combo) {
+        if (window.ZiziFX) {
+            window.ZiziFX.play(combo >= 2 ? 'combo' : 'correct');
+            window.ZiziFX.flash('rgba(46,204,113,.20)');
+            if (host && pts) window.ZiziFX.floatScore(host, '+' + pts, 'good');
+            if (combo >= 2) window.ZiziFX.burst(host);
+            window.ZiziFX.boomConfetti(combo >= 3 ? 90 : 55);
+        } else {
+            this.pop();
+        }
+    },
+
+    popBalloon: function (host, pts, combo) {
+        if (window.ZiziFX) {
+            window.ZiziFX.play('pop');
+            var fx = this;
+            setTimeout(function () { fx.hitFx(host, pts, combo); }, 40);
+        } else {
+            this.pop();
+        }
+    },
+
+    missFx: function (host, label) {
+        this.boom();
+        if (window.ZiziFX) {
+            window.ZiziFX.shake(host);
+            window.ZiziFX.flash('rgba(255,80,80,.22)');
+            if (host) window.ZiziFX.floatScore(host, label || '-time', 'bad');
+        }
+    },
+
+    warnLowTime: function (seconds, overlay) {
+        var sec = Math.ceil(seconds);
+        if (sec > 10 || sec < 1) {
+            if (overlay) overlay.classList.remove('is-urgent');
+            if (sec > 10) this._lastWarnSec = null;
+            return;
+        }
+        if (this._lastWarnSec === sec) return;
+        this._lastWarnSec = sec;
+        if (overlay) overlay.classList.add('is-urgent');
+        if (window.ZiziFX) {
+            window.ZiziFX.play('tick');
+            if (sec <= 5) window.ZiziFX.flash('rgba(255,90,95,.16)');
+        }
+    },
+
+    finishFx: function (opts) {
+        opts = opts || {};
+        if (window.ZiziFX && window.ZiziFX.celebrate) {
+            window.ZiziFX.celebrate({
+                emoji: opts.emoji || '🌟',
+                title: opts.title || '太棒了！',
+                sub: opts.sub || '',
+                stars: opts.stars || 0
+            });
+        } else {
+            this.win();
+        }
     },
 
     teach: function (word, coachId) {

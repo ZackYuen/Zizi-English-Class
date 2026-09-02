@@ -25,7 +25,8 @@ window.RaceGame = {
     W: 320,
     H: 420,
     ctx: null,
-    pending: false
+    pending: false,
+    _engineAt: 0
 };
 
 function raceEl(id) { return document.getElementById(id); }
@@ -278,6 +279,14 @@ function raceUpdate(dt) {
     car.y += car.vy * dt;
     car.x = Math.max(12, Math.min(g.W - 12, car.x));
     car.y = Math.max(12, Math.min(g.H - 12, car.y));
+    var spd = Math.hypot(car.vx, car.vy);
+    if (g.finger && spd > 35 && window.ZiziFX) {
+        var now = performance.now();
+        if (!g._engineAt || now - g._engineAt > 95) {
+            g._engineAt = now;
+            window.ZiziFX.play('engine');
+        }
+    }
 
     for (var i = 0; i < g.gates.length; i++) {
         var gate = g.gates[i];
@@ -294,10 +303,10 @@ function raceOnGate(gate) {
     if (g.pending) return;
     g.pending = true;
     if (gate.item.w === g.target.w) {
-        Curriculum.pop();
         g.combo += 1;
         var bonus = 100 + g.combo * 20 + Math.ceil(g.timeLeft);
         g.score += bonus;
+        Curriculum.hitFx(raceEl('race-overlay'), bonus, g.combo);
         g.got += 1;
         g.collected.push(g.target);
         Curriculum.award(0, {
@@ -307,7 +316,6 @@ function raceOnGate(gate) {
             reason: '賽車學到 ' + g.target.w
         });
         raceHud();
-        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
         g.phase = 'teach';
         var word = g.target.w;
         Curriculum.say('入到！' + word).then(function () {
@@ -323,7 +331,7 @@ function raceOnGate(gate) {
             raceSpawnGates();
         });
     } else {
-        Curriculum.boom();
+        Curriculum.missFx(raceEl('race-overlay'), '-4s');
         g.combo = 0;
         g.score = Math.max(0, g.score - 30);
         g.timeLeft = Math.max(0, g.timeLeft - 4);
@@ -343,6 +351,7 @@ function raceTickClock() {
     if (g.phase === 'play') {
         g.timeLeft -= 0.25;
         raceHud();
+        Curriculum.warnLowTime(g.timeLeft, raceEl('race-overlay'));
         if (g.timeLeft <= 0) {
             g.timeLeft = 0;
             raceFinish(g.got > 0);
@@ -373,11 +382,18 @@ function raceFinish(ok) {
     g.active = true;
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-    Curriculum.win();
     var stars = Curriculum.starsForScore(g.score, 500);
     Curriculum.award(stars, { reason: '完成字母賽車', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
     raceShow('race-over');
+    var overlay = raceEl('race-overlay');
+    if (overlay) overlay.classList.remove('is-urgent');
+    Curriculum.finishFx({
+        emoji: '🏎️',
+        title: ok ? '衝線喇！' : '時間到！',
+        sub: '分數 ' + g.score + ' · 學到 ' + g.got + ' 個字',
+        stars: stars
+    });
     var title = raceEl('race-over-title');
     var sub = raceEl('race-over-sub');
     var list = raceEl('race-over-words');
@@ -402,6 +418,7 @@ window.stopRaceGame = function () {
     if (g.clock) { clearInterval(g.clock); g.clock = null; }
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     var overlay = raceEl('race-overlay');
+    if (overlay) overlay.classList.remove('is-urgent', 'z-fx-shake');
     if (overlay && window.setDisplay) window.setDisplay('race-overlay', 'none');
     else if (overlay) {
         overlay.style.display = 'none';
@@ -432,6 +449,8 @@ window.startRaceGame = function () {
     g.collected = [];
     g.words = Curriculum.pickLesson(g.NEED + 3);
     g.target = null;
+    g._engineAt = 0;
+    Curriculum.bootFx();
     raceShow('race-rules');
     var group = raceEl('race-group');
     if (group) group.textContent = Curriculum.groupName();
@@ -450,10 +469,13 @@ window.beginRaceDrive = function () {
     var count = raceEl('race-count');
     var n = 3;
     if (count) { count.style.display = 'flex'; count.textContent = '3'; }
+    Curriculum.startFx();
+    Curriculum.countFx(3);
     Curriculum.say('三、二、一，開始！');
     var iv = setInterval(function () {
         n -= 1;
         if (count) count.textContent = n > 0 ? String(n) : 'GO';
+        if (n >= 0) Curriculum.countFx(n);
         if (n < 0) {
             clearInterval(iv);
             if (count) count.style.display = 'none';
