@@ -25,7 +25,8 @@ window.ShootGame = {
     bob: 0,
     beam: null,
     shots: [],
-    bursts: []
+    bursts: [],
+    falls: []
 };
 
 function shEl(id) { return document.getElementById(id); }
@@ -138,6 +139,7 @@ function shootNewRound(announce) {
     g.beam = null;
     g.shots = [];
     g.bursts = [];
+    g.falls = [];
     shootFillSky(true);
     shootHud();
     if (announce && g.phase === 'play' && g.target) {
@@ -218,6 +220,62 @@ function shootUpdateBursts(dt) {
         });
     });
     g.bursts = list.filter(function (burst) { return burst.t > 0; });
+}
+
+/** Gift inside the balloon: hop up, then fall off the bottom. Pure math for tests. */
+function shootMakeFall(x, y, word) {
+    return {
+        word: String(word || ''),
+        x: x,
+        y: y,
+        vx: (Math.random() - 0.5) * 90,
+        vy: -140 - Math.random() * 50,
+        rot: (Math.random() - 0.5) * 0.5,
+        spin: (Math.random() - 0.5) * 4.2,
+        t: 1.45,
+        life: 1.45
+    };
+}
+
+function shootStepFall(drop, dt, H) {
+    if (!drop) return false;
+    drop.t -= dt;
+    drop.x += drop.vx * dt;
+    drop.y += drop.vy * dt;
+    drop.vy += 920 * dt;
+    drop.vx *= Math.max(0.9, 1 - 0.35 * dt);
+    drop.rot += drop.spin * dt;
+    drop.spin *= Math.max(0.9, 1 - 0.4 * dt);
+    return drop.t > 0 && drop.y < (H || 800) + 90;
+}
+
+function shootUpdateFalls(dt) {
+    var g = window.ShootGame;
+    var H = g.H || 420;
+    g.falls = (g.falls || []).filter(function (drop) {
+        return shootStepFall(drop, dt, H);
+    });
+}
+
+function shootDrawFall(ctx, drop) {
+    if (!drop) return;
+    var u = 1 - drop.t / drop.life;
+    var fade = u > 0.72 ? Math.max(0, 1 - (u - 0.72) / 0.28) : 1;
+    var s = 48 + Math.min(18, Math.max(0, drop.vy) * 0.012);
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.translate(drop.x, drop.y);
+    ctx.rotate(drop.rot);
+    if (window.ZiziArt) {
+        window.ZiziArt.drawWord(ctx, drop.word, 0, 0, s, 0, true);
+    } else {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '800 26px Fredoka, sans-serif';
+        ctx.fillStyle = '#123b63';
+        ctx.fillText(drop.word, 0, 0);
+    }
+    ctx.restore();
 }
 
 /** Pure hit math: one correct pop. Returns 'energy' | 'word' | 'finish'. */
@@ -360,6 +418,10 @@ function shootDraw() {
         shootDrawBurst(ctx, burst);
     });
 
+    (g.falls || []).forEach(function (drop) {
+        shootDrawFall(ctx, drop);
+    });
+
     if (window.ZiziArt) {
         window.ZiziArt.drawWord(ctx, 'rocket', rocketX, rocketY, H * 0.14, g.bob);
     }
@@ -426,7 +488,9 @@ function shootExplodeShot(shot) {
     if (!g.active || g.phase !== 'play' || !b) return;
     if (g.balloons.indexOf(b) < 0) return;
     g.bursts = g.bursts || [];
+    g.falls = g.falls || [];
     g.bursts.push(shootMakeBurst(shot.x, shot.y, b.color));
+    g.falls.push(shootMakeFall(shot.x, shot.y, b.item && b.item.w));
     g.balloons = g.balloons.filter(function (x) { return x !== b; });
     var word = g.target && g.target.w;
     if (b.item && word && b.item.w === word) {
@@ -465,6 +529,7 @@ function shootUpdate(dt) {
     arrived.forEach(shootExplodeShot);
     if (g.beam && g.beam.t <= 0) g.beam = g.shots.length ? g.shots[g.shots.length - 1] : null;
     shootUpdateBursts(dt);
+    shootUpdateFalls(dt);
     if (g.busy) return;
     g.balloons.forEach(function (b) {
         if (b.shot) return;
@@ -532,6 +597,7 @@ window.stopShootGame = function () {
     g.beam = null;
     g.shots = [];
     g.bursts = [];
+    g.falls = [];
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     shootShowOver(false);
     var overlay = shEl('shoot-overlay');
@@ -647,6 +713,8 @@ if (typeof module !== 'undefined' && module.exports) {
         shootBulletRadius: shootBulletRadius,
         shootBulletPos: shootBulletPos,
         shootMakeBurst: shootMakeBurst,
+        shootMakeFall: shootMakeFall,
+        shootStepFall: shootStepFall,
         shootExplodeShot: shootExplodeShot,
         shootHit: shootHit
     };

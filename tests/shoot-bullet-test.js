@@ -59,6 +59,16 @@ var burst = shoot.shootMakeBurst(100, 80, '#51cf66');
 eq('burst has rubber bits', burst.bits.length >= 8, true);
 eq('burst lasts a beat', burst.life >= 0.3, true);
 
+var drop = shoot.shootMakeFall(100, 80, 'yarn');
+eq('fall carries the word', drop.word, 'yarn');
+eq('object hops up first', drop.vy < 0, true);
+var y0 = drop.y;
+var i;
+for (i = 0; i < 4; i++) shoot.shootStepFall(drop, 0.05, 420);
+for (i = 0; i < 20; i++) shoot.shootStepFall(drop, 0.05, 420);
+eq('then flies down past the pop', drop.y > y0, true);
+eq('gravity turns it downward', drop.vy > 0, true);
+
 window.ShootGame.active = true;
 window.ShootGame.phase = 'play';
 window.ShootGame.target = { w: 'frog' };
@@ -68,12 +78,14 @@ window.ShootGame.got = 0;
 window.ShootGame.power = 0;
 window.ShootGame.balloons = [{ item: { w: 'bell' }, color: '#ff6b6b', x: 0.4, y: 0.3, shot: true }];
 window.ShootGame.bursts = [];
+window.ShootGame.falls = [];
 window.ShootGame.W = 320;
 window.ShootGame.H = 420;
 window.ShootGame.decoys = [{ w: 'mat', emoji: '🎈', l: 'M' }];
 shoot.shootExplodeShot({ x: 128, y: 126, target: window.ShootGame.balloons[0] });
 eq('explode removes the balloon', window.ShootGame.balloons.filter(function (b) { return b.item.w === 'bell'; }).length === 0, true);
 eq('explode spawns a burst', window.ShootGame.bursts.length >= 1, true);
+eq('explode drops the object', window.ShootGame.falls.length >= 1 && window.ShootGame.falls[0].word === 'bell', true);
 
 if (fails) process.exit(1);
 console.log('all shoot bullet and burst tests passed');
