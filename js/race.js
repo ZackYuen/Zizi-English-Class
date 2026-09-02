@@ -20,7 +20,9 @@ window.RaceGame = {
     W: 320,
     H: 420,
     ctx: null,
-    pending: false
+    pending: false,
+    holding: false,
+    boost: 0
 };
 
 function raceEl(id) { return document.getElementById(id); }
@@ -33,7 +35,7 @@ function raceHud() {
         if (g.target) {
             Curriculum.fillTarget(tgt, g.target.w);
         } else {
-            tgt.textContent = '拖住架車去撞啱嗰幅圖';
+            tgt.textContent = '拖住架車，按住就加速';
         }
     }
 }
@@ -86,9 +88,27 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
-function drawCarTop(ctx, x, y, color) {
+function drawCarTop(ctx, x, y, color, boost) {
     ctx.save();
     ctx.translate(x, y);
+    boost = boost || 0;
+    if (boost > 0.08) {
+        var flame = 16 + boost * 28 + Math.sin(performance.now() / 50) * 6;
+        ctx.fillStyle = '#ffe066';
+        ctx.beginPath();
+        ctx.moveTo(-11, 38);
+        ctx.lineTo(0, 38 + flame);
+        ctx.lineTo(11, 38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.moveTo(-6, 38);
+        ctx.lineTo(0, 38 + flame * 0.55);
+        ctx.lineTo(6, 38);
+        ctx.closePath();
+        ctx.fill();
+    }
     ctx.shadowColor = '#fff59d';
     ctx.shadowBlur = 12;
     ctx.fillStyle = color;
@@ -173,12 +193,11 @@ function raceDraw() {
     });
 
     var cy = H * 0.82;
-    drawCarTop(ctx, g.car.x * W, cy + Math.sin(g.bob) * 3, '#e63946');
-
+    drawCarTop(ctx, g.car.x * W, cy + Math.sin(g.bob) * 3, '#e63946', g.boost);
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = '800 20px Fredoka, sans-serif';
+    ctx.font = '800 18px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('拖住架紅車', W / 2, 28);
+    ctx.fillText(g.holding ? '加速中！' : '拖住架紅車 · 按住加速', W / 2, 28);
 }
 
 function raceHit(card) {
@@ -216,14 +235,28 @@ function raceHit(card) {
     }
 }
 
+/** 0 = cruise, 1 = full boost. Cards fall this much of the track per second. */
+function raceCardSpeed(boost) {
+    boost = Math.max(0, Math.min(1, boost || 0));
+    return 0.10 + boost * 0.26;
+}
+
+function raceDashSpeed(boost) {
+    boost = Math.max(0, Math.min(1, boost || 0));
+    return 140 + boost * 300;
+}
+
 function raceUpdate(dt) {
     var g = window.RaceGame;
     if (g.phase !== 'play') return;
-    g.scroll += 200 * dt;
-    g.bob += dt * 7;
+    var want = g.holding ? 1 : 0;
+    g.boost += (want - g.boost) * Math.min(1, dt * 7);
+    g.scroll += raceDashSpeed(g.boost) * dt;
+    g.bob += dt * (7 + g.boost * 6);
     if (!g.pending) {
+        var fall = raceCardSpeed(g.boost);
         g.cards.forEach(function (card) {
-            card.y += 0.14 * dt;
+            card.y += fall * dt;
             if (card.y > 0.68 && card.y < 0.96) {
                 var cx = g.car.x * g.W;
                 var laneX = raceLaneX(card.lane);
@@ -281,6 +314,8 @@ window.stopRaceGame = function () {
     g.active = false;
     g.phase = 'play';
     g.pending = false;
+    g.holding = false;
+    g.boost = 0;
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
     raceShowOver(false);
     var overlay = raceEl('race-overlay');
@@ -308,6 +343,8 @@ window.startRaceGame = function () {
     g.target = null;
     g.car.x = 0.5;
     g.pending = false;
+    g.holding = false;
+    g.boost = 0;
     Curriculum.bootFx();
     raceShowOver(false);
     raceHud();
@@ -321,7 +358,7 @@ window.startRaceGame = function () {
     });
     if (g.raf) cancelAnimationFrame(g.raf);
     g.raf = requestAnimationFrame(function () { raceLoop(performance.now()); });
-    Curriculum.say('拖住架紅車，撞啱嗰幅圖。開始！');
+    Curriculum.say('拖住架紅車，按住就加速。開始！');
 };
 
 window.replayRaceWord = function () {
@@ -331,6 +368,7 @@ window.replayRaceWord = function () {
 };
 
 (function bindRaceInput() {
+    if (typeof document === 'undefined') return;
     function x(e) {
         if (e.touches && e.touches[0]) return e.touches[0].clientX;
         if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
@@ -343,6 +381,12 @@ window.replayRaceWord = function () {
         var t = (clientX - r.left) / (r.width || 1);
         window.RaceGame.car.x = Math.max(0.1, Math.min(0.9, t));
     }
+    function setHold(on) {
+        var g = window.RaceGame;
+        var was = g.holding;
+        g.holding = !!on;
+        if (g.holding && !was && window.ZiziFX) window.ZiziFX.play('engine');
+    }
     function down(e) {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || !window.RaceGame.active) return;
@@ -350,6 +394,7 @@ window.replayRaceWord = function () {
         if (e.pointerId != null && wrap.setPointerCapture) {
             try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
         }
+        setHold(true);
         setCar(x(e));
     }
     function move(e) {
@@ -357,14 +402,21 @@ window.replayRaceWord = function () {
         if (e.cancelable) e.preventDefault();
         setCar(x(e));
     }
+    function up() {
+        setHold(false);
+    }
     function bind() {
         var wrap = raceEl('race-canvas-wrap');
         if (!wrap || wrap._raceBound) return;
         wrap._raceBound = true;
         wrap.addEventListener('pointerdown', down);
         wrap.addEventListener('pointermove', move);
+        wrap.addEventListener('pointerup', up);
+        wrap.addEventListener('pointercancel', up);
         wrap.addEventListener('touchstart', down, { passive: false });
         wrap.addEventListener('touchmove', move, { passive: false });
+        wrap.addEventListener('touchend', up);
+        wrap.addEventListener('touchcancel', up);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
     else bind();
@@ -376,3 +428,7 @@ window.replayRaceWord = function () {
         }
     });
 })();
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { raceCardSpeed: raceCardSpeed, raceDashSpeed: raceDashSpeed };
+}
