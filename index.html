@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260902-alpopup">
+    <link rel="stylesheet" href="style.css?v=20260902-flypic">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -35,7 +35,7 @@
             <div class="zizi-cap">Z</div>
         </div>
         <h1>孜孜學英文</h1>
-        <p class="home-tagline">揸車、砌圖、搵寶、射火箭，用遊戲學 SATIPN 單詞。</p>
+        <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 單詞。</p>
         <div class="home-level" id="home-level">
             <div class="home-level-top">
                 <span class="home-level-badge">Lv.<span id="home-level-num">1</span></span>
@@ -92,10 +92,10 @@
             </span>
         </button>
         <button type="button" class="home-btn home-btn-match" onclick="enterMode('match')">
-            <span class="home-btn-emoji" aria-hidden="true">🖼️</span>
+            <span class="home-btn-emoji" aria-hidden="true">🦋</span>
             <span class="home-btn-text">
-                <span class="home-btn-title">尋寶圖</span>
-                <span class="home-btn-sub">揭開草叢，聽聲搵嘢</span>
+                <span class="home-btn-title">飛天搵字</span>
+                <span class="home-btn-sub">聽英文，捉住飛嚟飛去嗰幅圖</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
@@ -218,11 +218,11 @@
     </div>
 </div>
 
-<!-- 🖼️ Picture hunt -->
+<!-- 🦋 Flying pictures -->
 <div id="hunt-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
-        <button type="button" id="hunt-target" class="stage-ask" onclick="replayHuntWord()">聽英文，揭開草叢搵佢</button>
+        <button type="button" id="hunt-target" class="stage-ask" onclick="replayHuntWord()">聽英文，捉住飛緊嗰幅圖</button>
         <div class="stage-stars" id="hunt-stars">☆☆☆☆☆</div>
     </div>
     <div id="hunt-play" class="stage-field">
@@ -231,10 +231,10 @@
     </div>
     <div id="hunt-over" class="stage-over" style="display:none;">
         <div class="arena-card">
-            <h3 id="hunt-over-title">尋寶成功！</h3>
+            <h3 id="hunt-over-title">捉住晒！</h3>
             <p id="hunt-over-sub"></p>
             <ul id="hunt-over-words" class="arena-words"></ul>
-            <button type="button" class="arena-go" onclick="startPictureHunt()">再尋一轉</button>
+            <button type="button" class="arena-go" onclick="startPictureHunt()">再捉一轉</button>
             <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
         </div>
     </div>
@@ -271,7 +271,7 @@
             <p class="album-hint" id="album-hint">撳張卡睇點解咁寫，同聽英文。</p>
             <nav class="album-jumps" id="album-jumps" hidden></nav>
         </header>
-        <div id="album-empty" class="album-empty">仲未有單詞呀！去賽車、拼圖或者尋寶學新字啦！</div>
+        <div id="album-empty" class="album-empty">仲未有單詞呀！去賽車、拼圖或者飛天搵字學新字啦！</div>
         <div class="album-scroll" id="album-scroll"></div>
         <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
         <div id="album-detail" class="album-detail" hidden>
@@ -358,7 +358,7 @@
 <script src="js/state.js?v=20260902-write1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
 <script src="js/secrets.js?v=20260902-write1"></script>
-<script src="js/speech.js?v=20260902-pzvoice"></script>
+<script src="js/speech.js?v=20260902-skyfly"></script>
 <script src="js/progress.js?v=20260902-alpopup"></script>
 <script src="js/fx.js?v=20260902-boostbgm"></script>
 <script src="js/teach.js?v=20260902-write1"></script>
@@ -369,7 +369,7 @@
 <script src="js/art.js?v=20260902-write1"></script>
 <script src="js/race.js?v=20260902-nogreen"></script>
 <script src="js/wordpuzzle.js?v=20260902-pzvoice"></script>
-<script src="js/hunt.js?v=20260902-pzvoice"></script>
+<script src="js/hunt.js?v=20260902-skyfly"></script>
 <script src="js/shoot.js?v=20260902-objfall"></script>
 <script src="js/camera.js?v=20260902-camvision"></script>
 <script src="js/router.js?v=20260902-testyue"></script>
