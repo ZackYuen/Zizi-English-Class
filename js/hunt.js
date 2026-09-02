@@ -52,20 +52,28 @@ function huntPaintScene() {
             '<canvas class="hunt-art"></canvas>';
         btn.onclick = function () { huntTap(item, btn); };
         scene.appendChild(btn);
+    });
+    requestAnimationFrame(function () { huntPaintCanvases(); });
+}
+
+function huntPaintCanvases() {
+    var scene = huntEl('hunt-scene');
+    if (!scene || !window.ZiziArt) return;
+    Array.prototype.forEach.call(scene.querySelectorAll('.hunt-bush'), function (btn, i) {
+        var box = Math.max(88, Math.floor(Math.min(btn.clientWidth || 120, btn.clientHeight || 160) * 0.72));
         ['cover', 'art'].forEach(function (cls) {
             var cvs = btn.querySelector('.hunt-' + cls);
-            if (cvs && window.ZiziArt) {
-                var cs = Math.max(72, Math.floor(btn.clientHeight * 0.7));
-                cvs.width = cs * 2;
-                cvs.height = cs * 2;
-                var c = cvs.getContext('2d');
-                c.scale(2, 2);
-                if (cls === 'cover') {
-                    window.ZiziArt.drawWord(c, 'bush', cs / 2, cs / 2, cs, performance.now() / 1000 + i);
-                } else {
-                    window.ZiziArt.drawWord(c, item.w, cs / 2, cs / 2, cs * 0.7, performance.now() / 1000 + i);
-                }
-            }
+            if (!cvs) return;
+            cvs.width = box * 2;
+            cvs.height = box * 2;
+            cvs.style.width = box + 'px';
+            cvs.style.height = box + 'px';
+            var c = cvs.getContext('2d');
+            c.setTransform(2, 0, 0, 2, 0, 0);
+            c.clearRect(0, 0, box, box);
+            var word = cls === 'cover' ? 'bush' : btn.dataset.word;
+            var size = cls === 'cover' ? box * 0.96 : box * 0.78;
+            window.ZiziArt.drawWord(c, word, box / 2, box / 2, size, performance.now() / 1000 + i);
         });
     });
 }
