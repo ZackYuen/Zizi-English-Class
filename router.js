@@ -22,6 +22,7 @@ function hideAllOverlays() {
     setDisplay('start-overlay', 'none');
     setDisplay('camera-overlay', 'none');
     setDisplay('game-overlay', 'none');
+    setDisplay('play-overlay', 'none');
     setDisplay('settings-modal', 'none');
     setDisplay('app', 'none');
     setDisplay('standard-ui', 'none');
@@ -105,6 +106,7 @@ window.enterMode = function(mode) {
     if (mode === 'standard') {
         setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         setDisplay('standard-top-bar', 'flex');
         setDisplay('app', 'block');
         setDisplay('standard-ui', 'block');
@@ -112,24 +114,37 @@ window.enterMode = function(mode) {
         if (reCam) reCam.style.display = 'none';
 
         if (typeof startApp === 'function') startApp('standard');
-        if (window.playCantoneseTTS) window.playCantoneseTTS('一齊寫字啦！');
+        if (window.Arcade && window.Arcade.startRace) window.Arcade.startRace();
+        if (window.playCantoneseTTS) window.playCantoneseTTS('描字賽車！跟綠點畫，贏隻烏龜！');
     } else if (mode === 'camera') {
         setDisplay('standard-top-bar', 'none');
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('game-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         if (window.openCamera) window.openCamera();
     } else if (mode === 'game') {
         setDisplay('standard-top-bar', 'none');
         setDisplay('app', 'none');
         setDisplay('standard-ui', 'none');
         setDisplay('camera-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         if (window.startGame) window.startGame();
+    } else if (mode === 'puzzle') {
+        setDisplay('standard-top-bar', 'none');
+        setDisplay('app', 'none');
+        setDisplay('standard-ui', 'none');
+        setDisplay('camera-overlay', 'none');
+        setDisplay('game-overlay', 'none');
+        if (window.startPuzzleGame) window.startPuzzleGame();
     }
 };
 
 window.backToHome = function() {
     if (window.stopAllAudio) window.stopAllAudio();
+    if (window.stopShootGame) window.stopShootGame();
+    if (window.stopPlayGames) window.stopPlayGames();
+    if (window.Arcade && window.Arcade.stopRace) window.Arcade.stopRace();
     if (window.gameNextTimeout) clearTimeout(window.gameNextTimeout);
     if (window.gameReplayTimeout) clearTimeout(window.gameReplayTimeout);
 
@@ -155,6 +170,7 @@ window.addEventListener('pageshow', function () {
         setDisplay('start-overlay', 'none');
         setDisplay('camera-overlay', 'none');
         setDisplay('game-overlay', 'none');
+        setDisplay('play-overlay', 'none');
         setDisplay('settings-modal', 'none');
         setDisplay('home-menu', 'flex');
         setDisplay('back-to-home-btn', 'none');

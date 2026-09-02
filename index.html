@@ -5,36 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>孜孜學英文 - 統一選單版</title>
+    <title>孜孜英文大冒險</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<!-- 統一主選單 (Home Menu) -->
 <div id="home-menu" class="is-open" style="display:flex;">
-    <h1>🌟 孜孜拼音大冒險</h1>
-    <p>請選擇你想玩嘅模式：</p>
+    <p class="home-stars">⭐ <span data-arcade-stars>0</span></p>
+    <h1>🌟 孜孜英文大冒險</h1>
+    <p>揀一隻遊戲開波！</p>
 
     <div class="home-menu-actions">
-        <button type="button" class="home-btn-standard" onclick="enterMode('standard')">✍️ 基礎描字模式</button>
-        <button type="button" class="home-btn-camera" onclick="enterMode('camera')">📸 探索魔鏡模式</button>
-        <button type="button" class="home-btn-game" onclick="enterMode('game')">🎮 聽音大挑戰</button>
-        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 設定 API Keys</button>
+        <button type="button" class="home-btn home-btn-camera" onclick="enterMode('camera')">
+            <span class="home-btn-emoji">📸</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">魔鏡捉迷藏</span>
+                <span class="home-btn-sub">影真嘢 → 聽英文 → 搵返佢</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-standard" onclick="enterMode('standard')">
+            <span class="home-btn-emoji">🏎️</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">描字賽車</span>
+                <span class="home-btn-sub">跟綠點畫，贏隻烏龜</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
+            <span class="home-btn-emoji">🎈</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">音爆射擊</span>
+                <span class="home-btn-sub">聽音射爆啱嘅氣球</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn home-btn-puzzle" onclick="enterMode('puzzle')">
+            <span class="home-btn-emoji">🧩</span>
+            <span class="home-btn-text">
+                <span class="home-btn-title">搵唔同</span>
+                <span class="home-btn-sub">捉迷藏 + 兩張相睇分別</span>
+            </span>
+        </button>
+        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 設定</button>
     </div>
 </div>
 
-<!-- 統一返回主頁按鈕 -->
-<button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回主選單</button>
+<button type="button" id="back-to-home-btn" onclick="backToHome()" style="display:none;">🏠 返回</button>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
-    <h2 style="color:#ff595e; margin:0;">🌟 孜孜學英文</h2>
+    <h2 style="color:#ff595e; margin:0;">🏎️ 描字賽車</h2>
 </div>
 
-<!-- 1. 基礎模式與畫布區域 -->
 <div id="start-overlay" style="display:none;" aria-hidden="true"></div>
 <div id="app" style="display:none;">
-    <div id="msg">由綠色點出發，畫到尾為止！</div>
+    <div id="race-track" class="race-track" aria-hidden="true">
+        <div class="race-lane"><span class="racer racer-turtle" id="racer-turtle">🐢</span></div>
+        <div class="race-lane"><span class="racer racer-kid" id="racer-kid">🚗</span></div>
+    </div>
+    <div id="msg">由綠色點出發，畫到尾為止！贏隻烏龜！</div>
     <div id="canvas-wrapper"><canvas id="cvs" width="300" height="300"></canvas></div>
     <div class="controls">
         <button type="button" class="btn btn-clear" onclick="resetCanvas()">🧽 抹走</button>
@@ -47,49 +74,52 @@
     <div id="kb"></div>
 </div>
 
-<!-- 2. 相機模式區域 -->
 <div id="camera-ui-container" style="display:none;"></div>
 <div id="camera-overlay" style="display:none;">
+    <p class="cam-quest">影一樣嘢，之後同佢玩捉迷藏！</p>
     <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
-
     <canvas id="crop-canvas" width="300" height="300"></canvas>
-
     <div id="camera-controls">
         <button type="button" id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
         <button type="button" id="confirm-crop-btn" onclick="confirmCrop()" style="display:none;">✅ 確定</button>
         <button type="button" id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
         <button type="button" id="cancel-analyze-btn" style="display:none;">🛑 取消分析</button>
     </div>
-
     <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
 </div>
 
-<!-- 3. 聽音大挑戰遊戲區域 -->
 <div id="game-overlay" style="display:none;">
-    <h2>🎧 聽音大挑戰</h2>
-    <div id="game-msg">睇下係咩圖案，聽下係咩音！</div>
+    <div class="arcade-hud">
+        <span>⭐ <span id="shoot-score">0</span></span>
+        <span id="shoot-lives">❤️❤️❤️</span>
+        <span>再射 <span id="shoot-need">3</span></span>
+    </div>
+    <h2>🎈 音爆射擊</h2>
+    <div id="game-msg">聽音，射爆啱嘅氣球！</div>
     <button type="button" id="game-speaker" onclick="playGameSound()">
         <span id="game-emoji-display">🔊</span>
-        <span style="font-size:18px; color:#1d3557; margin-top:5px; font-weight:bold;">撳我重聽</span>
+        <span class="speaker-label">再聽</span>
     </button>
-    <div class="game-answers">
-        <button type="button" id="btn-A" class="game-ans-btn" onclick="checkAnswer('A')"></button>
-        <button type="button" id="btn-E" class="game-ans-btn" onclick="checkAnswer('E')"></button>
-        <button type="button" id="btn-I" class="game-ans-btn" onclick="checkAnswer('I')"></button>
-    </div>
+    <div id="shoot-field" class="shoot-field"></div>
 </div>
 
-<!-- 設定彈出視窗 -->
+<div id="play-overlay" style="display:none;">
+    <div class="arcade-hud">
+        <span>⭐ <span data-arcade-stars>0</span></span>
+        <span>搵到 <span id="play-found">0</span></span>
+    </div>
+    <h2 id="play-title">🙈 捉迷藏</h2>
+    <p id="play-msg">搵吓佢匿喺邊！</p>
+    <div id="play-stage" class="play-stage"></div>
+</div>
+
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
         <h2>⚙️ 設定 API Keys</h2>
-
         <label for="input-google-tts">Google TTS (語音及發聲):</label>
         <input type="password" id="input-google-tts" placeholder="輸入 Google API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-
         <label for="input-openrouter">OpenRouter (相機認字):</label>
         <input type="password" id="input-openrouter" placeholder="輸入 OpenRouter API Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-
         <div class="settings-actions">
             <button type="button" class="settings-cancel" onclick="closeSettings()">取消</button>
             <button type="button" class="settings-save" onclick="saveSettings()">💾 儲存</button>
@@ -102,6 +132,8 @@
 <script src="ui.js"></script>
 <script src="canvas.js"></script>
 <script src="camera.js"></script>
+<script src="arcade.js"></script>
+<script src="seek.js"></script>
 <script src="game.js"></script>
 <script src="router.js"></script>
 </body>

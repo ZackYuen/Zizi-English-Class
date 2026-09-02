@@ -45,7 +45,7 @@ window.setMode = function(mode) {
     } else {
         // 🌟 基礎模式顯示畫板
         if (canvasWrapper) canvasWrapper.style.display = 'block';
-        document.getElementById('msg').innerText = "由綠色點出發，畫到尾為止！";
+        document.getElementById('msg').innerText = "由綠色點出發，畫到尾，贏隻烏龜！";
         resetCanvas();
     }
     document.getElementById('msg').style.color = "#1982c4";

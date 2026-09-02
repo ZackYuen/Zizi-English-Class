@@ -1,19 +1,22 @@
 // ==========================================
-// 🎮 聽音大挑戰 (a, e, i) 遊戲模組 (精準無縫不截斷版)
+// 🎈 音爆射擊 — hear /æ/ /ɛ/ /ɪ/, pop the matching balloons
 // ==========================================
 
 window.currentGameTarget = '';
 window.currentWord = '';
 window.currentEmoji = '';
-window.lastWord = ''; 
-window.currentChoices = {}; 
+window.lastWord = '';
+window.currentChoices = {};
 window.gameAudio = new Audio();
 window.isGamePlaying = false;
-window.isGameProcessing = false; 
-
-// 🌟 異步音效防重疊 Token
+window.isGameProcessing = false;
 window.gameAudioToken = 0;
 window.uiAudioToken = 0;
+window.shootScore = 0;
+window.shootLives = 3;
+window.shootNeed = 0;
+window.shootTimer = null;
+window.shootRaf = 0;
 
 const gameWordBank = {
     'A': [
@@ -30,17 +33,19 @@ const gameWordBank = {
     ]
 };
 
-// 🌟 全局強行停止所有音效 (並清除事件監聽)
-window.stopAllAudio = function() {
-    if (window.gameAudio) { 
-        window.gameAudio.pause(); 
-        window.gameAudio.currentTime = 0; 
+window.stopAllAudio = function () {
+    if (window.gameAudio) {
+        window.gameAudio.pause();
+        window.gameAudio.currentTime = 0;
         window.gameAudio.onended = null;
     }
-    if (window.uiAudio) { 
-        window.uiAudio.pause(); 
-        window.uiAudio.currentTime = 0; 
-        window.uiAudio.onended = null; 
+    if (window.uiAudio) {
+        window.uiAudio.pause();
+        window.uiAudio.currentTime = 0;
+        window.uiAudio.onended = null;
+    }
+    if (window.enAudio) {
+        try { window.enAudio.pause(); window.enAudio.currentTime = 0; } catch (e) {}
     }
     if (window.mAudio) {
         window.mAudio.pause();
@@ -50,129 +55,104 @@ window.stopAllAudio = function() {
     window.uiAudioToken = 0;
 };
 
-const gameStyle = document.createElement('style');
-gameStyle.innerHTML = `
-    @keyframes shake-wrong {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-10px); }
-        50% { transform: translateX(10px); }
-        75% { transform: translateX(-10px); }
+window.stopShootGame = function () {
+    window.isGamePlaying = false;
+    window.isGameProcessing = false;
+    if (window.shootTimer) {
+        clearInterval(window.shootTimer);
+        window.shootTimer = null;
     }
-    .shake-anim { animation: shake-wrong 0.4s ease-in-out; }
-    .game-ans-btn { cursor: pointer; transition: transform 0.1s; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; border:4px solid #fff; border-radius:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width:100px; height:140px; font-size:40px; }
-    .game-ans-btn:active { transform: scale(0.9); }
-`;
-document.head.appendChild(gameStyle);
+    if (window.shootRaf) {
+        cancelAnimationFrame(window.shootRaf);
+        window.shootRaf = 0;
+    }
+    var field = document.getElementById('shoot-field');
+    if (field) field.innerHTML = '';
+};
 
-// 🌟 核心升級：精準等待廣東話讀完先執行 Callback
-window.playGameMessage = async function(text, callback) {
-    if(window.stopAllAudio) window.stopAllAudio();
-    
-    let token = Date.now();
+window.playGameMessage = async function (text, callback) {
+    if (window.stopAllAudio) window.stopAllAudio();
+    var token = Date.now();
     window.uiAudioToken = token;
-    
-    let key = localStorage.getItem('google_tts_key');
-    if (!key) { 
-        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
-        return; 
+    var key = localStorage.getItem('google_tts_key');
+    var done = function () {
+        if (callback && window.uiAudioToken === token && window.isGamePlaying) callback();
+    };
+    if (!key) {
+        setTimeout(done, 800);
+        return;
     }
-    
     try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
+        var res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
             method: 'POST',
             body: JSON.stringify({
                 input: { text: text },
-                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' }, 
+                voice: { languageCode: 'yue-HK', name: 'yue-HK-Standard-A' },
                 audioConfig: { audioEncoding: 'MP3' }
             })
         });
-        let data = await res.json();
-        
-        // 確保無被中途打斷先繼續
+        var data = await res.json();
         if (window.uiAudioToken !== token || !window.isGamePlaying) return;
-        
         if (data.audioContent) {
             window.uiAudio = window.uiAudio || new Audio();
             window.uiAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
-            
-            // 真正監聽「播完」嗰一刻
-            window.uiAudio.onended = () => {
+            window.uiAudio.onended = function () {
                 window.uiAudio.onended = null;
-                if (window.uiAudioToken === token && window.isGamePlaying) {
-                    setTimeout(() => {
-                        if (window.uiAudioToken === token && window.isGamePlaying) callback();
-                    }, 300); // 播完畀 0.3 秒呼吸位
-                }
+                setTimeout(done, 200);
             };
-            window.uiAudio.play();
-        } else {
-            setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500);
-        }
-    } catch(e) { 
-        console.error(e);
-        setTimeout(() => { if (window.uiAudioToken === token && window.isGamePlaying) callback(); }, 1500); 
+            window.uiAudio.play().catch(done);
+        } else setTimeout(done, 800);
+    } catch (e) {
+        setTimeout(done, 800);
     }
 };
 
-window.startGame = function() {
-    if (window.stopAllAudio) window.stopAllAudio();
+function updateShootHud() {
+    var s = document.getElementById('shoot-score');
+    var l = document.getElementById('shoot-lives');
+    var n = document.getElementById('shoot-need');
+    if (s) s.textContent = String(window.shootScore);
+    if (l) l.textContent = '❤️'.repeat(Math.max(0, window.shootLives)) || '💔';
+    if (n) n.textContent = String(window.shootNeed);
+}
 
-    const start = document.getElementById('start-overlay');
-    if (start) {
-        start.style.display = 'none';
-        start.classList.remove('is-open');
-    }
-    const overlay = document.getElementById('game-overlay');
+window.startGame = function () {
+    if (window.stopAllAudio) window.stopAllAudio();
+    window.stopShootGame();
+    var overlay = document.getElementById('game-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
         overlay.classList.add('is-open');
     }
-
     window.isGamePlaying = true;
     window.isGameProcessing = false;
     window.lastWord = '';
-
-    // 講完開場白自動出題
-    window.playGameMessage("聽音大挑戰開始！打開對耳仔，聽下要搵咩圖案出嚟啦！", () => {
+    window.shootScore = 0;
+    window.shootLives = 3;
+    updateShootHud();
+    window.playGameMessage('音爆射擊開始！聽個音，射爆啱嗰個氣球！', function () {
         window.nextGameQuestion();
     });
 };
 
-window.exitGame = function() {
-    window.isGamePlaying = false;
-    window.isGameProcessing = false;
+window.exitGame = function () {
+    window.stopShootGame();
     if (window.stopAllAudio) window.stopAllAudio();
-
-    const overlay = document.getElementById('game-overlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.classList.remove('is-open');
-    }
-    // Never show the empty start-overlay (it blocks all taps on iPhone).
-    // Prefer returning to the real home menu.
-    if (typeof window.backToHome === 'function') {
-        window.backToHome();
-        return;
-    }
-    const home = document.getElementById('home-menu');
-    if (home) {
-        home.style.display = 'flex';
-        home.classList.add('is-open');
-    }
+    if (typeof window.backToHome === 'function') window.backToHome();
 };
 
-window.nextGameQuestion = function() {
-    if(!window.isGamePlaying) return;
-    
-    const targets = ['A', 'E', 'I'];
+window.nextGameQuestion = function () {
+    if (!window.isGamePlaying) return;
+    var field = document.getElementById('shoot-field');
+    if (field) field.innerHTML = '';
+    var targets = ['A', 'E', 'I'];
     window.currentGameTarget = targets[Math.floor(Math.random() * targets.length)];
-    
     window.currentChoices = {};
-    targets.forEach(letter => {
-        let wordList = gameWordBank[letter];
-        let randomItem;
+    targets.forEach(function (letter) {
+        var wordList = gameWordBank[letter];
+        var randomItem;
         if (letter === window.currentGameTarget) {
-            do { randomItem = wordList[Math.floor(Math.random() * wordList.length)]; } 
+            do { randomItem = wordList[Math.floor(Math.random() * wordList.length)]; }
             while (randomItem.w === window.lastWord && wordList.length > 1);
             window.currentWord = randomItem.w;
             window.lastWord = randomItem.w;
@@ -182,129 +162,129 @@ window.nextGameQuestion = function() {
         }
         window.currentChoices[letter] = randomItem;
     });
-    
-    document.getElementById('game-emoji-display').innerText = '❓';
-    document.getElementById('game-msg').innerText = "👇 聽清楚喇，係邊個音？";
-    document.getElementById('game-msg').style.color = "#1d3557";
-    
-    const colors = { 'A': '#d90429', 'E': '#023e8a', 'I': '#4a4e69' };
-    const ipas = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
-    
-    targets.forEach(letter => {
-        const btn = document.getElementById(`btn-${letter}`);
-        if(btn) {
-            btn.innerHTML = `
-                <span style="font-size:45px; margin-bottom:5px;">${window.currentChoices[letter].e}</span>
-                <span style="font-size:28px; color:${colors[letter]}; font-weight:bold;">${letter.toLowerCase()}</span>
-                <span style="font-size:20px; color:${colors[letter]}; font-family:Arial;">${ipas[letter]}</span>
-            `;
-        }
-    });
-    
-    setTimeout(() => {
-        const speaker = document.getElementById('game-speaker');
-        if(speaker) {
-            speaker.style.transform = "scale(1.1)";
-            setTimeout(() => speaker.style.transform = "scale(1)", 300);
-        }
-        playGameSound();
-    }, 500);
+    window.shootNeed = 3;
+    window.isGameProcessing = false;
+    updateShootHud();
+    var msg = document.getElementById('game-msg');
+    if (msg) {
+        msg.innerText = '聽清楚，射 ' + window.currentGameTarget.toLowerCase() + ' 氣球！';
+        msg.style.color = '#1d3557';
+    }
+    var emojiEl = document.getElementById('game-emoji-display');
+    if (emojiEl) emojiEl.innerText = '❓';
+    if (window.shootTimer) clearInterval(window.shootTimer);
+    window.spawnBalloon();
+    window.shootTimer = setInterval(function () {
+        if (window.isGamePlaying && !window.isGameProcessing) window.spawnBalloon();
+    }, 1100);
+    setTimeout(function () { if (window.isGamePlaying) window.playGameSound(); }, 400);
 };
 
-window.playGameSound = async function() {
-    if(window.stopAllAudio) window.stopAllAudio();
-    
-    let token = Date.now();
-    window.gameAudioToken = token;
-    
-    let key = localStorage.getItem('google_tts_key');
-    if(!key) { 
-        alert("請先設定 Google TTS API Key"); 
-        window.exitGame();
-        return; 
-    }
-    
-    const ipaMap = { 'A': 'æ', 'E': 'ɛ', 'I': 'ɪ' };
-    const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
-    
-    const targetIPA = ipaMap[window.currentGameTarget];
-    const targetLetter = letterMap[window.currentGameTarget];
-    
-    let ssml = `<speak><prosody rate="0.8">
-        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
-        <break time="0.5s"/> 
-        <phoneme alphabet="ipa" ph="${targetIPA}">${targetLetter}</phoneme> 
-        <break time="0.5s"/> 
-        ${window.currentWord}
-    </prosody></speak>`;
+window.spawnBalloon = function () {
+    var field = document.getElementById('shoot-field');
+    if (!field || !window.isGamePlaying) return;
+    var letters = ['A', 'E', 'I'];
+    var letter = Math.random() < 0.55 ? window.currentGameTarget : letters[Math.floor(Math.random() * 3)];
+    var item = window.currentChoices[letter] || gameWordBank[letter][0];
+    var colors = { A: '#ff6b6b', E: '#4dabf7', I: '#845ef7' };
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'balloon';
+    b.style.left = (8 + Math.random() * 72) + '%';
+    b.style.background = colors[letter];
+    b.style.animationDuration = (4.2 + Math.random() * 2.4) + 's';
+    b.dataset.letter = letter;
+    b.innerHTML = '<span class="balloon-emoji">' + item.e + '</span><span class="balloon-letter">' + letter.toLowerCase() + '</span>';
+    b.onclick = function (ev) {
+        ev.preventDefault();
+        window.shootBalloon(b, letter);
+    };
+    b.addEventListener('animationend', function () {
+        if (b.parentNode) b.parentNode.removeChild(b);
+    });
+    field.appendChild(b);
+};
 
+window.shootBalloon = function (el, letter) {
+    if (!window.isGamePlaying || window.isGameProcessing) return;
+    if (el.classList.contains('is-pop')) return;
+    el.classList.add('is-pop');
+    if (letter === window.currentGameTarget) {
+        if (window.Arcade) window.Arcade.pop();
+        window.shootNeed = Math.max(0, window.shootNeed - 1);
+        window.shootScore += 1;
+        if (window.Arcade) window.Arcade.addStars(1);
+        updateShootHud();
+        if (window.shootNeed <= 0) {
+            window.isGameProcessing = true;
+            if (window.shootTimer) { clearInterval(window.shootTimer); window.shootTimer = null; }
+            var emojiEl = document.getElementById('game-emoji-display');
+            if (emojiEl) emojiEl.innerText = window.currentEmoji;
+            var msg = document.getElementById('game-msg');
+            if (msg) {
+                msg.innerText = '💥 啱喇！' + window.currentWord + '！';
+                msg.style.color = '#06d6a0';
+            }
+            if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: 0.55 } });
+            window.playGameMessage('啱喇！' + window.currentWord, function () {
+                window.isGameProcessing = false;
+                if (window.isGamePlaying) window.nextGameQuestion();
+            });
+        }
+    } else {
+        if (window.Arcade) window.Arcade.boom();
+        window.shootLives -= 1;
+        updateShootHud();
+        var wrong = window.currentChoices[letter];
+        var msg = document.getElementById('game-msg');
+        if (msg) {
+            msg.innerText = '唔係呢個！呢個係 ' + (wrong && wrong.w) + '。';
+            msg.style.color = '#e63946';
+        }
+        if (window.shootLives <= 0) {
+            window.isGameProcessing = true;
+            if (window.shootTimer) { clearInterval(window.shootTimer); window.shootTimer = null; }
+            window.playGameMessage('冇命喇！再嚟過！', function () {
+                window.shootLives = 3;
+                window.shootScore = 0;
+                window.isGameProcessing = false;
+                if (window.isGamePlaying) window.nextGameQuestion();
+            });
+        }
+    }
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 180);
+};
+
+window.playGameSound = async function () {
+    if (window.stopAllAudio) window.stopAllAudio();
+    var token = Date.now();
+    window.gameAudioToken = token;
+    var key = localStorage.getItem('google_tts_key');
+    if (!key) {
+        if (window.openSettings) window.openSettings();
+        return;
+    }
+    var ipaMap = { A: 'æ', E: 'ɛ', I: 'ɪ' };
+    var letterMap = { A: 'a', E: 'e', I: 'i' };
+    var ssml = '<speak><prosody rate="0.8"><phoneme alphabet="ipa" ph="' + ipaMap[window.currentGameTarget] + '">' +
+        letterMap[window.currentGameTarget] + '</phoneme><break time="0.5s"/><phoneme alphabet="ipa" ph="' +
+        ipaMap[window.currentGameTarget] + '">' + letterMap[window.currentGameTarget] + '</phoneme><break time="0.5s"/>' +
+        window.currentWord + '</prosody></speak>';
     try {
-        let res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
-            method:'POST', body:JSON.stringify({
+        var res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + key, {
+            method: 'POST',
+            body: JSON.stringify({
                 input: { ssml: ssml },
                 voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
                 audioConfig: { audioEncoding: 'MP3' }
             })
         });
-        let data = await res.json();
-        if(data.error) throw data.error;
-        
-        // 如果 Fetch 緊嗰陣佢撳咗掣，就放棄播放
+        var data = await res.json();
+        if (data.error) throw data.error;
         if (window.gameAudioToken !== token || !window.isGamePlaying) return;
-        
         window.gameAudio.src = 'data:audio/mp3;base64,' + data.audioContent;
         window.gameAudio.play();
-    } catch(e) { 
-        console.error("Game Audio Error", e); 
-        document.getElementById('game-msg').innerText = "❌ 語音系統錯誤";
-    }
-};
-
-window.checkAnswer = function(choice) {
-    if(!window.isGamePlaying || window.isGameProcessing) return;
-    
-    // 一撳即刻打斷上一把聲
-    if(window.stopAllAudio) window.stopAllAudio();
-    
-    const btn = document.getElementById(`btn-${choice}`);
-    const ipaSymbolMap = { 'A': '/æ/', 'E': '/ɛ/', 'I': '/ɪ/' };
-    const letterMap = { 'A': 'a', 'E': 'e', 'I': 'i' };
-    
-    if (choice === window.currentGameTarget) {
-        window.isGameProcessing = true; 
-        
-        if(typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
-        
-        const correctPhrases = ["啱喇！", "無錯！", "正確！", "對喇！", "搵到喇！"];
-        const randomPhrase = correctPhrases[Math.floor(Math.random() * correctPhrases.length)];
-        
-        document.getElementById('game-emoji-display').innerText = window.currentEmoji;
-        document.getElementById('game-msg').innerText = `✨ ${randomPhrase}${window.currentWord} 係 ${ipaSymbolMap[choice]} 音！`;
-        document.getElementById('game-msg').style.color = "#06d6a0";
-        
-        // 播完讚賞之後，自動出下一題
-        window.playGameMessage(randomPhrase, () => {
-            window.isGameProcessing = false;
-            window.nextGameQuestion();
-        });
-        
-    } else {
-        btn.classList.add('shake-anim');
-        setTimeout(() => btn.classList.remove('shake-anim'), 400);
-        
-        let clickedWord = window.currentChoices[choice].w;
-        document.getElementById('game-msg').innerText = `❌ 呢個係 ${clickedWord} (${ipaSymbolMap[choice]}) 喎，聽真啲！`;
-        document.getElementById('game-msg').style.color = "#e63946";
-        
-        let txt = `呢個係 ${clickedWord}，係 ${letterMap[choice]} 嘅音。聽多次啦！`;
-        
-        // 播完即時糾正之後，先重新播英文
-        window.playGameMessage(txt, () => {
-            if(window.isGamePlaying && !window.isGameProcessing) {
-                setTimeout(() => {
-                    if(window.isGamePlaying && !window.isGameProcessing) window.playGameSound();
-                }, 400);
-            }
-        });
+    } catch (e) {
+        console.error('Game Audio Error', e);
     }
 };

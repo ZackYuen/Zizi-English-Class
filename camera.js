@@ -52,7 +52,7 @@ window.openCamera = async function() {
         }
 
         if (window.playCantoneseTTS) {
-            window.playCantoneseTTS("魔鏡開咗喇！搵下有咩得意嘢，影低佢啦！");
+            window.playCantoneseTTS("魔鏡開咗喇！影一樣嘢，之後同佢玩捉迷藏！");
         }
     } catch (err) {
         console.error("相機權限錯誤:", err);
@@ -485,13 +485,11 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
 
                 setTimeout(() => {
                     window.closeCamera();
-
-                    const appEl = getEl('app');
-                    if (appEl) appEl.style.display = 'block';
-                    const topBar = getEl('standard-top-bar');
-                    if (topBar) topBar.style.display = 'flex';
-
-                    if (window.processWord) {
+                    if (window.startHideSeek) {
+                        window.startHideSeek({ word: finalWord, photo: window.lastCapturedImg });
+                    } else if (window.processWord) {
+                        const appEl = getEl('app');
+                        if (appEl) appEl.style.display = 'block';
                         window.processWord(finalWord, window.lastCapturedImg);
                     }
                 }, 500);

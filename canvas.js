@@ -66,6 +66,9 @@ window.resetCanvas = function() {
     const wrapper = document.getElementById('canvas-wrapper');
     if(wrapper) wrapper.style.transform = "scale(1) rotate(0deg)";
     updateMsg();
+    if (window.Arcade && window.Arcade.startRace && window.currentMode === 'standard') {
+        window.Arcade.startRace();
+    }
 };
 
 window.initWaypoints = function() {
@@ -278,11 +281,13 @@ if(cvs) {
             doneStrokes.push(curStroke); curStroke=[]; strokeIdx++; 
 
             initWaypoints(); 
+            if (window.Arcade && window.Arcade.onStrokeDone) window.Arcade.onStrokeDone();
 
             if(strokeIdx >= D[idx].st.length) { 
                 isDrawing=false;
                 cvs.releasePointerCapture(e.pointerId);
                 currentPercent = 100; updateMsg(); 
+                if (window.Arcade && window.Arcade.onStrokeDone) window.Arcade.onStrokeDone();
                 
                 setTimeout(()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playSnd(f,'triangle',0.3),i*100)); }, 200); 
                 
