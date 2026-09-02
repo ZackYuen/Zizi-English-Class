@@ -8,6 +8,7 @@ window.PuzzleGame = {
     phase: 'play',
     STARS: 5,
     got: 0,
+    found: [],
     words: [],
     item: null,
     next: 0
@@ -171,6 +172,7 @@ function pzTapLetter(ch, btn) {
     pzPaintReveal();
     if (g.next >= g.item.w.length) {
         g.got += 1;
+        g.found.push(g.item);
         Curriculum.hitFx(pzEl('puzzle-overlay'), null, g.got);
         Curriculum.award(0, {
             word: g.item.w,
@@ -209,7 +211,7 @@ function pzFinish() {
     if (title) title.textContent = '揭開晒！';
     if (sub) sub.textContent = '砌咗 ' + g.got + ' 個字 · +1⭐';
     if (list) {
-        list.innerHTML = g.words.slice(0, g.got).map(function (w) {
+        list.innerHTML = (g.found.length ? g.found : g.words.slice(0, g.got)).map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再砌多啲字！</li>';
     }
@@ -236,6 +238,7 @@ window.startWordPuzzle = function () {
     var g = window.PuzzleGame;
     g.active = true;
     g.got = 0;
+    g.found = [];
     g.words = Curriculum.pickLesson(g.STARS);
     g.item = null;
     Curriculum.bootFx();
