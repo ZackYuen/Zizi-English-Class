@@ -2400,6 +2400,11 @@ p.stage-ask {
   width: 100%;
   height: 100%;
   touch-action: none;
+  animation: pz-jiggle 2.2s ease-in-out infinite;
+}
+@keyframes pz-jiggle {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
 }
 .pz-piece canvas {
   display: block;
@@ -2510,6 +2515,11 @@ p.stage-ask {
   align-items: flex-end;
   justify-content: center;
   overflow: hidden;
+  animation: hunt-wobble 1.8s ease-in-out infinite;
+}
+@keyframes hunt-wobble {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 .hunt-prop {
   position: absolute;
@@ -2591,8 +2601,8 @@ p.stage-ask {
   box-shadow: 0 0 12px #fff176;
 }
 @keyframes shoot-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-14px) rotate(4deg); }
 }
 
 .arena-overlay.is-urgent .stage-stats,
