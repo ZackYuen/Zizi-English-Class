@@ -370,6 +370,80 @@ function albumCardHtml(item) {
         '</button>';
 }
 
+function albumPartsHtml(parts) {
+    if (!parts || !parts.length) return '';
+    var html = '<div class="etym-parts">';
+    for (var i = 0; i < parts.length; i++) {
+        if (i > 0) html += '<span class="etym-plus" aria-hidden="true">+</span>';
+        html += '<span class="etym-part">' +
+            '<b>' + albumEscape(parts[i].en) + '</b>' +
+            '<small>' + albumEscape(parts[i].yue || '') + '</small>' +
+            '</span>';
+    }
+    html += '</div>';
+    return html;
+}
+
+window.albumDetailHtml = function (word, item) {
+    var info = (window.ZiziTeach && window.ZiziTeach.info)
+        ? window.ZiziTeach.info(word)
+        : null;
+    var emoji = (item && item.emoji) || (info && info.emoji) || '⭐';
+    var yue = info ? info.yue : '';
+    var loan = info ? (info.loan || info.nick || '') : '';
+    var parts = info && info.parts ? info.parts : [];
+    var from = info ? info.from : '';
+    var story = info ? info.story : '';
+    var also = info && info.also ? info.also : null;
+    var yueLine = '';
+    if (loan && yue && yue !== loan) {
+        yueLine = albumEscape(yue);
+    } else if (yue && String(yue).toLowerCase() !== String(word || '').toLowerCase()) {
+        yueLine = albumEscape(yue);
+    }
+    var alsoHtml = '';
+    if (also && also.word) {
+        alsoHtml = '<p class="etym-also-label">又可以叫 ' + albumEscape(also.word) + '</p>' +
+            albumPartsHtml(also.parts);
+    }
+    return '<span class="album-detail-emoji">' + albumEscape(emoji) + '</span>' +
+        '<p class="album-detail-word" id="album-detail-word">' + albumEscape(word) + '</p>' +
+        (yueLine ? '<p class="album-detail-yue">' + yueLine + '</p>' : '') +
+        (loan ? '<p class="etym-nick">香港叫 <b>' + albumEscape(loan) + '</b></p>' : '') +
+        albumPartsHtml(parts) +
+        alsoHtml +
+        (from ? '<p class="etym-from">' + albumEscape(from) + '</p>' : '') +
+        (story ? '<p class="album-detail-story">' + albumEscape(story) + '</p>' : '');
+};
+
+function albumSpeakWord(word) {
+    var p = window.speakEnglish ? window.speakEnglish(word) : Promise.resolve();
+    Promise.resolve(p).then(function () {
+        if (window.ZiziTeach && window.ZiziTeach.speakStory) return window.ZiziTeach.speakStory(word);
+        if (window.playCantoneseTTS) return window.playCantoneseTTS('呢個係 ' + word);
+    }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+    });
+}
+
+window.openAlbumDetail = function (word, item) {
+    var panel = document.getElementById('album-detail');
+    var body = document.getElementById('album-detail-body');
+    if (!panel || !body || !word) return;
+    body.innerHTML = window.albumDetailHtml(word, item);
+    panel.hidden = false;
+    panel.classList.add('is-open');
+};
+
+window.closeAlbumDetail = function () {
+    var panel = document.getElementById('album-detail');
+    if (!panel) return;
+    panel.hidden = true;
+    panel.classList.remove('is-open');
+    var body = document.getElementById('album-detail-body');
+    if (body) body.innerHTML = '';
+};
+
 window.openWordAlbum = function () {
     const data = loadProgress();
     const modal = document.getElementById('album-overlay');
@@ -388,10 +462,10 @@ window.openWordAlbum = function () {
 
     if (model.total === 0) {
         if (empty) empty.style.display = 'block';
-        if (hint) hint.textContent = '撳張卡聽英文。字按 SATIPN 組同字母排好。';
+        if (hint) hint.textContent = '撳張卡睇點解咁寫，同聽英文。';
     } else {
         if (empty) empty.style.display = 'none';
-        if (hint) hint.textContent = '已經識咗 ' + model.total + ' 個字 · 撳卡聽英文';
+        if (hint) hint.textContent = '已經識咗 ' + model.total + ' 個字 · 撳卡睇拆字';
 
         var groupBtns = '';
         var letterBtns = '';
@@ -438,18 +512,14 @@ window.openWordAlbum = function () {
 
         scroll.innerHTML = html;
         scroll.scrollTop = 0;
-        scroll.onclick = async function (e) {
+        scroll.onclick = function (e) {
             var btn = e.target.closest('.album-card');
             if (!btn) return;
             var word = btn.getAttribute('data-word');
             if (!word) return;
             if (window.ZiziFX) window.ZiziFX.play('pop');
-            if (window.speakEnglish) await window.speakEnglish(word);
-            if (window.ZiziTeach && window.ZiziTeach.speakStory) {
-                await window.ZiziTeach.speakStory(word);
-            } else if (window.playCantoneseTTS) {
-                window.playCantoneseTTS('呢個係 ' + word);
-            }
+            window.openAlbumDetail(word, { word: word, emoji: (btn.querySelector('.album-emoji') || {}).textContent });
+            albumSpeakWord(word);
         };
     }
 
@@ -458,6 +528,7 @@ window.openWordAlbum = function () {
 };
 
 window.closeWordAlbum = function () {
+    if (window.closeAlbumDetail) window.closeAlbumDetail();
     const modal = document.getElementById('album-overlay');
     if (!modal) return;
     modal.style.display = 'none';
@@ -465,6 +536,15 @@ window.closeWordAlbum = function () {
     var scroll = document.getElementById('album-scroll');
     if (scroll) scroll.scrollTop = 0;
 };
+
+(function bindAlbumDetail() {
+    if (typeof document === 'undefined' || !document.addEventListener) return;
+    document.addEventListener('click', function (e) {
+        var panel = document.getElementById('album-detail');
+        if (!panel || panel.hidden || !panel.classList.contains('is-open')) return;
+        if (e.target === panel) window.closeAlbumDetail();
+    });
+})();
 
 window.addEventListener('load', function () {
     let data = ensureQuestDay(loadProgress());
