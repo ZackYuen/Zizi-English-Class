@@ -8,6 +8,7 @@ window.HuntGame = {
     phase: 'play',
     STARS: 5,
     got: 0,
+    found: [],
     target: null,
     queue: [],
     bushes: []
@@ -88,6 +89,7 @@ function huntTap(item, btn) {
     btn.classList.add('is-open');
     if (item.w === g.target.w) {
         g.got += 1;
+        g.found.push(g.target);
         Curriculum.hitFx(huntEl('hunt-overlay'), null, g.got);
         Curriculum.award(0, {
             word: item.w,
@@ -132,7 +134,7 @@ function huntFinish() {
     if (title) title.textContent = '搵到晒！';
     if (sub) sub.textContent = '揭開咗 ' + g.got + ' 個草叢 · +1⭐';
     if (list) {
-        list.innerHTML = g.queue.slice(0, g.got).map(function (w) {
+        list.innerHTML = (g.found.length ? g.found : g.queue.slice(0, g.got)).map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再揭開多啲草叢！</li>';
     }
@@ -159,6 +161,7 @@ window.startPictureHunt = function () {
     var g = window.HuntGame;
     g.active = true;
     g.got = 0;
+    g.found = [];
     g.queue = Curriculum.pickLesson(g.STARS);
     Curriculum.bootFx();
     huntShowOver(false);

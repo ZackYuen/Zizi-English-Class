@@ -11,6 +11,7 @@ window.RaceGame = {
     STARS: 5,
     got: 0,
     words: [],
+    found: [],
     target: null,
     cards: [],
     car: { x: 0.5 },
@@ -188,6 +189,7 @@ function raceHit(card) {
     if (card.item.w === word) {
         g.combo = (g.combo || 0) + 1;
         g.got += 1;
+        g.found.push(g.target);
         Curriculum.hitFx(raceEl('race-overlay'), null, g.combo);
         Curriculum.award(0, {
             word: word,
@@ -267,7 +269,7 @@ function raceFinish() {
     if (title) title.textContent = '撞齊晒！';
     if (sub) sub.textContent = '學咗 ' + g.got + ' 個字 · +1⭐';
     if (list) {
-        list.innerHTML = g.words.slice(0, g.got).map(function (w) {
+        list.innerHTML = (g.found.length ? g.found : g.words.slice(0, g.got)).map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再拖車撞多啲圖！</li>';
     }
@@ -301,6 +303,7 @@ window.startRaceGame = function () {
     g.active = true;
     g.phase = 'play';
     g.got = 0;
+    g.found = [];
     g.words = Curriculum.pickLesson(g.STARS + 2);
     g.target = null;
     g.car.x = 0.5;

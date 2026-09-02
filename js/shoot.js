@@ -10,6 +10,7 @@ window.ShootGame = {
     raf: 0,
     STARS: 5,
     got: 0,
+    found: [],
     target: null,
     queue: [],
     balloons: [],
@@ -145,6 +146,7 @@ function shootHit(b) {
     var word = g.target.w;
     if (b.item.w === word) {
         g.got += 1;
+        g.found.push(g.target);
         Curriculum.popBalloon(shEl('shoot-overlay'), null, g.got);
         Curriculum.award(0, {
             word: word,
@@ -219,7 +221,7 @@ function shootFinish() {
     if (title) title.textContent = '射爆晒！';
     if (sub) sub.textContent = '射中 ' + g.got + ' 個氣球 · +1⭐';
     if (list) {
-        list.innerHTML = g.queue.slice(0, g.got).map(function (w) {
+        list.innerHTML = (g.found.length ? g.found : g.queue.slice(0, g.got)).map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再射多啲氣球！</li>';
     }
@@ -249,6 +251,7 @@ window.startShootGame = function () {
     g.active = true;
     g.phase = 'play';
     g.got = 0;
+    g.found = [];
     g.queue = Curriculum.pickLesson(g.STARS + 2);
     g.target = null;
     g.pending = false;
