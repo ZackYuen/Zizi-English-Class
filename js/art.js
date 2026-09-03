@@ -102,6 +102,183 @@
         ctx.font = '800 ' + Math.round(fs) + 'px Fredoka, sans-serif';
         ctx.fillText(w, x, y);
     }
+    function inkRect(data, width, height, alphaMin) {
+        var stats = inkStats(data, width, height, alphaMin);
+        if (!stats) return null;
+        return { x: stats.x, y: stats.y, w: stats.w, h: stats.h };
+    }
+    function inkStats(data, width, height, alphaMin) {
+        var minA = alphaMin == null ? 40 : alphaMin;
+        var minX = width;
+        var minY = height;
+        var maxX = -1;
+        var maxY = -1;
+        var sx = 0;
+        var sy = 0;
+        var sw = 0;
+        for (var y = 0; y < height; y++) {
+            for (var x = 0; x < width; x++) {
+                var a = data[(y * width + x) * 4 + 3];
+                if (a < minA) continue;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+                sx += x * a;
+                sy += y * a;
+                sw += a;
+            }
+        }
+        if (maxX < minX || sw <= 0) return null;
+        return {
+            x: minX,
+            y: minY,
+            w: maxX - minX + 1,
+            h: maxY - minY + 1,
+            cx: sx / sw,
+            cy: sy / sw
+        };
+    }
+    function emojiNudge(m) {
+        if (!m) return { dx: 0, dy: 0 };
+        var left = m.actualBoundingBoxLeft || 0;
+        var right = m.actualBoundingBoxRight || 0;
+        var ascent = m.actualBoundingBoxAscent || 0;
+        var descent = m.actualBoundingBoxDescent || 0;
+        return {
+            dx: (left + right > 1) ? (left - right) / 2 : 0,
+            dy: (ascent + descent > 1) ? (ascent - descent) / 2 : 0
+        };
+    }
+    function hostEmojiShift(s) {
+        if (typeof navigator === 'undefined') return 0;
+        var ua = navigator.userAgent || '';
+        if (/iPhone|iPad|iPod/.test(ua)) return -s * 0.16;
+        if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return -s * 0.16;
+        return 0;
+    }
+    function fitSprite(srcW, srcH, box, cx, cy) {
+        var fit = box * 0.88;
+        var scale = Math.min(fit / Math.max(1, srcW), fit / Math.max(1, srcH));
+        var dw = srcW * scale;
+        var dh = srcH * scale;
+        var ox = cx == null ? srcW / 2 : cx;
+        var oy = cy == null ? srcH / 2 : cy;
+        return { dw: dw, dh: dh, dx: -(ox * scale), dy: -(oy * scale) };
+    }
+    var emojiBake = {};
+    function bakeEmoji(em) {
+        if (emojiBake[em]) return emojiBake[em];
+        if (typeof document === 'undefined' || !document.createElement) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var fontPx = 96;
+        var pad = 48;
+        var side = fontPx + pad * 2;
+        var off = document.createElement('canvas');
+        off.width = side;
+        off.height = side;
+        var o = off.getContext('2d', { willReadFrequently: true }) || off.getContext('2d');
+        if (!o) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        o.font = fontPx + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+        o.textAlign = 'center';
+        o.textBaseline = 'middle';
+        o.fillText(em, side / 2, side / 2);
+        var img;
+        try {
+            img = o.getImageData(0, 0, side, side);
+        } catch (err) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var stats = inkStats(img.data, side, side, 40);
+        if (!stats) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var sprite = document.createElement('canvas');
+        sprite.width = stats.w;
+        sprite.height = stats.h;
+        sprite.getContext('2d').drawImage(off, stats.x, stats.y, stats.w, stats.h, 0, 0, stats.w, stats.h);
+        emojiBake[em] = {
+            canvas: sprite,
+            w: stats.w,
+            h: stats.h,
+            cx: stats.cx - stats.x,
+            cy: stats.cy - stats.y
+        };
+        return emojiBake[em];
+    }
+    function cloneSprite(baked) {
+        var copy = document.createElement('canvas');
+        copy.width = baked.w;
+        copy.height = baked.h;
+        copy.className = 'zizi-pic-sprite';
+        copy.getContext('2d').drawImage(baked.canvas, 0, 0);
+        return copy;
+    }
+    function drawCenteredEmoji(ctx, em, s) {
+        var baked = bakeEmoji(em);
+        if (baked && !baked.fail) {
+            var place = fitSprite(baked.w, baked.h, s, baked.cx, baked.cy);
+            ctx.drawImage(baked.canvas, place.dx, place.dy, place.dw, place.dh);
+            return;
+        }
+        ctx.fillStyle = '#123b63';
+        ctx.font = Math.round(s * 0.72) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var n = emojiNudge(ctx.measureText(em));
+        var dx = n.dx || hostEmojiShift(s);
+        ctx.fillText(em, dx, n.dy);
+    }
+    function pictureEl(word, size) {
+        var wrap = document.createElement('div');
+        wrap.className = 'zizi-pic';
+        wrap.setAttribute('aria-hidden', 'true');
+        var px = size || 88;
+        wrap.style.width = px + 'px';
+        wrap.style.height = px + 'px';
+        var key = String(word || '').toLowerCase();
+        var dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+        function shapeCanvas(paint) {
+            var cvs = document.createElement('canvas');
+            cvs.width = Math.round(px * dpr);
+            cvs.height = Math.round(px * dpr);
+            cvs.style.width = '100%';
+            cvs.style.height = '100%';
+            var ctx = cvs.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            paint(ctx);
+            wrap.appendChild(cvs);
+            return wrap;
+        }
+        if (draw[key]) {
+            return shapeCanvas(function (ctx) {
+                draw[key](ctx, px / 2, px / 2, px * 0.78);
+            });
+        }
+        var em = emojiOf(key);
+        if (em) {
+            var baked = bakeEmoji(em);
+            if (baked && !baked.fail) {
+                wrap.appendChild(cloneSprite(baked));
+                return wrap;
+            }
+            var span = document.createElement('span');
+            span.className = 'zizi-emoji';
+            span.textContent = em;
+            wrap.appendChild(span);
+            return wrap;
+        }
+        return shapeCanvas(function (ctx) {
+            generic(ctx, px / 2, px / 2, px * 0.78, key, true);
+        });
+    }
 
     var draw = {
         ant: function (c, x, y, s) {
@@ -268,7 +445,20 @@
         },
         jog: function (c, x, y, s) { jogger(c, x, y, s); },
         run: function (c, x, y, s) { jogger(c, x, y, s); },
-        hop: function (c, x, y, s) { jogger(c, x, y, s); }
+        hop: function (c, x, y, s) { jogger(c, x, y, s); },
+        heart: function (c, x, y, s) {
+            c.fillStyle = '#e63946';
+            c.beginPath();
+            c.moveTo(x, y + s * 0.36);
+            c.bezierCurveTo(x - s * 0.5, y + s * 0.06, x - s * 0.4, y - s * 0.34, x, y - s * 0.1);
+            c.bezierCurveTo(x + s * 0.4, y - s * 0.34, x + s * 0.5, y + s * 0.06, x, y + s * 0.36);
+            c.closePath();
+            c.fill();
+            c.fillStyle = 'rgba(255,255,255,0.45)';
+            c.beginPath();
+            c.ellipse(x - s * 0.12, y - s * 0.06, s * 0.08, s * 0.05, -0.6, 0, Math.PI * 2);
+            c.fill();
+        }
     };
 
     window.ZiziArt = {
@@ -298,17 +488,22 @@
             } else {
                 var em = emojiOf(key);
                 if (em) {
-                    ctx.fillStyle = '#000';
-                    ctx.font = Math.round(s * 0.78) + 'px serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(em, 0, s * 0.04);
+                    drawCenteredEmoji(ctx, em, s);
                 } else {
                     generic(ctx, 0, 0, s, key, !skipLabel);
                 }
             }
             ctx.restore();
         },
+        usesShape: function (word) {
+            return !!draw[String(word || '').toLowerCase()];
+        },
+        pictureEl: pictureEl,
+        inkRect: inkRect,
+        inkStats: inkStats,
+        emojiNudge: emojiNudge,
+        hostEmojiShift: hostEmojiShift,
+        fitSprite: fitSprite,
         color: col
     };
 })();
