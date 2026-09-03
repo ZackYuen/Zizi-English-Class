@@ -11,7 +11,8 @@ window.PuzzleGame = {
     found: [],
     words: [],
     item: null,
-    next: 0
+    next: 0,
+    introSaid: false
 };
 
 function pzEl(id) { return document.getElementById(id); }
@@ -116,12 +117,9 @@ function pzStartWord() {
     g.talkId = (g.talkId || 0) + 1;
     var talkId = g.talkId;
     var word = g.item.w;
-    Curriculum.voiceCatch(
-        Curriculum.say('撳下面啲字母砌呢個字！').then(function () {
-            if (!g.active || g.talkId !== talkId || !g.item || g.item.w !== word) return;
-            return Curriculum.speakEn(word);
-        })
-    );
+    Curriculum.playPrompt(g, '撳下面啲字母砌呢個字！', word, function () {
+        return g.active && g.talkId === talkId && g.item && g.item.w === word;
+    });
 }
 
 function pzHintTapBelow() {
@@ -248,6 +246,7 @@ window.startWordPuzzle = function () {
     g.found = [];
     g.words = Curriculum.pickLesson(g.STARS);
     g.item = null;
+    g.introSaid = false;
     Curriculum.bootFx();
     pzShowOver(false);
     window.beginPuzzlePlay();
