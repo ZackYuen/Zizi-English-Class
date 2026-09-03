@@ -362,9 +362,10 @@ window.buildAlbumModel = function (wordsMap) {
 function albumCardHtml(item) {
     var yue = albumCaption(item);
     var count = Number(item.count) || 1;
-    return '<button type="button" class="album-card" data-word="' + albumEscape(item.word) + '">' +
-        '<span class="album-emoji">' + albumEscape(item.emoji || '⭐') + '</span>' +
-        '<span class="album-word">' + albumEscape(item.word) + '</span>' +
+    var word = item.word || '';
+    return '<button type="button" class="album-card" data-word="' + albumEscape(word) + '">' +
+        '<span class="album-emoji" data-art-word="' + albumEscape(word) + '"></span>' +
+        '<span class="album-word">' + albumEscape(word) + '</span>' +
         (yue ? '<span class="album-yue">' + albumEscape(yue) + '</span>' : '') +
         (count > 1 ? '<span class="album-count">×' + count + '</span>' : '') +
         '</button>';
@@ -388,7 +389,6 @@ window.albumDetailHtml = function (word, item) {
     var info = (window.ZiziTeach && window.ZiziTeach.info)
         ? window.ZiziTeach.info(word)
         : null;
-    var emoji = (item && item.emoji) || (info && info.emoji) || '⭐';
     var yue = info ? info.yue : '';
     var loan = info ? (info.loan || info.nick || '') : '';
     var parts = info && info.parts ? info.parts : [];
@@ -406,7 +406,7 @@ window.albumDetailHtml = function (word, item) {
         alsoHtml = '<p class="etym-also-label">又可以叫 ' + albumEscape(also.word) + '</p>' +
             albumPartsHtml(also.parts);
     }
-    return '<span class="album-detail-emoji">' + albumEscape(emoji) + '</span>' +
+    return '<span class="album-detail-emoji" data-art-word="' + albumEscape(word) + '"></span>' +
         '<p class="album-detail-word" id="album-detail-word">' + albumEscape(word) + '</p>' +
         (yueLine ? '<p class="album-detail-yue">' + yueLine + '</p>' : '') +
         (loan ? '<p class="etym-nick">香港叫 <b>' + albumEscape(loan) + '</b></p>' : '') +
@@ -415,6 +415,30 @@ window.albumDetailHtml = function (word, item) {
         (from ? '<p class="etym-from">' + albumEscape(from) + '</p>' : '') +
         (story ? '<p class="album-detail-story">' + albumEscape(story) + '</p>' : '');
 };
+
+function albumLiveEmoji(word, fallback) {
+    var key = String(word || '').toLowerCase();
+    var list = window.D || [];
+    for (var i = 0; i < list.length; i++) {
+        if (String(list[i].w || '').toLowerCase() === key) return list[i].emoji || fallback;
+    }
+    return fallback || '⭐';
+}
+
+function albumPaintArt(root) {
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('[data-art-word]'), function (el) {
+        var word = el.getAttribute('data-art-word');
+        if (!word) return;
+        el.innerHTML = '';
+        if (window.ZiziArt && window.ZiziArt.pictureEl) {
+            var size = el.classList.contains('album-detail-emoji') ? 92 : 56;
+            el.appendChild(window.ZiziArt.pictureEl(word, size));
+            return;
+        }
+        el.textContent = albumLiveEmoji(word, '⭐');
+    });
+}
 
 function albumSpeakWord(word) {
     var p = window.speakEnglish ? window.speakEnglish(word) : Promise.resolve();
@@ -431,6 +455,7 @@ window.openAlbumDetail = function (word, item) {
     var body = document.getElementById('album-detail-body');
     if (!panel || !body || !word) return;
     body.innerHTML = window.albumDetailHtml(word, item);
+    albumPaintArt(body);
     panel.hidden = false;
     panel.classList.add('is-open');
 };
@@ -511,6 +536,7 @@ window.openWordAlbum = function () {
         }
 
         scroll.innerHTML = html;
+        albumPaintArt(scroll);
         scroll.scrollTop = 0;
         scroll.onclick = function (e) {
             var btn = e.target.closest('.album-card');
@@ -518,7 +544,7 @@ window.openWordAlbum = function () {
             var word = btn.getAttribute('data-word');
             if (!word) return;
             if (window.ZiziFX) window.ZiziFX.play('pop');
-            window.openAlbumDetail(word, { word: word, emoji: (btn.querySelector('.album-emoji') || {}).textContent });
+            window.openAlbumDetail(word, { word: word });
             albumSpeakWord(word);
         };
     }

@@ -1466,7 +1466,19 @@ button:disabled {
   touch-action: manipulation;
 }
 .album-card:active { transform: scale(0.96); }
-.album-emoji { font-size: 48px; line-height: 1; }
+.album-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  font-size: 48px;
+  line-height: 1;
+}
+.album-emoji .zizi-pic {
+  width: 56px !important;
+  height: 56px !important;
+}
 .album-word {
   font-size: clamp(22px, 6.6vw, 30px);
   font-weight: 800;
@@ -1528,10 +1540,18 @@ button:disabled {
   box-sizing: border-box;
 }
 .album-detail-emoji {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 6px;
   font-size: 64px;
   line-height: 1;
-  margin: 0 0 6px;
+}
+.album-detail-emoji .zizi-pic {
+  width: 96px !important;
+  height: 96px !important;
 }
 .album-detail-word {
   margin: 0 0 4px;
