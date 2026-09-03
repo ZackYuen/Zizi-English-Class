@@ -16,7 +16,8 @@ window.HuntGame = {
     raf: 0,
     busy: false,
     bob: 0,
-    paintT: 0
+    paintT: 0,
+    introSaid: false
 };
 
 function huntEl(id) { return document.getElementById(id); }
@@ -276,11 +277,10 @@ function huntAsk() {
     var others = Curriculum.decoys(g.target, 2);
     g.items = Curriculum.shuffle([g.target].concat(others)).slice(0, 3);
     huntPaintScene();
-    Curriculum.voiceCatch(
-        Curriculum.say('邊幅圖係 ' + g.target.w + '？捉住佢！').then(function () {
-            if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
-        })
-    );
+    var word = g.target.w;
+    Curriculum.playPrompt(g, '三幅圖喺度飛，捉住你聽到嗰個！', word, function () {
+        return g.active && g.phase === 'play' && g.target && g.target.w === word;
+    });
 }
 
 function huntTap(item, btn) {
@@ -395,6 +395,7 @@ window.startPictureHunt = function () {
     g.got = 0;
     g.found = [];
     g.queue = Curriculum.pickLesson(g.STARS);
+    g.introSaid = false;
     Curriculum.bootFx();
     huntShowOver(false);
     window.beginHuntPlay();

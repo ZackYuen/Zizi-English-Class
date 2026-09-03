@@ -162,6 +162,25 @@ window.Curriculum = {
         }));
     },
 
+    /**
+     * How-to Cantonese once per game, then English. Later calls skip Cantonese.
+     * stillOn() — if it returns false after the how-to, skip English (stale round).
+     */
+    playPrompt: function (game, howTo, word, stillOn) {
+        var self = this;
+        if (!word) return Promise.resolve();
+        var first = !!(game && !game.introSaid);
+        if (game) game.introSaid = true;
+        function en() {
+            if (stillOn && !stillOn()) return;
+            return self.speakEn(word);
+        }
+        if (first && howTo) {
+            return this.voiceCatch(this.say(howTo).then(en));
+        }
+        return this.voiceCatch(Promise.resolve().then(en));
+    },
+
     /** Skip leftover lines when a newer voice cuts in. */
     voiceCatch: function (p) {
         if (!p || typeof p.catch !== 'function') return p;

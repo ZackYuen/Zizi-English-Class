@@ -23,7 +23,8 @@ window.RaceGame = {
     pending: false,
     holding: false,
     boost: 0,
-    streaks: []
+    streaks: [],
+    introSaid: false
 };
 
 function raceEl(id) { return document.getElementById(id); }
@@ -72,13 +73,15 @@ function raceSpawn() {
         return { item: item, lane: i, y: -0.22 };
     });
     raceHud();
-    if (g.phase === 'play' && g.target) {
-        Curriculum.voiceCatch(
-            Curriculum.say('撞 ' + g.target.w + '！').then(function () {
-                if (g.active && g.phase === 'play') return Curriculum.speakEn(g.target.w);
-            })
-        );
-    }
+}
+
+function raceAsk() {
+    var g = window.RaceGame;
+    if (g.phase !== 'play' || !g.target) return;
+    var word = g.target.w;
+    Curriculum.playPrompt(g, '拖住架紅車，按住就加速。開始！', word, function () {
+        return g.active && g.phase === 'play' && g.target && g.target.w === word;
+    });
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -271,6 +274,7 @@ function raceHit(card) {
                 return;
             }
             raceSpawn();
+            raceAsk();
         });
     } else {
         Curriculum.missFx(raceEl('race-play'), '碰！');
@@ -429,6 +433,7 @@ window.startRaceGame = function () {
     g.holding = false;
     g.boost = 0;
     g.streaks = [];
+    g.introSaid = false;
     Curriculum.bootFx();
     raceShowOver(false);
     raceHud();
@@ -442,7 +447,7 @@ window.startRaceGame = function () {
     });
     if (g.raf) cancelAnimationFrame(g.raf);
     g.raf = requestAnimationFrame(function () { raceLoop(performance.now()); });
-    Curriculum.say('拖住架紅車，按住就加速。開始！');
+    raceAsk();
 };
 
 window.replayRaceWord = function () {
