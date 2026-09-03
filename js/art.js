@@ -102,6 +102,97 @@
         ctx.font = '800 ' + Math.round(fs) + 'px Fredoka, sans-serif';
         ctx.fillText(w, x, y);
     }
+    function inkRect(data, width, height, alphaMin) {
+        var minA = alphaMin == null ? 24 : alphaMin;
+        var minX = width;
+        var minY = height;
+        var maxX = -1;
+        var maxY = -1;
+        for (var y = 0; y < height; y++) {
+            for (var x = 0; x < width; x++) {
+                if (data[(y * width + x) * 4 + 3] < minA) continue;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+        if (maxX < minX) return null;
+        return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+    }
+    function emojiNudge(m) {
+        if (!m) return { dx: 0, dy: 0 };
+        var left = m.actualBoundingBoxLeft || 0;
+        var right = m.actualBoundingBoxRight || 0;
+        var ascent = m.actualBoundingBoxAscent || 0;
+        var descent = m.actualBoundingBoxDescent || 0;
+        return {
+            dx: (left + right > 1) ? (left - right) / 2 : 0,
+            dy: (ascent + descent > 1) ? (ascent - descent) / 2 : 0
+        };
+    }
+    function fitSprite(srcW, srcH, box) {
+        var fit = box * 0.88;
+        var scale = Math.min(fit / Math.max(1, srcW), fit / Math.max(1, srcH));
+        var dw = srcW * scale;
+        var dh = srcH * scale;
+        return { dw: dw, dh: dh, dx: -dw / 2, dy: -dh / 2 };
+    }
+    var emojiBake = {};
+    function bakeEmoji(em) {
+        if (emojiBake[em]) return emojiBake[em];
+        if (typeof document === 'undefined' || !document.createElement) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var fontPx = 96;
+        var pad = 40;
+        var side = fontPx + pad * 2;
+        var off = document.createElement('canvas');
+        off.width = side;
+        off.height = side;
+        var o = off.getContext('2d');
+        if (!o) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        o.font = fontPx + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+        o.textAlign = 'center';
+        o.textBaseline = 'middle';
+        o.fillText(em, side / 2, side / 2);
+        var img;
+        try {
+            img = o.getImageData(0, 0, side, side);
+        } catch (err) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var box = inkRect(img.data, side, side, 24);
+        if (!box) {
+            emojiBake[em] = { fail: true };
+            return emojiBake[em];
+        }
+        var sprite = document.createElement('canvas');
+        sprite.width = box.w;
+        sprite.height = box.h;
+        sprite.getContext('2d').drawImage(off, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+        emojiBake[em] = { canvas: sprite, w: box.w, h: box.h };
+        return emojiBake[em];
+    }
+    function drawCenteredEmoji(ctx, em, s) {
+        var baked = bakeEmoji(em);
+        if (baked && !baked.fail) {
+            var place = fitSprite(baked.w, baked.h, s);
+            ctx.drawImage(baked.canvas, place.dx, place.dy, place.dw, place.dh);
+            return;
+        }
+        ctx.fillStyle = '#123b63';
+        ctx.font = Math.round(s * 0.72) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var n = emojiNudge(ctx.measureText(em));
+        ctx.fillText(em, n.dx, n.dy);
+    }
 
     var draw = {
         ant: function (c, x, y, s) {
@@ -268,7 +359,20 @@
         },
         jog: function (c, x, y, s) { jogger(c, x, y, s); },
         run: function (c, x, y, s) { jogger(c, x, y, s); },
-        hop: function (c, x, y, s) { jogger(c, x, y, s); }
+        hop: function (c, x, y, s) { jogger(c, x, y, s); },
+        heart: function (c, x, y, s) {
+            c.fillStyle = '#e63946';
+            c.beginPath();
+            c.moveTo(x, y + s * 0.36);
+            c.bezierCurveTo(x - s * 0.5, y + s * 0.06, x - s * 0.4, y - s * 0.34, x, y - s * 0.1);
+            c.bezierCurveTo(x + s * 0.4, y - s * 0.34, x + s * 0.5, y + s * 0.06, x, y + s * 0.36);
+            c.closePath();
+            c.fill();
+            c.fillStyle = 'rgba(255,255,255,0.45)';
+            c.beginPath();
+            c.ellipse(x - s * 0.12, y - s * 0.06, s * 0.08, s * 0.05, -0.6, 0, Math.PI * 2);
+            c.fill();
+        }
     };
 
     window.ZiziArt = {
@@ -298,17 +402,19 @@
             } else {
                 var em = emojiOf(key);
                 if (em) {
-                    ctx.fillStyle = '#000';
-                    ctx.font = Math.round(s * 0.78) + 'px serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(em, 0, s * 0.04);
+                    drawCenteredEmoji(ctx, em, s);
                 } else {
                     generic(ctx, 0, 0, s, key, !skipLabel);
                 }
             }
             ctx.restore();
         },
+        usesShape: function (word) {
+            return !!draw[String(word || '').toLowerCase()];
+        },
+        inkRect: inkRect,
+        emojiNudge: emojiNudge,
+        fitSprite: fitSprite,
         color: col
     };
 })();
