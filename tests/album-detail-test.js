@@ -44,6 +44,7 @@ eq('keeps story', html.indexOf('香港人叫巴士') !== -1, true);
 eq('shows Hong Kong loan', html.indexOf('香港叫') !== -1 && html.indexOf('巴士') !== -1, true);
 eq('shows parts', html.indexOf('etym-parts') !== -1, true);
 eq('shows the word', html.indexOf('bus') !== -1, true);
+eq('detail picture is filled from the word', html.indexOf('data-art-word="bus"') !== -1, true);
 
 var fs = require('fs');
 var page = fs.readFileSync(__dirname + '/../index.html', 'utf8');

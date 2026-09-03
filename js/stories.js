@@ -37,6 +37,7 @@ window.WORD_STORIES = {
     hit:   { yue: '打中', parts: [{ en: 'hit', yue: '打' }], from: '古北歐文', story: 'hit 意思係「碰到、打中」。字同動作一齊。' },
     hop:   { yue: '單腳跳', parts: [{ en: 'hop', yue: '跳' }], from: '古英文 hoppian', story: 'hoppian 就係跳。而家 hop 仲係跳，袋鼠都係 hop hop 跳。' },
     ink:   { yue: '墨水', parts: [{ en: 'ink', yue: '墨' }], from: '希臘文 enkauston', story: '希臘文 enkauston 意思係「燒入去」。以前用火熔蠟寫字，而家墨水仲叫 ink。' },
+    iron:  { yue: '熨斗', parts: [{ en: 'iron', yue: '熨斗' }], from: '古英文', story: 'iron 本來係一種硬金屬。燙衫嗰件用熱鐵將衫熨平，所以都叫 iron。' },
     ice:   { yue: '冰', parts: [{ en: 'ice', yue: '冰' }], from: '古英文 is', story: '香港人叫哎士，就係 ice。古英文 is 係凍到硬嗰層水。' },
     ill:   { yue: '病咗', parts: [{ en: 'ill', yue: '唔舒服' }], from: '古北歐文 illr', story: 'illr 意思係「壞、唔好」。人覺得壞咗、唔舒服，就叫 ill。' },
     insect:{ yue: '昆蟲', parts: [{ en: 'in', yue: '入／分開' }, { en: 'sect', yue: '切開' }], from: '拉丁文 insectum', story: '拉丁文 insectum 意思係「切成幾截」。因為蟲身體一截一截，好似被切開，所以叫 insect。' },
