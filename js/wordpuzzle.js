@@ -188,15 +188,14 @@ function pzTapLetter(ch, btn) {
         });
         pzHud();
         g.talkId = (g.talkId || 0) + 1;
-        Curriculum.voiceCatch(Curriculum.speakEn(g.item.w));
-        setTimeout(function () {
+        Curriculum.afterSpeakEn(g.item.w, 900).then(function () {
             if (!g.active) return;
             if (g.got >= g.STARS) {
                 pzFinish();
                 return;
             }
             pzStartWord();
-        }, 1200);
+        });
     }
 }
 

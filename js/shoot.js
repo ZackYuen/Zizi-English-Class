@@ -451,17 +451,29 @@ function shootClearWord() {
         reason: '射擊學到 ' + word
     });
     shootHud();
-    if (word) Curriculum.speakEn(word);
     g.busy = true;
-    setTimeout(function () {
-        g.busy = false;
-        if (!g.active) return;
-        if (g.got >= g.STARS) {
-            shootFinish();
-            return;
-        }
-        shootNewRound(true);
-    }, 650);
+    if (word) {
+        Curriculum.afterSpeakEn(word, 700).then(function () {
+            g.busy = false;
+            if (!g.active) return;
+            if (g.got >= g.STARS) {
+                shootFinish();
+                return;
+            }
+            shootNewRound(true);
+        });
+    } else {
+        g.busy = true;
+        setTimeout(function () {
+            g.busy = false;
+            if (!g.active) return;
+            if (g.got >= g.STARS) {
+                shootFinish();
+                return;
+            }
+            shootNewRound(true);
+        }, 650);
+    }
 }
 
 function shootHit(b) {
