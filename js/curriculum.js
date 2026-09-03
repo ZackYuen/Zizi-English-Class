@@ -293,6 +293,11 @@ window.Curriculum = {
 
     wordPic: function (word, cssPx) {
         var size = cssPx || 44;
+        if (window.ZiziArt && window.ZiziArt.pictureEl) {
+            var el = window.ZiziArt.pictureEl(word, size);
+            el.classList.add('stage-pic');
+            return el;
+        }
         var cvs = document.createElement('canvas');
         cvs.className = 'stage-pic';
         cvs.setAttribute('aria-hidden', 'true');

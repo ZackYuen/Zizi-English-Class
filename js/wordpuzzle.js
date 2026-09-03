@@ -36,25 +36,6 @@ function pzShowOver(on) {
     el.classList.toggle('is-open', on);
 }
 
-function pzPaintHidden(item, size) {
-    var c = document.createElement('canvas');
-    c.width = size;
-    c.height = size;
-    var ctx = c.getContext('2d');
-    var grd = ctx.createLinearGradient(0, 0, size, size);
-    grd.addColorStop(0, '#fff3b0');
-    grd.addColorStop(1, '#a2d2ff');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, size, size);
-    ctx.strokeStyle = '#123b63';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(6, 6, size - 12, size - 12);
-    if (window.ZiziArt) {
-        window.ZiziArt.drawWord(ctx, item.w, size / 2, size / 2, size * 0.78, performance.now() / 1000);
-    }
-    return c;
-}
-
 function pzStartWord() {
     var g = window.PuzzleGame;
     g.phase = 'play';
@@ -67,13 +48,17 @@ function pzStartWord() {
     reveal.innerHTML = '';
     spell.innerHTML = '';
     var size = 240;
-    var src = pzPaintHidden(g.item, size);
+    if (window.ZiziArt && window.ZiziArt.pictureEl) {
+        var pic = window.ZiziArt.pictureEl(g.item.w, size);
+        pic.classList.add('pz-pic');
+        reveal.appendChild(pic);
+    }
     var revealCvs = document.createElement('canvas');
     revealCvs.width = size;
     revealCvs.height = size;
     reveal.appendChild(revealCvs);
     g._revealCtx = revealCvs.getContext('2d');
-    g._revealSrc = src;
+    g._revealSrc = null;
 
     var letters = g.item.w.split('');
     var decoyPool = 'satipnckehrmdgoulfbjvwxyzq'.split('').filter(function (ch) {
@@ -139,18 +124,18 @@ function pzHintTapBelow() {
 function pzPaintReveal() {
     var g = window.PuzzleGame;
     var ctx = g._revealCtx;
-    var src = g._revealSrc;
-    if (!ctx || !src || !g.item) return;
-    var size = src.width;
+    if (!ctx || !g.item) return;
+    var size = ctx.canvas.width;
     ctx.clearRect(0, 0, size, size);
     var letters = g.item.w.split('').length;
     var show = letters ? g.next / letters : 0;
     var w = Math.round(size * show);
-    if (w > 0) ctx.drawImage(src, 0, 0, w, size, 0, 0, w, size);
     ctx.fillStyle = 'rgba(18,59,99,0.7)';
     ctx.fillRect(w, 0, size - w, size);
-    ctx.fillStyle = '#ffc93c';
-    ctx.fillRect(w - 4, 0, 8, size);
+    if (w < size) {
+        ctx.fillStyle = '#ffc93c';
+        ctx.fillRect(Math.max(0, w - 4), 0, 8, size);
+    }
 }
 
 function pzTapLetter(ch, btn) {

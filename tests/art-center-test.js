@@ -63,5 +63,24 @@ eq('ink top', box && box.y, 2);
 eq('ink width', box && box.w, 2);
 eq('ink height', box && box.h, 2);
 
+var rightHeavy = new Uint8ClampedArray(8 * 8 * 4);
+function setA(x, y, a) { rightHeavy[(y * 8 + x) * 4 + 3] = a; }
+for (var yy = 0; yy < 8; yy++) {
+    for (var xx = 0; xx < 8; xx++) setA(xx, yy, 30);
+    setA(6, yy, 255);
+    setA(7, yy, 255);
+}
+var stats = window.ZiziArt.inkStats(rightHeavy, 8, 8, 24);
+eq('right-heavy ink has a centroid', !!(stats && stats.cx > 4), true);
+var centered = window.ZiziArt.fitSprite(stats.w, stats.h, 100, stats.cx - stats.x, stats.cy - stats.y);
+var bboxOnly = window.ZiziArt.fitSprite(stats.w, stats.h, 100);
+eq('centroid shifts further left than bbox center', centered.dx < bboxOnly.dx, true);
+
+eq('pictureEl exists', typeof window.ZiziArt.pictureEl, 'function');
+var fs = require('fs');
+var puzzle = fs.readFileSync(__dirname + '/../js/wordpuzzle.js', 'utf8');
+eq('puzzle uses pictureEl for every word', puzzle.indexOf('pictureEl') !== -1, true);
+eq('puzzle no longer paints emoji onto the reveal bitmap', puzzle.indexOf('pzPaintHidden') === -1, true);
+
 if (fails) process.exit(1);
 console.log('all art center tests passed');
