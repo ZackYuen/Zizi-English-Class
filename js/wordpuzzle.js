@@ -16,6 +16,45 @@ window.PuzzleGame = {
 
 function pzEl(id) { return document.getElementById(id); }
 
+function pzSlotLayout(rowWidth, n) {
+    n = Math.max(1, n | 0);
+    var width = Math.max(120, rowWidth || 320);
+    var gap = n >= 9 ? 3 : n >= 7 ? 4 : n >= 6 ? 6 : 8;
+    var slot = Math.floor((width - gap * (n - 1)) / n);
+    slot = Math.max(26, Math.min(76, slot));
+    while (slot * n + gap * (n - 1) > width && gap > 2) {
+        gap -= 1;
+        slot = Math.max(26, Math.min(76, Math.floor((width - gap * (n - 1)) / n)));
+    }
+    if (slot * n + gap * (n - 1) > width) {
+        slot = Math.max(22, Math.floor((width - gap * (n - 1)) / n));
+    }
+    return {
+        gap: gap,
+        slot: slot,
+        font: Math.max(14, Math.round(slot * 0.56))
+    };
+}
+
+function pzFitSlotRow(row, n) {
+    if (!row) return null;
+    var width = row.clientWidth;
+    if (!width && row.parentElement) width = row.parentElement.clientWidth;
+    var layout = pzSlotLayout(width, n);
+    row.style.setProperty('--pz-n', String(n));
+    row.style.setProperty('--pz-gap', layout.gap + 'px');
+    row.style.setProperty('--pz-slot', layout.slot + 'px');
+    row.style.setProperty('--pz-fs', layout.font + 'px');
+    return layout;
+}
+
+function pzOnWinResize() {
+    var g = window.PuzzleGame;
+    if (!g.active || !g.item) return;
+    var row = document.querySelector('#puzzle-overlay .pz-slots-row');
+    if (row) pzFitSlotRow(row, g.item.w.length);
+}
+
 function pzHud() {
     var g = window.PuzzleGame;
     Curriculum.stars(pzEl('pz-stars'), g.got, g.STARS);
@@ -93,6 +132,10 @@ function pzStartWord() {
     });
     slots.addEventListener('click', pzHintTapBelow);
     spell.appendChild(slots);
+    pzFitSlotRow(slots, letters.length);
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(function () { pzFitSlotRow(slots, letters.length); });
+    }
 
     var arrow = document.createElement('div');
     arrow.className = 'pz-tap-arrow';
@@ -259,3 +302,10 @@ window.beginPuzzlePlay = function () {
 };
 
 window.startPuzzleGame = window.startWordPuzzle;
+
+window.PuzzleGame.slotLayout = pzSlotLayout;
+window.PuzzleGame.fitSlotRow = pzFitSlotRow;
+
+if (typeof window.addEventListener === 'function') {
+    window.addEventListener('resize', pzOnWinResize);
+}
