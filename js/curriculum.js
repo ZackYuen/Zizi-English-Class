@@ -140,7 +140,7 @@ window.Curriculum = {
 
     speakEn: function (word, opts) {
         opts = opts || {};
-        if (window.ZiziFX) window.ZiziFX.duckMusic(1.8);
+        if (window.ZiziFX) window.ZiziFX.duckMusic(3.2);
         if (window.speakEnglish) {
             return window.speakEnglish(word, {
                 rate: opts.rate != null ? opts.rate : 0.88,
@@ -148,6 +148,18 @@ window.Curriculum = {
             });
         }
         return Promise.resolve();
+    },
+
+    /** Speak English, then wait until both the word AND minMs have finished. */
+    afterSpeakEn: function (word, minMs) {
+        var started = Date.now();
+        var wait = Math.max(0, minMs || 0);
+        var self = this;
+        return this.voiceCatch(Promise.resolve(this.speakEn(word)).then(function () {
+            var left = wait - (Date.now() - started);
+            if (left <= 0) return;
+            return new Promise(function (resolve) { setTimeout(resolve, left); });
+        }));
     },
 
     /** Skip leftover lines when a newer voice cuts in. */
@@ -349,3 +361,7 @@ window.Curriculum = {
         return 1;
     }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = window.Curriculum;
+}

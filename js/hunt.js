@@ -325,15 +325,14 @@ function huntTap(item, btn) {
             reason: '捉住咗 ' + item.w
         });
         huntHud();
-        Curriculum.speakEn(item.w);
-        setTimeout(function () {
+        Curriculum.afterSpeakEn(item.w, 1300).then(function () {
             if (!g.active) return;
             if (g.got >= g.STARS) {
                 huntFinish();
                 return;
             }
             huntAsk();
-        }, 1300);
+        });
     } else {
         btn.classList.add('is-miss');
         Curriculum.boom();

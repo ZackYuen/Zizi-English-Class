@@ -263,8 +263,7 @@ function raceHit(card) {
             reason: '賽車學到 ' + word
         });
         raceHud();
-        Curriculum.speakEn(word);
-        setTimeout(function () {
+        Curriculum.afterSpeakEn(word, 700).then(function () {
             g.pending = false;
             if (!g.active) return;
             if (g.got >= g.STARS) {
@@ -272,7 +271,7 @@ function raceHit(card) {
                 return;
             }
             raceSpawn();
-        }, 500);
+        });
     } else {
         Curriculum.missFx(raceEl('race-play'), '碰！');
         Curriculum.speakEn(card.item.w);
