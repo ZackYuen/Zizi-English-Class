@@ -451,7 +451,7 @@ window.ZiziFX = {
 
     burst: function (host) {
         var wrap = host || document.body;
-        var colors = ['#ff6b6b', '#ffc93c', '#2ecc71', '#4dabf7', '#845ef7', '#ff8fab'];
+        var colors = ['#d97860', '#e9bd55', '#79aa82', '#6faebc', '#8b7e9e', '#d4a0ad'];
         for (var i = 0; i < 12; i++) {
             var p = document.createElement('span');
             p.className = 'z-fx-bit';

@@ -4,19 +4,26 @@
    ========================================== */
 
 :root {
-  --sky-top: #7fd4ff;
-  --sky-mid: #b8e9ff;
-  --sky-bottom: #e8f8ff;
-  --navy: #123b63;
-  --ink: #1a3a5c;
-  --sun: #ffc93c;
-  --coral: #ff5a5f;
-  --leaf: #2ecc71;
-  --ocean: #1bb8e8;
-  --orange: #ff8c42;
-  --cloud: rgba(255, 255, 255, 0.85);
-  --card: rgba(255, 255, 255, 0.92);
-  --shadow: 0 8px 0 rgba(18, 59, 99, 0.12);
+  --paper: #fbf4e5;
+  --paper-2: #efe1c5;
+  --sky-top: #a9d5df;
+  --sky-mid: #dceef1;
+  --sky-bottom: #f9f3e7;
+  --navy: #243e4a;
+  --ink: #243e4a;
+  --ink-soft: #526873;
+  --sun: #e9bd55;
+  --coral: #d97860;
+  --leaf: #79aa82;
+  --mint: #79aa82;
+  --ocean: #6faebc;
+  --sky: #a9d5df;
+  --sky-deep: #6faebc;
+  --orange: #d9a066;
+  --white: #fffdf7;
+  --cloud: rgba(255, 253, 247, 0.82);
+  --card: rgba(255, 253, 247, 0.94);
+  --shadow: 0 9px 0 rgba(77, 72, 57, 0.08), 0 18px 38px rgba(63, 70, 65, 0.09);
   --radius-lg: 22px;
   --font: "Fredoka", "Chalkboard SE", "Comic Sans MS", sans-serif;
 }

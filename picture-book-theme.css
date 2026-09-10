@@ -1,0 +1,349 @@
+/*
+ * Shared Japanese picture-book art direction (from ZiZiPrimaryPrep):
+ * warm textured paper, softly inked edges, watercolor colour and clear diagrams.
+ */
+:root {
+  --paper: #fbf4e5;
+  --paper-2: #efe1c5;
+  --ink: #243e4a;
+  --ink-soft: #526873;
+  --navy: #243e4a;
+  --sky: #a9d5df;
+  --sky-deep: #6faebc;
+  --sky-top: #a9d5df;
+  --sky-mid: #dceef1;
+  --sky-bottom: #f9f3e7;
+  --sun: #e9bd55;
+  --coral: #d97860;
+  --mint: #79aa82;
+  --leaf: #79aa82;
+  --ocean: #6faebc;
+  --orange: #d9a066;
+  --white: #fffdf7;
+  --cloud: rgba(255, 253, 247, 0.82);
+  --card: rgba(255, 253, 247, 0.94);
+  --shadow: 0 9px 0 rgba(77, 72, 57, 0.08), 0 18px 38px rgba(63, 70, 65, 0.09);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.82) 0 4%, transparent 24%),
+    radial-gradient(circle at 85% 3%, rgba(233, 189, 85, 0.2), transparent 25%),
+    radial-gradient(circle at 25% 90%, rgba(111, 174, 188, 0.16), transparent 30%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(71, 74, 64, 0.025) 0 0.7px, transparent 0.8px 5px),
+    linear-gradient(180deg, #dceef1 0%, #f9f3e7 42%, #efe2cb 100%);
+  color: var(--ink);
+}
+
+#home-menu {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.78) 0 5%, transparent 26%),
+    radial-gradient(circle at 88% 4%, rgba(233, 189, 85, 0.22), transparent 28%),
+    radial-gradient(circle at 22% 92%, rgba(111, 174, 188, 0.18), transparent 32%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(71, 74, 64, 0.03) 0 0.7px, transparent 0.8px 5px),
+    linear-gradient(180deg, #cfe6ea 0%, #f9f3e7 46%, #efe2cb 100%) !important;
+}
+
+.home-sky {
+  opacity: 0.7;
+  filter: saturate(0.68);
+}
+
+.cloud {
+  background: rgba(255, 253, 247, 0.72);
+  opacity: 0.78;
+}
+
+.home-balloon {
+  background: var(--coral);
+  box-shadow: inset -6px -4px 0 rgba(75, 69, 53, 0.1);
+}
+
+.zizi-mascot {
+  filter: saturate(0.78) sepia(0.08);
+}
+
+.zizi-face {
+  background: radial-gradient(circle at 35% 30%, #fff3c8, #e9bd55 58%, #d9a04a);
+  box-shadow: 0 7px 0 rgba(91, 79, 55, 0.1), 0 12px 24px rgba(52, 66, 66, 0.1);
+  border: 3px solid rgba(90, 82, 64, 0.14);
+}
+
+.zizi-cap {
+  background: var(--sky-deep);
+  box-shadow: 0 3px 0 rgba(75, 69, 53, 0.16);
+}
+
+#home-menu h1,
+#home-menu .home-tagline {
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 253, 247, 0.7);
+}
+
+.home-level,
+.home-quest,
+.home-progress .home-stat,
+.home-stat,
+.album-card,
+.album-detail,
+#album-detail,
+.arena-card,
+.arcade-hud,
+.zizi-coach,
+.settings-card,
+.secrets-status,
+.write-word-chip,
+.stage-ask,
+.stage-stars {
+  border-color: rgba(94, 83, 61, 0.16);
+  background-color: rgba(255, 253, 247, 0.94);
+  box-shadow: 0 6px 0 rgba(94, 83, 61, 0.08), 0 13px 28px rgba(50, 67, 67, 0.08);
+}
+
+.home-level,
+.home-quest,
+.home-stat,
+.album-card,
+.arena-card {
+  position: relative;
+  border: 2px solid rgba(94, 83, 61, 0.14);
+}
+
+.home-level::after,
+.home-quest::after,
+.home-stat::after,
+.album-card::after,
+.arena-card::after {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(114, 96, 64, 0.08);
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.home-level-badge {
+  background: var(--sun);
+  color: var(--ink);
+}
+
+.home-level-fill {
+  background: linear-gradient(90deg, var(--sky-deep), var(--mint));
+  filter: saturate(0.72);
+}
+
+.home-quest-meta {
+  color: var(--sky-deep);
+}
+
+.home-quest-item.is-done .home-quest-check {
+  background: var(--mint);
+}
+
+.home-stat-label {
+  color: var(--ink-soft);
+}
+
+.home-btn {
+  border: 2px solid rgba(75, 69, 53, 0.11);
+  box-shadow: 0 5px 0 rgba(78, 68, 49, 0.14);
+  color: #fffdf7;
+}
+
+.home-btn-standard { background: linear-gradient(135deg, #d97860, #c46852) !important; }
+.home-btn-puzzle { background: linear-gradient(135deg, #8b7e9e, #6f657e) !important; }
+.home-btn-match { background: linear-gradient(135deg, #6faebc, #5a97a4) !important; color: #fffdf7 !important; }
+.home-btn-game { background: linear-gradient(135deg, #d9a066, #c4894d) !important; }
+.home-btn-write { background: linear-gradient(135deg, #fffaf0, #ead8ad) !important; color: var(--ink) !important; }
+.home-btn-camera { background: linear-gradient(135deg, #a9d5df, #6faebc) !important; color: var(--ink) !important; }
+.home-btn-album { background: linear-gradient(135deg, #f5fbfa, #cee1dc) !important; color: var(--ink) !important; }
+
+.home-btn-write .home-btn-sub,
+.home-btn-camera .home-btn-sub,
+.home-btn-album .home-btn-sub {
+  opacity: 0.78;
+}
+
+.home-btn-speak,
+.home-btn-music,
+.pill-btn,
+.ghost-btn {
+  background: rgba(255, 253, 247, 0.9);
+  color: var(--ink);
+  border: 2px solid rgba(75, 69, 53, 0.11);
+  box-shadow: 0 5px 0 rgba(78, 68, 49, 0.14);
+}
+
+.home-btn-settings {
+  background: rgba(111, 174, 188, 0.22);
+  color: var(--ink);
+}
+
+.mode-back-btn,
+#back-to-home-btn {
+  background: var(--coral);
+  box-shadow: 0 3px 0 rgba(78, 68, 49, 0.18);
+}
+
+.btn,
+.hint-btn,
+.btn-hint,
+.play-win-btn,
+.arena-go,
+.arena-home,
+.settings-save,
+.settings-cancel,
+#capture-btn,
+#close-camera-btn,
+#confirm-crop-btn,
+#cancel-analyze-btn,
+#retake-btn,
+#clear-draw-btn,
+.btn-clear,
+.btn-magic,
+.pz-pop,
+.race-steer-btn {
+  border: 2px solid rgba(75, 69, 53, 0.11);
+  box-shadow: 0 5px 0 rgba(78, 68, 49, 0.14);
+}
+
+.btn-clear,
+#capture-btn,
+#clear-draw-btn,
+#cancel-analyze-btn { background: var(--coral); color: #fffdf7; }
+.btn-magic,
+.arena-go,
+.play-win-write,
+.settings-save,
+#confirm-crop-btn { background: var(--mint); color: #fffdf7; }
+.hint-btn,
+.btn-hint,
+.arena-home,
+.play-win-btn,
+.btn-next { background: var(--sun); color: var(--ink); }
+#retake-btn,
+#close-camera-btn { background: var(--sky-deep); color: #fffdf7; }
+
+.arena-overlay {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(233, 189, 85, 0.18), transparent 28%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(71, 74, 64, 0.03) 0 0.7px, transparent 0.8px 5px),
+    linear-gradient(180deg, #cfe6ea 0%, #f9f3e7 55%, #efe2cb 100%) !important;
+}
+
+#game-overlay,
+#match-overlay,
+#play-overlay {
+  background:
+    repeating-radial-gradient(circle at 30% 20%, rgba(71, 74, 64, 0.03) 0 0.7px, transparent 0.8px 5px),
+    linear-gradient(180deg, #dceef1 0%, #f9f3e7 100%) !important;
+}
+
+#album-overlay {
+  background: var(--paper-2);
+}
+
+.album-card-wrap {
+  background:
+    radial-gradient(ellipse 90% 40% at 50% -8%, rgba(233, 189, 85, 0.18) 0%, transparent 55%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(71, 74, 64, 0.025) 0 0.7px, transparent 0.8px 5px),
+    #fbf4e5;
+}
+
+.album-card-wrap h2,
+.album-hint,
+#play-title,
+#play-msg,
+.mode-header h2,
+#game-overlay h2 {
+  color: var(--ink);
+}
+
+.album-card,
+.album-detail-panel,
+#album-detail .album-detail-card,
+.album-detail {
+  background-color: rgba(255, 253, 247, 0.94);
+  border-color: rgba(94, 83, 61, 0.16);
+}
+
+.zizi-pic,
+.zizi-pic-sprite,
+.pz-reveal,
+.album-emoji,
+.album-detail-emoji {
+  filter: saturate(0.78) sepia(0.06) contrast(0.96);
+}
+
+.pz-reveal,
+.hunt-fly,
+.match-choice-btn,
+.hint-pic {
+  border: 4px solid #fffdf7;
+  box-shadow: 0 5px 0 rgba(86, 76, 56, 0.1), 0 10px 20px rgba(51, 67, 65, 0.09);
+}
+
+.pz-reveal {
+  background: linear-gradient(135deg, #fffaf0, #cee1dc);
+}
+
+.pz-letter-slot {
+  background: #e7f0e8;
+  border-color: rgba(88, 79, 60, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.pz-letter-slot.is-done {
+  color: #3f6b48;
+  background: #e4f0e2;
+  border-color: var(--mint);
+}
+
+.hunt-scene {
+  background:
+    radial-gradient(circle at 86% 10%, rgba(233, 189, 85, 0.55) 0 16px, transparent 52px),
+    radial-gradient(circle at 14% 16%, rgba(255, 253, 247, 0.9) 0 20px, transparent 22px),
+    linear-gradient(#a9d5df 0%, #dceef1 52%, #f4ead6 100%);
+  filter: saturate(0.78) sepia(0.06);
+}
+
+#shoot-overlay .shoot-field,
+.shoot-field {
+  background: linear-gradient(#a9d5df, #e7f1ea);
+  border-color: #fffdf7;
+}
+
+.stage-ask {
+  background: #fffaf0;
+  color: var(--ink);
+}
+
+.arcade-hud,
+.chip,
+.check-row,
+.shoot-energy-track {
+  border-color: rgba(81, 73, 57, 0.17);
+  background: #fffdf7;
+}
+
+#settings-modal .settings-panel,
+.settings-panel {
+  background: rgba(255, 253, 247, 0.96);
+  border: 2px solid rgba(94, 83, 61, 0.16);
+  box-shadow: 0 6px 0 rgba(94, 83, 61, 0.08), 0 13px 28px rgba(50, 67, 67, 0.08);
+}
+
+.secrets-status {
+  background: #e7f1ea;
+  color: var(--ink);
+}
+.secrets-status.is-ready { background: #dceee0; color: #3f6b48; }
+.secrets-status.is-empty { background: #fffaf0; color: #6c584c; }
+
+@media (prefers-reduced-motion: reduce) {
+  .zizi-mascot,
+  .home-balloon,
+  .cloud {
+    animation: none;
+  }
+}
