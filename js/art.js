@@ -460,43 +460,90 @@
             c.fill();
         },
         iron: function (c, x, y, s) {
-            c.strokeStyle = 'rgba(168,212,255,0.95)';
-            c.lineWidth = Math.max(2, s * 0.035);
+            // Clothes iron pressing a shirt. Never red — a red body + handle
+            // reads as a fire extinguisher (🧯), which is not 熨斗.
+            c.fillStyle = '#4dabf7';
+            c.beginPath();
+            c.moveTo(x - s * 0.36, y + s * 0.18);
+            c.lineTo(x - s * 0.08, y + s * 0.1);
+            c.lineTo(x + s * 0.14, y + s * 0.1);
+            c.lineTo(x + s * 0.44, y + s * 0.2);
+            c.lineTo(x + s * 0.38, y + s * 0.44);
+            c.lineTo(x - s * 0.32, y + s * 0.44);
+            c.closePath();
+            c.fill();
+            c.beginPath();
+            c.moveTo(x - s * 0.12, y + s * 0.12);
+            c.lineTo(x - s * 0.42, y - s * 0.02);
+            c.lineTo(x - s * 0.48, y + s * 0.14);
+            c.lineTo(x - s * 0.22, y + s * 0.22);
+            c.closePath();
+            c.fill();
+            c.beginPath();
+            c.moveTo(x + s * 0.1, y + s * 0.12);
+            c.lineTo(x + s * 0.4, y - s * 0.02);
+            c.lineTo(x + s * 0.48, y + s * 0.14);
+            c.lineTo(x + s * 0.26, y + s * 0.22);
+            c.closePath();
+            c.fill();
+            c.fillStyle = '#74c0fc';
+            c.beginPath();
+            c.moveTo(x - s * 0.04, y + s * 0.1);
+            c.lineTo(x + s * 0.04, y + s * 0.22);
+            c.lineTo(x + s * 0.12, y + s * 0.1);
+            c.closePath();
+            c.fill();
+
+            c.strokeStyle = 'rgba(186,230,253,0.95)';
+            c.lineWidth = Math.max(2, s * 0.04);
             c.lineCap = 'round';
-            [[-0.16, -0.4], [0.02, -0.48], [0.18, -0.4]].forEach(function (p) {
+            [[-0.5, -0.06], [-0.44, -0.18], [-0.32, -0.28]].forEach(function (p) {
                 c.beginPath();
                 c.moveTo(x + s * p[0], y + s * (p[1] + 0.08));
-                c.quadraticCurveTo(x + s * p[0] + s * 0.03, y + s * p[1], x + s * p[0], y + s * (p[1] - 0.08));
+                c.quadraticCurveTo(x + s * p[0] - s * 0.05, y + s * p[1], x + s * p[0], y + s * (p[1] - 0.08));
                 c.stroke();
             });
-            c.strokeStyle = '#1d3557';
-            c.lineWidth = s * 0.09;
-            c.beginPath();
-            c.moveTo(x - s * 0.04, y - s * 0.04);
-            c.quadraticCurveTo(x + s * 0.08, y - s * 0.36, x + s * 0.26, y - s * 0.06);
-            c.stroke();
-            c.fillStyle = '#e63946';
-            c.beginPath();
-            c.moveTo(x - s * 0.44, y + s * 0.14);
-            c.lineTo(x + s * 0.36, y - s * 0.02);
-            c.lineTo(x + s * 0.4, y + s * 0.2);
-            c.lineTo(x - s * 0.2, y + s * 0.34);
-            c.closePath();
-            c.fill();
+
             c.fillStyle = '#cfd8dc';
             c.beginPath();
-            c.moveTo(x - s * 0.36, y + s * 0.16);
-            c.lineTo(x + s * 0.3, y + s * 0.04);
-            c.lineTo(x + s * 0.32, y + s * 0.16);
-            c.lineTo(x - s * 0.16, y + s * 0.26);
+            c.moveTo(x - s * 0.44, y + s * 0.1);
+            c.lineTo(x + s * 0.3, y - s * 0.02);
+            c.lineTo(x + s * 0.34, y + s * 0.16);
+            c.lineTo(x - s * 0.18, y + s * 0.24);
             c.closePath();
             c.fill();
-            c.fillStyle = '#9aa5ad';
+            c.fillStyle = '#90a4ae';
             c.beginPath();
-            c.arc(x + s * 0.08, y + s * 0.14, s * 0.035, 0, Math.PI * 2);
+            c.moveTo(x - s * 0.4, y + s * 0.12);
+            c.lineTo(x + s * 0.28, y + s * 0.02);
+            c.lineTo(x + s * 0.3, y + s * 0.12);
+            c.lineTo(x - s * 0.16, y + s * 0.2);
+            c.closePath();
+            c.fill();
+
+            c.fillStyle = '#4c6ef5';
+            c.beginPath();
+            c.moveTo(x - s * 0.18, y + s * 0.02);
+            c.lineTo(x + s * 0.22, y - s * 0.08);
+            c.lineTo(x + s * 0.26, y + s * 0.08);
+            c.lineTo(x - s * 0.04, y + s * 0.14);
+            c.closePath();
+            c.fill();
+
+            c.strokeStyle = '#1d3557';
+            c.lineWidth = s * 0.1;
+            c.lineCap = 'round';
+            c.beginPath();
+            c.moveTo(x - s * 0.02, y);
+            c.quadraticCurveTo(x + s * 0.1, y - s * 0.34, x + s * 0.22, y - s * 0.04);
+            c.stroke();
+
+            c.fillStyle = '#868e96';
+            c.beginPath();
+            c.arc(x + s * 0.06, y + s * 0.1, s * 0.03, 0, Math.PI * 2);
             c.fill();
             c.beginPath();
-            c.arc(x - s * 0.06, y + s * 0.18, s * 0.03, 0, Math.PI * 2);
+            c.arc(x - s * 0.08, y + s * 0.14, s * 0.028, 0, Math.PI * 2);
             c.fill();
         }
     };
