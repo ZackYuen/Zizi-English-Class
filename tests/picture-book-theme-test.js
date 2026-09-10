@@ -27,6 +27,8 @@ eq('home is not the old neon sky', theme.indexOf('#6ec9ff') === -1, true);
 eq('word art palette is muted coral', art.indexOf('#d97860') !== -1, true);
 eq('word art palette dropped neon orange', art.indexOf('#ff8c42') === -1, true);
 eq('word art ink is picture-book ink', art.indexOf('#243e4a') !== -1, true);
+var wf = fs.readFileSync(path.join(__dirname, '../.github/workflows/deploy-pages.yml'), 'utf8');
+eq('Pages deploy copies the theme stylesheet', wf.indexOf('picture-book-theme.css') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all picture-book theme tests passed');

@@ -75,7 +75,7 @@ jobs:
       - name: Prepare site folder
         run: |
           mkdir -p _site
-          cp index.html style.css README.md _site/
+          cp index.html style.css picture-book-theme.css README.md _site/
           cp -r js _site/js
           STAMP=$(date +%Y%m%d%H%M%S)
           sed -i "s/ZIZI_CACHE_BUST/${STAMP}/g" _site/index.html
