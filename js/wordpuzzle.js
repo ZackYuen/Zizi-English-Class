@@ -174,7 +174,7 @@ function pzPaintReveal() {
     ctx.fillStyle = 'rgba(18,59,99,0.7)';
     ctx.fillRect(w, 0, size - w, size);
     if (w < size) {
-        ctx.fillStyle = '#ffc93c';
+        ctx.fillStyle = '#e9bd55';
         ctx.fillRect(Math.max(0, w - 4), 0, 8, size);
     }
 }

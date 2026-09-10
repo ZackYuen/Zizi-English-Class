@@ -33,7 +33,7 @@ window.ShootGame = {
 function shEl(id) { return document.getElementById(id); }
 
 function shootColors() {
-    return ['#ff6b6b', '#4dabf7', '#845ef7', '#51cf66', '#ff922b', '#f06595', '#20c997', '#fcc419'];
+    return ['#d97860', '#6faebc', '#8b7e9e', '#79aa82', '#d9a066', '#c4898c', '#6f8f7a', '#e9bd55'];
 }
 
 function shootRadius() {
@@ -199,7 +199,7 @@ function shootDrawBurst(ctx, burst) {
         ctx.beginPath();
         ctx.ellipse(0, 0, bit.w, bit.h, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#123b63';
+        ctx.strokeStyle = '#243e4a';
         ctx.lineWidth = 1.2;
         ctx.stroke();
         ctx.restore();
@@ -272,7 +272,7 @@ function shootDrawFall(ctx, drop) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = '800 26px Fredoka, sans-serif';
-        ctx.fillStyle = '#123b63';
+        ctx.fillStyle = '#243e4a';
         ctx.fillText(drop.word, 0, 0);
     }
     ctx.restore();
@@ -352,8 +352,8 @@ function shootDraw() {
     var r = shootRadius();
 
     var sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#7ec8ff');
-    sky.addColorStop(1, '#d4f4ff');
+    sky.addColorStop(0, '#a9d5df');
+    sky.addColorStop(1, '#e7f1ea');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
@@ -389,7 +389,7 @@ function shootDraw() {
         ctx.beginPath();
         ctx.ellipse(-r * 0.32, -r * 0.38, r * 0.22, r * 0.3, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#123b63';
+        ctx.strokeStyle = '#243e4a';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, r * 1.22);
@@ -402,7 +402,7 @@ function shootDraw() {
             : 22;
         ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#123b63';
+        ctx.strokeStyle = '#243e4a';
         ctx.lineWidth = 5;
         ctx.strokeText(b.item.w, 0, 0);
         ctx.fillStyle = '#fff';

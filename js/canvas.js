@@ -242,7 +242,7 @@ window.loop = function() {
                             let isHl = (i === phase.hlIdx);
                             
                             ctx.font = `bold ${scaledBaseFSize}px Comic Sans MS`; 
-                            ctx.fillStyle = isHl ? '#e63946' : (isVowel ? '#f4a261' : '#1d3557');
+                            ctx.fillStyle = isHl ? '#d97860' : (isVowel ? '#d9a066' : '#243e4a');
                             ctx.fillText(pd.letter, startX + w/2, 120);
                             
                             ctx.font = `bold ${scaledIpaFSize}px Arial`; 

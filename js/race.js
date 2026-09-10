@@ -138,10 +138,10 @@ function drawCarTop(ctx, x, y, color, boost) {
     roundRect(ctx, -24, -42, 48, 84, 14);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#123b63';
+    ctx.fillStyle = '#243e4a';
     roundRect(ctx, -16, -24, 32, 20, 7);
     ctx.fill();
-    ctx.fillStyle = '#a8e4ff';
+    ctx.fillStyle = '#cfe6ea';
     roundRect(ctx, -12, -20, 24, 12, 4);
     ctx.fill();
     ctx.fillStyle = '#1f1f1f';
@@ -161,7 +161,7 @@ function raceDraw() {
     var W = g.W;
     var H = g.H;
 
-    ctx.fillStyle = '#8ed87a';
+    ctx.fillStyle = '#79aa82';
     ctx.fillRect(0, 0, W, H);
 
     ctx.fillStyle = '#4d4d4d';
@@ -212,18 +212,18 @@ function raceDraw() {
         ctx.save();
         ctx.translate(x, y);
         ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#123b63';
+        ctx.strokeStyle = '#243e4a';
         ctx.lineWidth = 4;
         roundRect(ctx, -w / 2, -h / 2, w, h, 18);
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = '#123b63';
+        ctx.fillStyle = '#243e4a';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (hasArt) {
             window.ZiziArt.drawWord(ctx, word, 0, -h * 0.22, Math.round(h * 0.4), g.bob, true);
             var fs = window.ZiziArt.fitWord(ctx, word, w * 0.88, h * 0.32);
-            ctx.fillStyle = '#123b63';
+            ctx.fillStyle = '#243e4a';
             ctx.font = '800 ' + fs + 'px Fredoka, sans-serif';
             ctx.fillText(word, 0, h * 0.28);
         } else {
@@ -238,11 +238,11 @@ function raceDraw() {
 
     var cy = H * 0.82;
     var shake = g.boost > 0.25 ? (Math.random() - 0.5) * g.boost * 8 : 0;
-    drawCarTop(ctx, g.car.x * W + shake, cy + Math.sin(g.bob) * 3, '#e63946', g.boost);
+    drawCarTop(ctx, g.car.x * W + shake, cy + Math.sin(g.bob) * 3, '#d97860', g.boost);
     ctx.fillStyle = g.holding ? '#ff9f1c' : 'rgba(255,255,255,0.92)';
     ctx.font = g.holding ? '800 28px Fredoka, sans-serif' : '800 18px Fredoka, sans-serif';
     ctx.textAlign = 'center';
-    ctx.strokeStyle = g.holding ? '#123b63' : 'transparent';
+    ctx.strokeStyle = g.holding ? '#243e4a' : 'transparent';
     ctx.lineWidth = g.holding ? 5 : 0;
     var label = g.holding ? '🔥 加速！！' : '拖住架紅車 · 按住加速';
     if (g.holding) ctx.strokeText(label, W / 2, 34);

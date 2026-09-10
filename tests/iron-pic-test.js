@@ -53,7 +53,7 @@ var ironFn = artSrc.slice(artSrc.indexOf('iron: function'), artSrc.indexOf('wind
 eq('iron drawing is in art.js', ironFn.indexOf('iron: function') === 0, true);
 eq('iron drawing mentions a shirt', ironFn.indexOf('shirt') !== -1, true);
 eq('iron drawing is not the red extinguisher body', ironFn.indexOf('#e63946') === -1, true);
-eq('iron drawing uses a blue shirt', ironFn.indexOf('#4dabf7') !== -1, true);
+eq('iron drawing uses a blue shirt', ironFn.indexOf('#6faebc') !== -1, true);
 
 var saved = window.getProgress();
 eq('album forgets a stored 🧯 for iron', saved.words.iron.emoji !== '🧯', true);
@@ -68,8 +68,8 @@ eq('detail popup does not embed 🧯', html.indexOf('🧯') === -1, true);
 eq('detail popup paints live art for iron', html.indexOf('data-art-word="iron"') !== -1, true);
 
 var page = fs.readFileSync(__dirname + '/../index.html', 'utf8');
-eq('iron art is cache-busted', page.indexOf('js/art.js?v=20260910-iron3') !== -1, true);
-eq('iron progress is cache-busted', page.indexOf('js/progress.js?v=20260910-iron3') !== -1, true);
+eq('iron art is cache-busted', page.indexOf('js/art.js?v=20260910-ehon') !== -1, true);
+eq('iron progress is cache-busted', page.indexOf('js/progress.js?v=20260910-ehon') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all iron clothes picture tests passed');

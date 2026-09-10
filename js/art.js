@@ -10,11 +10,11 @@
         return h;
     }
     function col(i) {
-        var cs = ['#ff8c42', '#2ecc71', '#4dabf7', '#9b5de5', '#ff6b6b', '#f4a261', '#e76f51', '#2a9d8f'];
+        var cs = ['#d9a066', '#79aa82', '#6faebc', '#8b7e9e', '#d97860', '#e9bd55', '#c4894d', '#6f8f7a'];
         return cs[i % cs.length];
     }
     function text(ctx, word, x, y, size) {
-        ctx.fillStyle = '#123b63';
+        ctx.fillStyle = '#243e4a';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = '800 ' + size + 'px Fredoka, sans-serif';
@@ -25,7 +25,7 @@
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#1d3557';
+        ctx.fillStyle = '#243e4a';
         ctx.beginPath();
         ctx.arc(x + r * 0.2, y, r * 0.45, 0, Math.PI * 2);
         ctx.fill();
@@ -50,14 +50,14 @@
         limb(c, x - s * 0.2, y + s * 0.28, x - s * 0.3, y + s * 0.4, s * 0.08, '#3d5a80');
         limb(c, x + s * 0.02, y + s * 0.06, x + s * 0.18, y + s * 0.22, s * 0.08, '#3d5a80');
         limb(c, x + s * 0.18, y + s * 0.22, x + s * 0.34, y + s * 0.16, s * 0.08, '#3d5a80');
-        c.fillStyle = '#e63946';
+        c.fillStyle = '#d97860';
         c.beginPath();
         c.ellipse(x - s * 0.32, y + s * 0.42, s * 0.09, s * 0.045, 0, 0, Math.PI * 2);
         c.fill();
         c.beginPath();
         c.ellipse(x + s * 0.38, y + s * 0.16, s * 0.09, s * 0.045, 0.25, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = '#4dabf7';
+        c.fillStyle = '#6faebc';
         c.beginPath();
         c.ellipse(x, y - s * 0.02, s * 0.15, s * 0.2, -0.25, 0, Math.PI * 2);
         c.fill();
@@ -90,7 +90,7 @@
         ctx.beginPath();
         ctx.arc(x, y, s * 0.48, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#123b63';
+        ctx.strokeStyle = '#243e4a';
         ctx.lineWidth = Math.max(3, s * 0.05);
         ctx.stroke();
         if (withText === false) return;
@@ -228,7 +228,7 @@
             ctx.drawImage(baked.canvas, place.dx, place.dy, place.dw, place.dh);
             return;
         }
-        ctx.fillStyle = '#123b63';
+        ctx.fillStyle = '#243e4a';
         ctx.font = Math.round(s * 0.72) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -289,13 +289,13 @@
             eye(c, x + s * 0.34, y - s * 0.05, s * 0.06);
         },
         apple: function (c, x, y, s) {
-            c.fillStyle = '#e63946';
+            c.fillStyle = '#d97860';
             c.beginPath(); c.arc(x, y + s * 0.06, s * 0.34, 0, Math.PI * 2); c.fill();
-            c.fillStyle = '#2ecc71';
+            c.fillStyle = '#79aa82';
             c.beginPath(); c.ellipse(x + s * 0.12, y - s * 0.3, s * 0.16, s * 0.07, 0.6, 0, Math.PI * 2); c.fill();
         },
         car: function (c, x, y, s) {
-            c.fillStyle = '#e63946';
+            c.fillStyle = '#d97860';
             c.fillRect(x - s * 0.4, y - s * 0.12, s * 0.8, s * 0.24);
             c.fillRect(x - s * 0.2, y - s * 0.28, s * 0.42, s * 0.2);
             c.fillStyle = '#1f1f1f';
@@ -355,7 +355,7 @@
             eye(c, x + s * 0.12, y - s * 0.12, s * 0.08);
         },
         sun: function (c, x, y, s) {
-            c.fillStyle = '#ffc93c';
+            c.fillStyle = '#e9bd55';
             for (var i = 0; i < 8; i++) {
                 var a = (i / 8) * Math.PI * 2;
                 c.beginPath();
@@ -389,7 +389,7 @@
             c.beginPath();
             c.ellipse(x - s * 0.12, y - s * 0.06, s * 0.16, s * 0.1, 0, 0, Math.PI * 2);
             c.fill();
-            var cols = ['#e63946', '#4dabf7', '#ffc93c', '#2ecc71', '#9b5de5', '#f4a261'];
+            var cols = ['#d97860', '#6faebc', '#e9bd55', '#79aa82', '#8b7e9e', '#d9a066'];
             var n = 0;
             for (var row = 0; row < 2; row++) {
                 for (var col = 0; col < 3; col++) {
@@ -400,19 +400,19 @@
         },
         bed: function (c, x, y, s) { draw.quilt(c, x, y, s); },
         rocket: function (c, x, y, s) {
-            c.fillStyle = '#e63946';
+            c.fillStyle = '#d97860';
             c.beginPath();
             c.moveTo(x, y - s * 0.5);
             c.quadraticCurveTo(x + s * 0.28, y, x + s * 0.18, y + s * 0.34);
             c.lineTo(x - s * 0.18, y + s * 0.34);
             c.quadraticCurveTo(x - s * 0.28, y, x, y - s * 0.5);
             c.fill();
-            c.fillStyle = '#a8e4ff';
+            c.fillStyle = '#cfe6ea';
             c.beginPath(); c.arc(x, y - s * 0.08, s * 0.1, 0, Math.PI * 2); c.fill();
-            c.fillStyle = '#4dabf7';
+            c.fillStyle = '#6faebc';
             c.beginPath(); c.moveTo(x - s * 0.16, y + s * 0.34); c.lineTo(x - s * 0.3, y + s * 0.5); c.lineTo(x - s * 0.1, y + s * 0.34); c.closePath(); c.fill();
             c.beginPath(); c.moveTo(x + s * 0.16, y + s * 0.34); c.lineTo(x + s * 0.3, y + s * 0.5); c.lineTo(x + s * 0.1, y + s * 0.34); c.closePath(); c.fill();
-            c.fillStyle = '#ffca3a';
+            c.fillStyle = '#e9bd55';
             c.beginPath();
             c.moveTo(x, y + s * 0.34);
             c.quadraticCurveTo(x + s * 0.08, y + s * 0.52, x, y + s * 0.62);
@@ -420,11 +420,11 @@
             c.fill();
         },
         balloon: function (c, x, y, s) {
-            c.fillStyle = '#ff6b6b';
+            c.fillStyle = '#d97860';
             c.beginPath(); c.ellipse(x, y - s * 0.08, s * 0.3, s * 0.38, 0, 0, Math.PI * 2); c.fill();
             c.fillStyle = 'rgba(255,255,255,0.5)';
             c.beginPath(); c.ellipse(x - s * 0.08, y - s * 0.22, s * 0.08, s * 0.14, 0, 0, Math.PI * 2); c.fill();
-            c.strokeStyle = '#123b63';
+            c.strokeStyle = '#243e4a';
             c.lineWidth = s * 0.03;
             c.beginPath();
             c.moveTo(x, y + s * 0.3);
@@ -432,7 +432,7 @@
             c.stroke();
         },
         star: function (c, x, y, s) {
-            c.fillStyle = '#ffc93c';
+            c.fillStyle = '#e9bd55';
             c.beginPath();
             for (var i = 0; i < 5; i++) {
                 var a = -Math.PI / 2 + (i / 5) * Math.PI * 4;
@@ -447,7 +447,7 @@
         run: function (c, x, y, s) { jogger(c, x, y, s); },
         hop: function (c, x, y, s) { jogger(c, x, y, s); },
         heart: function (c, x, y, s) {
-            c.fillStyle = '#e63946';
+            c.fillStyle = '#d97860';
             c.beginPath();
             c.moveTo(x, y + s * 0.36);
             c.bezierCurveTo(x - s * 0.5, y + s * 0.06, x - s * 0.4, y - s * 0.34, x, y - s * 0.1);
@@ -462,7 +462,7 @@
         iron: function (c, x, y, s) {
             // Clothes iron pressing a shirt. Never red — a red body + handle
             // reads as a fire extinguisher (🧯), which is not 熨斗.
-            c.fillStyle = '#4dabf7';
+            c.fillStyle = '#6faebc';
             c.beginPath();
             c.moveTo(x - s * 0.36, y + s * 0.18);
             c.lineTo(x - s * 0.08, y + s * 0.1);
@@ -486,7 +486,7 @@
             c.lineTo(x + s * 0.26, y + s * 0.22);
             c.closePath();
             c.fill();
-            c.fillStyle = '#74c0fc';
+            c.fillStyle = '#a9d5df';
             c.beginPath();
             c.moveTo(x - s * 0.04, y + s * 0.1);
             c.lineTo(x + s * 0.04, y + s * 0.22);
@@ -521,7 +521,7 @@
             c.closePath();
             c.fill();
 
-            c.fillStyle = '#4c6ef5';
+            c.fillStyle = '#5b7c8a';
             c.beginPath();
             c.moveTo(x - s * 0.18, y + s * 0.02);
             c.lineTo(x + s * 0.22, y - s * 0.08);
@@ -530,7 +530,7 @@
             c.closePath();
             c.fill();
 
-            c.strokeStyle = '#1d3557';
+            c.strokeStyle = '#243e4a';
             c.lineWidth = s * 0.1;
             c.lineCap = 'round';
             c.beginPath();
