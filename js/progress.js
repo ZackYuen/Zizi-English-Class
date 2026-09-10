@@ -16,7 +16,7 @@ function loadProgress() {
             };
         }
         const data = JSON.parse(raw);
-        return {
+        const next = {
             stars: Number(data.stars) || 0,
             words: data.words && typeof data.words === 'object' ? data.words : {},
             streakDays: Number(data.streakDays) || 0,
@@ -25,6 +25,8 @@ function loadProgress() {
             questDone: data.questDone && typeof data.questDone === 'object' ? data.questDone : {},
             todayStars: Number(data.todayStars) || 0
         };
+        if (syncStoredWordPics(next)) saveProgress(next);
+        return next;
     } catch (e) {
         return {
             stars: 0, words: {}, streakDays: 0, lastPlayDate: '',
@@ -225,7 +227,7 @@ window.awardStars = function (stars, meta) {
         isNewWord = !prev;
         data.words[key] = {
             word: key,
-            emoji: info.emoji || (prev && prev.emoji) || '⭐',
+            emoji: wordBankEmoji(key, info.emoji || (prev && prev.emoji) || '⭐'),
             letter: info.letter || (prev && prev.letter) || (key.charAt(0) || '').toUpperCase(),
             count: ((prev && prev.count) || 0) + 1,
             lastAt: Date.now()
@@ -416,13 +418,31 @@ window.albumDetailHtml = function (word, item) {
         (story ? '<p class="album-detail-story">' + albumEscape(story) + '</p>' : '');
 };
 
-function albumLiveEmoji(word, fallback) {
+function wordBankEmoji(word, fallback) {
     var key = String(word || '').toLowerCase();
     var list = window.D || [];
     for (var i = 0; i < list.length; i++) {
-        if (String(list[i].w || '').toLowerCase() === key) return list[i].emoji || fallback;
+        if (String(list[i].w || '').toLowerCase() === key) return list[i].emoji || fallback || '⭐';
     }
     return fallback || '⭐';
+}
+
+function syncStoredWordPics(data) {
+    if (!data || !data.words) return false;
+    var dirty = false;
+    Object.keys(data.words).forEach(function (key) {
+        var item = data.words[key];
+        if (!item) return;
+        var live = wordBankEmoji(item.word || key, '');
+        if (!live || item.emoji === live) return;
+        item.emoji = live;
+        dirty = true;
+    });
+    return dirty;
+}
+
+function albumLiveEmoji(word, fallback) {
+    return wordBankEmoji(word, fallback);
 }
 
 function albumPaintArt(root) {
