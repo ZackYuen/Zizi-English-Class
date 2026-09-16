@@ -243,9 +243,8 @@ function pzFinish() {
     if (title) title.textContent = '揭開晒！';
     if (sub) sub.textContent = '砌咗 ' + g.got + ' 個字 · +1⭐';
     if (list) {
-        list.innerHTML = (g.found.length ? g.found : g.words.slice(0, g.got)).map(function (w) {
-            return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
-        }).join('') || '<li>再砌多啲字！</li>';
+        list.innerHTML = Curriculum.listHtml(g.found.length ? g.found : g.words.slice(0, g.got)) || '<li>再砌多啲字！</li>';
+        Curriculum.paintArt(list);
     }
     Curriculum.voiceCatch(Curriculum.say('揭開晒！你砌字好快。'));
 }

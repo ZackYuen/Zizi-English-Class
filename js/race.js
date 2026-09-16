@@ -387,9 +387,8 @@ function raceFinish() {
     if (title) title.textContent = '撞齊晒！';
     if (sub) sub.textContent = '學咗 ' + g.got + ' 個字 · +1⭐';
     if (list) {
-        list.innerHTML = (g.found.length ? g.found : g.words.slice(0, g.got)).map(function (w) {
-            return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
-        }).join('') || '<li>再拖車撞多啲圖！</li>';
+        list.innerHTML = Curriculum.listHtml(g.found.length ? g.found : g.words.slice(0, g.got)) || '<li>再拖車撞多啲圖！</li>';
+        Curriculum.paintArt(list);
     }
     Curriculum.say('撞齊晒！你架車好快。');
 }

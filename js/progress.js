@@ -137,10 +137,10 @@ window.markQuest = function (key) {
 window.getDailyQuest = function () {
     const data = ensureQuestDay(loadProgress());
     const items = [
-        { key: 'listen', label: '玩一局賽車或射擊', emoji: '🎈', done: !!data.questDone.listen },
-        { key: 'match', label: '玩一局飛天搵字', emoji: '🦋', done: !!data.questDone.match },
-        { key: 'stars3', label: '今日攞 3 粒星', emoji: '⭐', done: (data.todayStars || 0) >= 3 || !!data.questDone.stars3 },
-        { key: 'newword', label: '學一個新單詞', emoji: '📚', done: !!data.questDone.newword }
+        { key: 'listen', label: '玩一局賽車或射擊', pic: 'balloon', done: !!data.questDone.listen },
+        { key: 'match', label: '玩一局飛天搵字', pic: 'butterfly', done: !!data.questDone.match },
+        { key: 'stars3', label: '今日攞 3 粒星', pic: 'star', done: (data.todayStars || 0) >= 3 || !!data.questDone.stars3 },
+        { key: 'newword', label: '學一個新單詞', pic: 'book', done: !!data.questDone.newword }
     ];
     const doneCount = items.filter(function (i) { return i.done; }).length;
     return { items: items, doneCount: doneCount, total: items.length, allDone: doneCount >= items.length };
@@ -196,11 +196,12 @@ window.refreshHomeProgress = function () {
             const li = document.createElement('li');
             li.className = 'home-quest-item' + (item.done ? ' is-done' : '');
             li.innerHTML =
-                '<span class="home-quest-emoji" aria-hidden="true">' + item.emoji + '</span>' +
+                '<span class="home-quest-emoji" data-art-word="' + item.pic + '" aria-hidden="true"></span>' +
                 '<span class="home-quest-label">' + item.label + '</span>' +
                 '<span class="home-quest-check" aria-hidden="true">' + (item.done ? '✓' : '') + '</span>';
             questList.appendChild(li);
         });
+        if (window.ZiziArt && window.ZiziArt.fillAll) window.ZiziArt.fillAll(questList);
     }
 };
 
@@ -446,16 +447,14 @@ function albumLiveEmoji(word, fallback) {
 }
 
 function albumPaintArt(root) {
+    if (window.ZiziArt && window.ZiziArt.fillAll) {
+        window.ZiziArt.fillAll(root);
+        return;
+    }
     if (!root) return;
     Array.prototype.forEach.call(root.querySelectorAll('[data-art-word]'), function (el) {
         var word = el.getAttribute('data-art-word');
         if (!word) return;
-        el.innerHTML = '';
-        if (window.ZiziArt && window.ZiziArt.pictureEl) {
-            var size = el.classList.contains('album-detail-emoji') ? 92 : 56;
-            el.appendChild(window.ZiziArt.pictureEl(word, size));
-            return;
-        }
         el.textContent = albumLiveEmoji(word, '⭐');
     });
 }

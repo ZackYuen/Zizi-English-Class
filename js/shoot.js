@@ -594,9 +594,8 @@ function shootFinish() {
     if (title) title.textContent = '能源充滿！';
     if (sub) sub.textContent = '每個字射中 ' + g.NEED + ' 個波波 · +1⭐';
     if (list) {
-        list.innerHTML = (g.found.length ? g.found : g.queue.slice(0, g.got)).map(function (w) {
-            return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
-        }).join('') || '<li>再射多啲氣球！</li>';
+        list.innerHTML = Curriculum.listHtml(g.found.length ? g.found : g.queue.slice(0, g.got)) || '<li>再射多啲氣球！</li>';
+        Curriculum.paintArt(list);
     }
     Curriculum.say('能源充滿！你射得好準。');
 }
