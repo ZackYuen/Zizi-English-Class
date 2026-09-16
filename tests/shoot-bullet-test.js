@@ -23,6 +23,7 @@ global.Curriculum = {
     speakEn: function () {},
     pop: function () {},
     missFx: function () {},
+    sparkFx: function () {},
     award: function () {},
     popBalloon: function () {},
     say: function () { return Promise.resolve(); }

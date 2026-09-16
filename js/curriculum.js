@@ -212,13 +212,39 @@ window.Curriculum = {
         else this.pop();
     },
 
+    answerLabel: function (pts, fallback) {
+        if (pts == null || pts === '') return fallback || '叻！';
+        if (typeof pts === 'number') return (pts > 0 ? '+' : '') + pts;
+        return String(pts);
+    },
+
     hitFx: function (host, pts, combo) {
+        var label = this.answerLabel(pts, '叻！');
         if (window.ZiziFX) {
             window.ZiziFX.play(combo >= 2 ? 'combo' : 'correct');
             window.ZiziFX.flash('rgba(46,204,113,.20)');
-            if (host && pts) window.ZiziFX.floatScore(host, '+' + pts, 'good');
-            if (combo >= 2) window.ZiziFX.burst(host);
+            if (host) {
+                window.ZiziFX.floatScore(host, label, 'good');
+                window.ZiziFX.burst(host);
+                if (window.ZiziFX.ring) window.ZiziFX.ring(host);
+            }
             window.ZiziFX.boomConfetti(combo >= 3 ? 90 : 55);
+        } else {
+            this.pop();
+        }
+    },
+
+    /** Mid-step correct: letter, energy drop, or one writing stroke. */
+    sparkFx: function (host, label) {
+        if (window.ZiziFX) {
+            window.ZiziFX.play('pop');
+            window.ZiziFX.flash('rgba(233,189,85,.20)');
+            if (host) {
+                window.ZiziFX.floatScore(host, label || '好！', 'good');
+                window.ZiziFX.burst(host);
+                if (window.ZiziFX.ring) window.ZiziFX.ring(host);
+                if (window.ZiziFX.pulse) window.ZiziFX.pulse(host);
+            }
         } else {
             this.pop();
         }
@@ -239,7 +265,7 @@ window.Curriculum = {
         if (window.ZiziFX) {
             window.ZiziFX.shake(host);
             window.ZiziFX.flash('rgba(255,80,80,.22)');
-            if (host) window.ZiziFX.floatScore(host, label || '-time', 'bad');
+            if (host) window.ZiziFX.floatScore(host, label || '再試', 'bad');
         }
     },
 

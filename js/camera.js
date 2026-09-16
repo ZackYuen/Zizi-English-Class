@@ -645,7 +645,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
             window.isAnalyzing = false;
             if (loadingMsg) loadingMsg.innerText = '✨ 搵到喇！係 ' + finalWord + '！';
             if (window.Curriculum && window.Curriculum.hitFx) {
-                window.Curriculum.hitFx(document.getElementById('camera-overlay'), null, 1);
+                window.Curriculum.hitFx(document.getElementById('camera-overlay'), '搵到！', 1);
             }
 
             setTimeout(function () {

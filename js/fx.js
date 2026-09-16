@@ -475,6 +475,23 @@ window.ZiziFX = {
         setTimeout(function () { el.classList.remove('z-fx-shake'); }, 420);
     },
 
+    pulse: function (el) {
+        if (!el) return;
+        el.classList.remove('z-fx-pulse');
+        void el.offsetWidth;
+        el.classList.add('z-fx-pulse');
+        setTimeout(function () { el.classList.remove('z-fx-pulse'); }, 480);
+    },
+
+    ring: function (host) {
+        var wrap = host || document.body;
+        if (!wrap || !wrap.appendChild) return;
+        var el = document.createElement('span');
+        el.className = 'z-fx-ring';
+        wrap.appendChild(el);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 560);
+    },
+
     boomConfetti: function (n) {
         if (typeof confetti !== 'function') return;
         confetti({ particleCount: n || 80, spread: 70, origin: { y: 0.58 } });

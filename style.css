@@ -2838,7 +2838,7 @@ canvas.stage-pic { display: block; }
   border-color: #2ecc71;
   box-shadow: 0 3px 0 rgba(46, 204, 113, 0.35);
   outline: none;
-  animation: none;
+  animation: z-fx-pulse 0.42s cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 .pz-tap-arrow {
   flex: 0 0 auto;
@@ -2902,8 +2902,10 @@ canvas.stage-pic { display: block; }
 .pz-pop.is-used {
   opacity: 0.28;
   pointer-events: none;
-  animation: none;
   box-shadow: 0 3px 0 #c9b8a0;
+}
+.pz-pop.is-hit {
+  animation: z-fx-pulse 0.42s cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 
 .hunt-scene {
@@ -3187,6 +3189,31 @@ canvas.stage-pic { display: block; }
   40% { transform: translateX(8px); }
   60% { transform: translateX(-5px); }
   80% { transform: translateX(5px); }
+}
+.z-fx-pulse {
+  animation: z-fx-pulse 0.42s cubic-bezier(0.2, 1.4, 0.3, 1);
+}
+@keyframes z-fx-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.z-fx-ring {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 4px solid rgba(233, 189, 85, 0.95);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 22;
+  animation: z-fx-ring-out 0.52s ease-out forwards;
+}
+@keyframes z-fx-ring-out {
+  0% { opacity: 1; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(6); }
 }
 .arena-overlay.is-urgent .stage-ask {
   box-shadow: 0 0 0 3px rgba(255, 90, 95, 0.45);

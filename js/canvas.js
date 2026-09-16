@@ -391,9 +391,20 @@ window.computeFollowScore = function () {
     return Math.round(sum / totalStrokes);
 };
 
+function writeFxHost() {
+    return document.getElementById('canvas-wrapper')
+        || document.getElementById('app')
+        || document.body;
+}
+
 function rejectDirtyStroke() {
-    if (window.ZiziFX) window.ZiziFX.play('wrong');
-    else if (window.playSnd) window.playSnd(200, 'sawtooth', 0.15);
+    if (window.Curriculum && window.Curriculum.missFx) {
+        window.Curriculum.missFx(writeFxHost(), '再畫');
+    } else if (window.ZiziFX) {
+        window.ZiziFX.play('wrong');
+    } else if (window.playSnd) {
+        window.playSnd(200, 'sawtooth', 0.15);
+    }
     if (curStroke && curStroke.length >= 4) {
         window.strokeAttempts = window.strokeAttempts || [];
         window.strokeAttempts.push(curStroke);
@@ -424,6 +435,11 @@ function finishLetterComplete(pointerId) {
     currentPercent = window.computeFollowScore();
 
     if (!allFollowed || currentPercent < passAt) {
+        if (window.Curriculum && window.Curriculum.missFx) {
+            window.Curriculum.missFx(writeFxHost(), '再畫');
+        } else if (window.ZiziFX) {
+            window.ZiziFX.play('wrong');
+        }
         var n = window.ZiziTeach ? window.ZiziTeach.bumpWrite() : 1;
         var msg = document.getElementById('msg');
         var hintLine = n >= 2
@@ -550,6 +566,10 @@ function commitCurrentStroke(pointerId, pos) {
     }
 
     playSnd(880, 'sine', 0.2);
+    var letterDone = typeof D !== 'undefined' && D[idx] && D[idx].st && (strokeIdx + 1 >= D[idx].st.length);
+    if (!letterDone && window.Curriculum && window.Curriculum.sparkFx) {
+        window.Curriculum.sparkFx(writeFxHost(), '跟到！');
+    }
     window.strokeReports = window.strokeReports || [];
     window.strokeReports.push(report);
     if (curStroke && curStroke.length >= 2) doneStrokes.push(curStroke);

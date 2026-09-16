@@ -184,12 +184,15 @@ function pzTapLetter(ch, btn) {
     if (!g.active || g.phase !== 'play' || !g.item) return;
     var need = g.item.w.split('')[g.next];
     if (ch !== need) {
-        Curriculum.missFx(btn, '聽聲');
+        Curriculum.missFx(pzEl('puzzle-overlay') || btn, '聽聲');
+        if (window.ZiziFX && window.ZiziFX.shake) window.ZiziFX.shake(btn);
         Curriculum.voiceCatch(Curriculum.speakEn(ch));
         return;
     }
-    Curriculum.pop();
+    Curriculum.sparkFx(pzEl('puzzle-overlay') || btn, need.toUpperCase());
+    if (window.ZiziFX && window.ZiziFX.pulse) window.ZiziFX.pulse(btn);
     btn.disabled = true;
+    btn.classList.add('is-hit');
     btn.classList.add('is-used');
     var slot = document.querySelector('.pz-letter-slot[data-i="' + g.next + '"]');
     if (slot) {
@@ -205,7 +208,7 @@ function pzTapLetter(ch, btn) {
     if (g.next >= g.item.w.length) {
         g.got += 1;
         g.found.push(g.item);
-        Curriculum.hitFx(pzEl('puzzle-overlay'), null, g.got);
+        Curriculum.hitFx(pzEl('puzzle-overlay'), '砌到！', g.got);
         Curriculum.award(0, {
             word: g.item.w,
             emoji: g.item.emoji,

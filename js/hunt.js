@@ -313,10 +313,9 @@ function huntTap(item, btn) {
         });
         g.got += 1;
         g.found.push(g.target);
-        Curriculum.hitFx(huntEl('hunt-overlay'), null, g.got);
+        Curriculum.hitFx(huntEl('hunt-overlay'), '捉住！', g.got);
         if (window.ZiziFX) {
             window.ZiziFX.play(g.got >= g.STARS ? 'fanfare' : 'star');
-            if (window.ZiziFX.burst) window.ZiziFX.burst(huntEl('hunt-play'));
         }
         Curriculum.award(0, {
             word: item.w,
@@ -335,7 +334,7 @@ function huntTap(item, btn) {
         });
     } else {
         btn.classList.add('is-miss');
-        Curriculum.boom();
+        Curriculum.missFx(huntEl('hunt-play') || btn, '唔係呢個');
         Curriculum.speakEn(item.w);
         setTimeout(function () {
             btn.classList.remove('is-miss');

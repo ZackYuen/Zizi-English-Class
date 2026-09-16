@@ -258,7 +258,7 @@ function raceHit(card) {
         g.combo = (g.combo || 0) + 1;
         g.got += 1;
         g.found.push(g.target);
-        Curriculum.hitFx(raceEl('race-overlay'), null, g.combo);
+        Curriculum.hitFx(raceEl('race-overlay'), '啱喇！', g.combo);
         Curriculum.award(0, {
             word: word,
             emoji: card.item.emoji,

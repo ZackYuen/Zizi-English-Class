@@ -34,6 +34,7 @@ global.window.Curriculum = {
     award: function () {},
     popBalloon: function () {},
     missFx: function () {},
+    sparkFx: function () {},
     bootFx: function () {},
     finishFx: function () {},
     pop: function () {}

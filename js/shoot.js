@@ -428,7 +428,9 @@ function shootDraw() {
 }
 
 function shootPopFx(label) {
-    if (window.ZiziFX) {
+    if (Curriculum.sparkFx) {
+        Curriculum.sparkFx(shEl('shoot-play'), label || '+💧');
+    } else if (window.ZiziFX) {
         window.ZiziFX.play('pop');
         window.ZiziFX.floatScore(shEl('shoot-play'), label || '+💧', 'good');
     } else if (Curriculum.pop) {
@@ -443,7 +445,7 @@ function shootClearWord() {
     var word = item && item.w;
     g.found.push(item);
     g.got += 1;
-    Curriculum.popBalloon(shEl('shoot-overlay'), null, g.got);
+    Curriculum.popBalloon(shEl('shoot-overlay'), '射中！', g.got);
     Curriculum.award(0, {
         word: word,
         emoji: item && item.emoji,
@@ -517,12 +519,7 @@ function shootExplodeShot(shot) {
         if (result === 'finish' || result === 'word') shootClearWord();
         return;
     }
-    if (window.ZiziFX) {
-        window.ZiziFX.play('wrong');
-        window.ZiziFX.floatScore(shEl('shoot-play'), '唔係呢個', 'bad');
-    } else {
-        Curriculum.missFx(shEl('shoot-play'), '碰！');
-    }
+    Curriculum.missFx(shEl('shoot-play'), '唔係呢個');
     if (b.item) Curriculum.speakEn(b.item.w);
     g.balloons.push(shootMakeBalloon(shootPickItem(), true));
 }
