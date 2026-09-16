@@ -29,7 +29,7 @@ eq('home icons exist', window.ZiziArt.usesShape('butterfly') && window.ZiziArt.u
 var page = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 eq('home uses the watercolor wave portrait', page.indexOf('img/characters/zizi-wave.jpg') !== -1, true);
 eq('celebration uses the watercolor cheer portrait', page.indexOf('img/characters/zizi-cheer.jpg') !== -1, true);
-eq('home buttons use drawn pictures', page.indexOf('data-art-word="car"') !== -1 && page.indexOf('home-btn-emoji" aria-hidden="true">🏎️') === -1, true);
+eq('home buttons use watercolor icons', page.indexOf('img/icons/icon-race.jpg') !== -1 && page.indexOf('img/icons/icon-hunt.jpg') !== -1, true);
 eq('home stats use drawn pictures', page.indexOf('data-art-word="star"') !== -1, true);
 
 eq('portrait helper points at characters', window.ZiziArt.portrait('wave').indexOf('zizi-wave.jpg') !== -1, true);
@@ -37,6 +37,9 @@ eq('cheer portrait is distinct', window.ZiziArt.portrait('cheer').indexOf('zizi-
 
 ['zizi-wave.jpg', 'zizi-cheer.jpg', 'zizi-think.jpg'].forEach(function (name) {
     eq('portrait file ' + name, fs.existsSync(path.join(__dirname, '../img/characters', name)), true);
+});
+['icon-race.jpg', 'icon-puzzle.jpg', 'icon-hunt.jpg', 'icon-shoot.jpg', 'icon-write.jpg', 'icon-camera.jpg', 'icon-album.jpg'].forEach(function (name) {
+    eq('icon file ' + name, fs.existsSync(path.join(__dirname, '../img/icons', name)), true);
 });
 
 var hunt = fs.readFileSync(path.join(__dirname, '../js/hunt.js'), 'utf8');

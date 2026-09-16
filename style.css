@@ -447,12 +447,20 @@ button:disabled {
   box-shadow: 0 3px 0 rgba(18, 59, 99, 0.12);
 }
 .home-btn-emoji {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.home-btn-art {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 2px 0 rgba(75, 69, 53, 0.12);
 }
 .home-inline-pic {
   display: inline-flex;
