@@ -21,7 +21,7 @@ eq('theme uses warm paper', theme.indexOf('--paper: #fbf4e5') !== -1, true);
 eq('theme uses watercolor coral', theme.indexOf('--coral: #d97860') !== -1, true);
 eq('theme uses watercolor sky', theme.indexOf('--sky: #a9d5df') !== -1, true);
 eq('page links the theme after style.css', /style\.css[^"]+"[\s\S]*picture-book-theme\.css/.test(page), true);
-eq('page cache-busts the theme', page.indexOf('picture-book-theme.css?v=20260910-ehon') !== -1, true);
+eq('page cache-busts the theme', page.indexOf('picture-book-theme.css?v=20260916-ehon') !== -1, true);
 eq('root tokens match the picture-book paper', css.indexOf('--paper: #fbf4e5') !== -1, true);
 eq('home is not the old neon sky', theme.indexOf('#6ec9ff') === -1, true);
 eq('word art palette is muted coral', art.indexOf('#d97860') !== -1, true);
@@ -29,6 +29,7 @@ eq('word art palette dropped neon orange', art.indexOf('#ff8c42') === -1, true);
 eq('word art ink is picture-book ink', art.indexOf('#243e4a') !== -1, true);
 var wf = fs.readFileSync(path.join(__dirname, '../.github/workflows/deploy-pages.yml'), 'utf8');
 eq('Pages deploy copies the theme stylesheet', wf.indexOf('picture-book-theme.css') !== -1, true);
+eq('Pages deploy copies character portraits', wf.indexOf('cp -r img _site/img') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all picture-book theme tests passed');

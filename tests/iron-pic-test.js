@@ -68,8 +68,8 @@ eq('detail popup does not embed 🧯', html.indexOf('🧯') === -1, true);
 eq('detail popup paints live art for iron', html.indexOf('data-art-word="iron"') !== -1, true);
 
 var page = fs.readFileSync(__dirname + '/../index.html', 'utf8');
-eq('iron art is cache-busted', page.indexOf('js/art.js?v=20260910-ehon') !== -1, true);
-eq('iron progress is cache-busted', page.indexOf('js/progress.js?v=20260910-ehon') !== -1, true);
+eq('iron art is cache-busted', page.indexOf('js/art.js?v=20260916-ehon') !== -1, true);
+eq('iron progress is cache-busted', page.indexOf('js/progress.js?v=20260916-ehon') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all iron clothes picture tests passed');

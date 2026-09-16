@@ -493,7 +493,22 @@ window.ZiziFX = {
         var sub = document.getElementById('celebrate-sub');
         var stars = document.getElementById('celebrate-stars');
 
-        if (emoji) emoji.textContent = opts.emoji || '🌟';
+        if (emoji) {
+            emoji.innerHTML = '';
+            if (opts.word && window.ZiziArt && window.ZiziArt.pictureEl) {
+                emoji.appendChild(window.ZiziArt.pictureEl(opts.word, 88));
+            } else {
+                var img = document.createElement('img');
+                img.className = 'zizi-portrait';
+                img.src = (window.ZiziArt && window.ZiziArt.portrait)
+                    ? window.ZiziArt.portrait('cheer')
+                    : 'img/characters/zizi-cheer.jpg';
+                img.alt = '';
+                img.width = 120;
+                img.height = 120;
+                emoji.appendChild(img);
+            }
+        }
         if (title) title.textContent = opts.title || '叻仔！';
         if (sub) sub.textContent = opts.sub || '';
         if (stars) {

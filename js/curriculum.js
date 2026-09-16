@@ -256,6 +256,16 @@ window.Curriculum = {
         if (window.ZiziFX) window.ZiziFX.play('tick');
     },
 
+    listHtml: function (words) {
+        return (words || []).map(function (w) {
+            return '<li><span class="arena-word-pic" data-art-word="' + w.w + '"></span> <b>' + w.w + '</b> ' + (this.yue(w.w) || '') + '</li>';
+        }, this).join('');
+    },
+
+    paintArt: function (root) {
+        if (window.ZiziArt && window.ZiziArt.fillAll) window.ZiziArt.fillAll(root);
+    },
+
     finishFx: function (opts) {
         opts = opts || {};
         if (window.ZiziFX && window.ZiziFX.celebrate) {

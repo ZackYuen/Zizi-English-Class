@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260910-ehon">
-    <link rel="stylesheet" href="picture-book-theme.css?v=20260910-ehon">
+    <link rel="stylesheet" href="style.css?v=20260916-ehon">
+    <link rel="stylesheet" href="picture-book-theme.css?v=20260916-ehon">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -28,12 +28,7 @@
 
     <div class="home-hero">
         <div class="zizi-mascot" aria-hidden="true">
-            <div class="zizi-face">
-                <span class="zizi-eye left"></span>
-                <span class="zizi-eye right"></span>
-                <span class="zizi-smile"></span>
-            </div>
-            <div class="zizi-cap">Z</div>
+            <img class="zizi-portrait" src="img/characters/zizi-wave.jpg" alt="" width="120" height="120">
         </div>
         <h1>孜孜學英文</h1>
         <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 單詞。</p>
@@ -51,17 +46,17 @@
 
     <div class="home-progress" id="home-progress">
         <div class="home-stat">
-            <span class="home-stat-emoji" aria-hidden="true">⭐</span>
+            <span class="home-stat-emoji" data-art-word="star" aria-hidden="true"></span>
             <span id="home-stars-count" class="home-stat-num">0</span>
             <span class="home-stat-label">星星</span>
         </div>
         <div class="home-stat">
-            <span class="home-stat-emoji" aria-hidden="true">📚</span>
+            <span class="home-stat-emoji" data-art-word="book" aria-hidden="true"></span>
             <span id="home-words-count" class="home-stat-num">0</span>
             <span class="home-stat-label">單詞</span>
         </div>
         <div class="home-stat">
-            <span class="home-stat-emoji" aria-hidden="true">🔥</span>
+            <span class="home-stat-emoji" data-art-word="fire" aria-hidden="true"></span>
             <span id="home-streak-count" class="home-stat-num">0</span>
             <span class="home-stat-label">日數</span>
         </div>
@@ -75,53 +70,53 @@
         <ul id="home-quest-list" class="home-quest-list"></ul>
     </div>
 
-    <button type="button" class="home-btn-speak" onclick="announceHomeMenu()">🔊 聽孜孜講</button>
+    <button type="button" class="home-btn-speak" onclick="announceHomeMenu()"><span class="home-inline-pic" data-art-word="speaker" data-art-size="22" aria-hidden="true"></span> 聽孜孜講</button>
 
     <div class="home-menu-actions">
         <button type="button" class="home-btn home-btn-standard" onclick="enterMode('race')">
-            <span class="home-btn-emoji" aria-hidden="true">🏎️</span>
+            <span class="home-btn-emoji" data-art-word="car" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">字母賽車</span>
                 <span class="home-btn-sub">拖架車撞啱嗰幅圖</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-puzzle" onclick="enterMode('puzzle')">
-            <span class="home-btn-emoji" aria-hidden="true">🧩</span>
+            <span class="home-btn-emoji" data-art-word="puzzle" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">單詞拼圖</span>
                 <span class="home-btn-sub">撈字母填格仔，揭開幅畫</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-match" onclick="enterMode('match')">
-            <span class="home-btn-emoji" aria-hidden="true">🦋</span>
+            <span class="home-btn-emoji" data-art-word="butterfly" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">飛天搵字</span>
                 <span class="home-btn-sub">聽英文，捉住飛嚟飛去嗰幅圖</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-game" onclick="enterMode('game')">
-            <span class="home-btn-emoji" aria-hidden="true">🎈</span>
+            <span class="home-btn-emoji" data-art-word="balloon" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">音爆射擊</span>
                 <span class="home-btn-sub">射十個波波，加滿能源</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-write" onclick="enterMode('standard')">
-            <span class="home-btn-emoji" aria-hidden="true">✍️</span>
+            <span class="home-btn-emoji" data-art-word="pencil" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">手指描字</span>
                 <span class="home-btn-sub">跟綠點學寫字母</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-camera" onclick="enterMode('camera')">
-            <span class="home-btn-emoji" aria-hidden="true">📸</span>
+            <span class="home-btn-emoji" data-art-word="camera" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">探索魔鏡</span>
                 <span class="home-btn-sub">影真嘢，學寫呢個字</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-album" onclick="enterMode('album')">
-            <span class="home-btn-emoji" aria-hidden="true">📒</span>
+            <span class="home-btn-emoji" data-art-word="notebook" aria-hidden="true"></span>
             <span class="home-btn-text">
                 <span class="home-btn-title">我嘅單詞冊</span>
                 <span class="home-btn-sub">拆字 · 點解咁寫</span>
@@ -130,14 +125,14 @@
     </div>
 
     <div class="home-footer">
-        <button type="button" id="btn-music-toggle" class="home-btn-music" onclick="toggleZiziMusic()" aria-pressed="true">🎵 音樂開</button>
-        <button type="button" class="home-btn-settings" onclick="openSettings()">⚙️ 家長設定</button>
+        <button type="button" id="btn-music-toggle" class="home-btn-music" onclick="toggleZiziMusic()" aria-pressed="true"><span class="home-inline-pic" data-art-word="music" data-art-size="22" aria-hidden="true"></span> 音樂開</button>
+        <button type="button" class="home-btn-settings" onclick="openSettings()"><span class="home-inline-pic" data-art-word="gear" data-art-size="22" aria-hidden="true"></span> 家長設定</button>
     </div>
 </div>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
-    <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
-    <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">✍️ 手指描字</h2>
+    <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">返回</button>
+    <h2 style="color:#d97860; margin:0; flex:1; text-align:center;">手指描字</h2>
     <span class="top-bar-spacer" aria-hidden="true"></span>
 </div>
 
@@ -176,7 +171,7 @@
 <!-- 🏎️ Letter racing -->
 <div id="race-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="mode-back-btn" onclick="backToHome()">返回</button>
         <button type="button" id="race-target" class="stage-ask" onclick="replayRaceWord()">拖住架車，按住就加速</button>
         <div class="stage-stars" id="race-stars">☆☆☆☆☆</div>
     </div>
@@ -191,7 +186,7 @@
             <p id="race-over-sub"></p>
             <ul id="race-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startRaceGame()">再嚟一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">返主選單</button>
         </div>
     </div>
 </div>
@@ -199,7 +194,7 @@
 <!-- 🧩 Word puzzle -->
 <div id="puzzle-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="mode-back-btn" onclick="backToHome()">返回</button>
         <p id="pz-prompt" class="stage-ask">撳下面啲字母填格仔</p>
         <div class="stage-stars" id="pz-stars">☆☆☆☆☆</div>
     </div>
@@ -214,7 +209,7 @@
             <p id="pz-over-sub"></p>
             <ul id="pz-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startWordPuzzle()">再砌一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">返主選單</button>
         </div>
     </div>
 </div>
@@ -222,7 +217,7 @@
 <!-- 🦋 Flying pictures -->
 <div id="hunt-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="mode-back-btn" onclick="backToHome()">返回</button>
         <button type="button" id="hunt-target" class="stage-ask" onclick="replayHuntWord()">聽英文，捉住飛緊嗰幅圖</button>
         <div class="stage-stars" id="hunt-stars">☆☆☆☆☆</div>
     </div>
@@ -236,7 +231,7 @@
             <p id="hunt-over-sub"></p>
             <ul id="hunt-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startPictureHunt()">再捉一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">返主選單</button>
         </div>
     </div>
 </div>
@@ -244,7 +239,7 @@
 <!-- Balloon shooting -->
 <div id="shoot-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
-        <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="mode-back-btn" onclick="backToHome()">返回</button>
         <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">射十個波波，加滿能源</button>
         <div class="stage-stars" id="shoot-stars">☆☆☆☆☆</div>
     </div>
@@ -259,7 +254,7 @@
             <p id="shoot-over-sub"></p>
             <ul id="shoot-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startShootGame()">再射一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">返主選單</button>
         </div>
     </div>
 </div>
@@ -268,7 +263,7 @@
 <div id="album-overlay" style="display:none;">
     <div class="album-card-wrap">
         <header class="album-top">
-            <h2>📒 我嘅單詞冊</h2>
+            <h2>我嘅單詞冊</h2>
             <p class="album-hint" id="album-hint">撳張卡睇點解咁寫，同聽英文。</p>
             <nav class="album-jumps" id="album-jumps" hidden></nav>
         </header>
@@ -287,7 +282,9 @@
 <!-- Big celebration -->
 <div id="celebrate-overlay" style="display:none;" aria-live="off">
     <div class="celebrate-card">
-        <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">🌟</div>
+        <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">
+            <img class="zizi-portrait" src="img/characters/zizi-cheer.jpg" alt="" width="120" height="120">
+        </div>
         <p id="celebrate-title" class="celebrate-title">叻仔！</p>
         <p id="celebrate-sub" class="celebrate-sub"></p>
         <p id="celebrate-stars" class="celebrate-stars"></p>
@@ -298,7 +295,7 @@
 <!-- Settings -->
 <div id="settings-modal" style="display:none;">
     <div class="settings-card">
-        <h2>⚙️ 聲線同設定</h2>
+        <h2>聲線同設定</h2>
         <p class="settings-note">同小學預備班一樣：Safari 用唔到 iPhone Siri 聲音 2（Apple 限制網頁），所以有 Google Key 就用 Chirp3 HD 高質粵語同英文。手機系統聲只係後備。</p>
         <p id="secrets-status" class="secrets-status">檢查緊 GitHub Pages Key…</p>
 
@@ -354,24 +351,24 @@
 </div>
 
 <!-- Load order: data → stories → state → config/secrets → speech/progress → fx → writing → curriculum/games → camera → router -->
-<script src="js/data.js?v=20260910-ehon"></script>
+<script src="js/data.js?v=20260916-ehon"></script>
 <script src="js/stories.js?v=20260910-ehon"></script>
 <script src="js/state.js?v=20260902-write1"></script>
 <script src="js/config.js?v=ZIZI_CACHE_BUST"></script>
 <script src="js/secrets.js?v=20260902-write1"></script>
 <script src="js/speech.js?v=20260902-skyfly"></script>
-<script src="js/progress.js?v=20260910-ehon"></script>
-<script src="js/fx.js?v=20260910-ehon"></script>
-<script src="js/teach.js?v=20260902-write1"></script>
+<script src="js/progress.js?v=20260916-ehon"></script>
+<script src="js/fx.js?v=20260916-ehon"></script>
+<script src="js/teach.js?v=20260916-ehon"></script>
 <script src="js/writing.js?v=20260902-write1"></script>
 <script src="js/ui.js?v=20260902-write1"></script>
-<script src="js/canvas.js?v=20260910-ehon"></script>
-<script src="js/curriculum.js?v=20260903-merge"></script>
-<script src="js/art.js?v=20260910-ehon"></script>
-<script src="js/race.js?v=20260910-ehon"></script>
-<script src="js/wordpuzzle.js?v=20260910-ehon"></script>
-<script src="js/hunt.js?v=20260910-ehon"></script>
-<script src="js/shoot.js?v=20260910-ehon"></script>
+<script src="js/canvas.js?v=20260916-ehon"></script>
+<script src="js/curriculum.js?v=20260916-ehon"></script>
+<script src="js/art.js?v=20260916-ehon"></script>
+<script src="js/race.js?v=20260916-ehon"></script>
+<script src="js/wordpuzzle.js?v=20260916-ehon"></script>
+<script src="js/hunt.js?v=20260916-ehon"></script>
+<script src="js/shoot.js?v=20260916-ehon"></script>
 <script src="js/camera.js?v=20260902-camvision"></script>
 <script src="js/router.js?v=20260902-testyue"></script>
 </body>

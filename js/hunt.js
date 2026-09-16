@@ -363,9 +363,8 @@ function huntFinish() {
     if (title) title.textContent = '捉住晒！';
     if (sub) sub.textContent = '捉到 ' + g.got + ' 幅飛圖 · +1⭐';
     if (list) {
-        list.innerHTML = (g.found.length ? g.found : g.queue.slice(0, g.got)).map(function (w) {
-            return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
-        }).join('') || '<li>再捉多幾幅圖！</li>';
+        list.innerHTML = Curriculum.listHtml(g.found.length ? g.found : g.queue.slice(0, g.got)) || '<li>再捉多幾幅圖！</li>';
+        Curriculum.paintArt(list);
     }
     Curriculum.say('捉住晒！你耳朵好叻。');
 }

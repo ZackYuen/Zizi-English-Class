@@ -259,7 +259,12 @@ window.loop = function() {
                         let drawW = img.width * ratio, drawH = img.height * ratio;
                         ctx.drawImage(img, 150 - (drawW / 2), 110 - (drawH / 2), drawW, drawH);
                     }
-                    else { ctx.font='100px Arial'; ctx.fillText(D[idx].emoji || '', 150, 100); }
+                    else if (window.ZiziArt) {
+                        window.ZiziArt.drawWord(ctx, D[idx].w, 150, 100, 140, 0, true);
+                    } else {
+                        ctx.font='100px Arial';
+                        ctx.fillText(D[idx].emoji || '', 150, 100);
+                    }
                     
                     let fSize = 50;
                     ctx.font = `bold ${fSize}px Comic Sans MS`;
@@ -267,7 +272,7 @@ window.loop = function() {
                         fSize -= 2;
                         ctx.font = `bold ${fSize}px Comic Sans MS`;
                     }
-                    ctx.fillStyle='#1d3557'; 
+                    ctx.fillStyle='#243e4a'; 
                     ctx.fillText(phase.text, 150, 260);
                     
                     if(!fired && typeof confetti !== 'undefined') { 

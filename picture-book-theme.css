@@ -60,7 +60,11 @@ body {
 }
 
 .zizi-mascot {
-  filter: saturate(0.78) sepia(0.08);
+  filter: none;
+}
+
+.zizi-portrait {
+  mix-blend-mode: multiply;
 }
 
 .zizi-face {

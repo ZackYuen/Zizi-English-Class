@@ -77,6 +77,7 @@ jobs:
           mkdir -p _site
           cp index.html style.css picture-book-theme.css README.md _site/
           cp -r js _site/js
+          cp -r img _site/img
           STAMP=$(date +%Y%m%d%H%M%S)
           sed -i "s/ZIZI_CACHE_BUST/${STAMP}/g" _site/index.html
 

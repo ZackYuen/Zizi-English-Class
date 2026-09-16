@@ -215,11 +215,23 @@ button:disabled {
 }
 
 .zizi-mascot {
-  width: 88px;
-  height: 88px;
+  width: 120px;
+  height: 120px;
   margin: 0 auto 8px;
   position: relative;
   animation: mascot-bounce 2.4s ease-in-out infinite;
+}
+.zizi-portrait {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  border: 3px solid rgba(90, 82, 64, 0.14);
+  border-radius: 30%;
+  object-fit: cover;
+  object-position: center 12%;
+  background: #fbf4e5;
+  box-shadow: 0 7px 0 rgba(91, 79, 55, 0.1), 0 12px 24px rgba(52, 66, 66, 0.1);
 }
 .zizi-face {
   width: 78px;
@@ -435,9 +447,34 @@ button:disabled {
   box-shadow: 0 3px 0 rgba(18, 59, 99, 0.12);
 }
 .home-btn-emoji {
-  font-size: 32px;
-  width: 44px;
-  text-align: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-inline-pic {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.home-stat-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 2px;
+}
+.home-quest-emoji {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 .home-btn-text {
@@ -1816,10 +1853,17 @@ button:disabled {
   animation: pop-in 0.45s ease;
 }
 .celebrate-emoji {
-  font-size: 72px;
-  line-height: 1;
-  margin-bottom: 8px;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: mascot-bounce 1.2s ease-in-out infinite;
+}
+.celebrate-emoji .zizi-portrait {
+  width: 120px;
+  height: 120px;
 }
 .celebrate-title {
   margin: 0 0 6px;
@@ -1980,9 +2024,12 @@ button:disabled {
   display: none !important;
 }
 .zizi-coach-emoji {
-  font-size: 36px;
-  line-height: 1;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .zizi-coach-title {
   margin: 0 0 4px;
@@ -2079,7 +2126,7 @@ button:disabled {
   box-sizing: border-box;
 }
 .write-word-chip.is-empty { display: none; }
-.write-chip-emoji { font-size: 28px; line-height: 1; }
+.write-chip-emoji { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .write-chip-text {
   display: flex;
   flex-direction: column;
@@ -2624,6 +2671,14 @@ canvas.stage-pic { display: block; }
   font-weight: 700;
   color: #123b63;
 }
+.arena-word-pic {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .arena-count {
   position: absolute;
   inset: 0;
@@ -2760,6 +2815,13 @@ canvas.stage-pic { display: block; }
   justify-content: center;
   overflow: hidden;
   pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+.zizi-pic canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .zizi-pic-sprite {
   max-width: 78%;

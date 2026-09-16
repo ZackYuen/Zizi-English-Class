@@ -127,10 +127,11 @@ window.ZiziTeach = (function () {
             el.setAttribute('hidden', 'hidden');
             return;
         }
+        var picWord = payload.pic || payload.word || '';
         el.classList.remove('is-empty');
         el.removeAttribute('hidden');
         el.innerHTML =
-            '<div class="zizi-coach-emoji" aria-hidden="true">' + escapeHtml(emoji) + '</div>' +
+            '<div class="zizi-coach-emoji" data-art-word="' + escapeHtml(picWord || 'idea') + '" aria-hidden="true"></div>' +
             '<div class="zizi-coach-body">' +
                 (title ? '<p class="zizi-coach-title">' + escapeHtml(title) + '</p>' : '') +
                 (nick ? '<p class="etym-nick">香港叫 <b>' + escapeHtml(nick) + '</b></p>' : '') +
@@ -138,6 +139,7 @@ window.ZiziTeach = (function () {
                 alsoHtml(also) +
                 (body ? '<p class="zizi-coach-story">' + escapeHtml(body) + '</p>' : '') +
             '</div>';
+        if (window.ZiziArt && window.ZiziArt.fillAll) window.ZiziArt.fillAll(el);
     }
 
     function hideCoach(el) {
@@ -168,11 +170,12 @@ window.ZiziTeach = (function () {
             ? ('香港叫 ' + w.loan + (w.loan !== w.yue ? '（' + w.yue + '）' : ''))
             : (w.yue || '');
         chip.innerHTML =
-            '<span class="write-chip-emoji" aria-hidden="true">' + escapeHtml(w.emoji) + '</span>' +
+            '<span class="write-chip-emoji" data-art-word="' + escapeHtml(w.w) + '" aria-hidden="true"></span>' +
             '<span class="write-chip-text">' +
                 '<span class="write-chip-en">' + escapeHtml(w.w) + '</span>' +
                 '<span class="write-chip-yue">' + escapeHtml(yueLine) + '</span>' +
             '</span>';
+        if (window.ZiziArt && window.ZiziArt.fillAll) window.ZiziArt.fillAll(chip);
         hideCoach(document.getElementById('write-coach'));
     }
 
@@ -187,6 +190,8 @@ window.ZiziTeach = (function () {
         if (n === 1) {
             return {
                 emoji: w.emoji,
+                pic: w.w,
+                word: w.w,
                 title: w.w,
                 body: '聽多次英文，揀「' + meaning + '」嗰幅圖。',
                 nick: w.loan,
@@ -198,6 +203,8 @@ window.ZiziTeach = (function () {
         if (n === 2) {
             return {
                 emoji: w.emoji,
+                pic: w.w,
+                word: w.w,
                 title: w.w,
                 body: w.story,
                 nick: w.loan,
@@ -209,6 +216,8 @@ window.ZiziTeach = (function () {
         }
         return {
             emoji: w.emoji,
+            pic: w.w,
+            word: w.w,
             title: '係呢個！' + w.w,
             body: w.story + ' 揀發光嗰幅圖啦。',
             nick: w.loan,
@@ -227,6 +236,7 @@ window.ZiziTeach = (function () {
         if (n === 1) {
             return {
                 emoji: '👂',
+                pic: 'ear',
                 title: '聽開頭個音',
                 body: letter + ' 好似「' + cue + '」。',
                 speak: '聽開頭。' + letter + '好似' + cue + '。'
@@ -235,6 +245,8 @@ window.ZiziTeach = (function () {
         if (n === 2) {
             return {
                 emoji: w.emoji,
+                pic: w.w,
+                word: w.w,
                 title: '呢個字係 ' + w.w,
                 body: '開頭音係 ' + letter + '。',
                 nick: w.loan,
@@ -245,6 +257,8 @@ window.ZiziTeach = (function () {
         }
         return {
             emoji: w.emoji,
+            pic: w.w,
+            word: w.w,
             title: '揀發光個掣！',
             body: w.w + ' 開頭係 ' + letter + '。',
             nick: w.loan,
@@ -386,6 +400,8 @@ window.ZiziTeach = (function () {
         extra = extra || {};
         return {
             emoji: extra.emoji || w.emoji,
+            pic: extra.pic || w.w,
+            word: w.w,
             title: extra.title || w.w,
             body: extra.body != null ? extra.body : w.story,
             nick: w.nick,
