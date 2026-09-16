@@ -222,7 +222,7 @@ window.Curriculum = {
         var label = this.answerLabel(pts, '叻！');
         if (window.ZiziFX) {
             window.ZiziFX.play(combo >= 2 ? 'combo' : 'correct');
-            window.ZiziFX.flash('rgba(46,204,113,.20)');
+            window.ZiziFX.flash('rgba(46,204,113,.32)');
             if (host) {
                 window.ZiziFX.floatScore(host, label, 'good');
                 window.ZiziFX.burst(host);
@@ -238,7 +238,7 @@ window.Curriculum = {
     sparkFx: function (host, label) {
         if (window.ZiziFX) {
             window.ZiziFX.play('pop');
-            window.ZiziFX.flash('rgba(233,189,85,.20)');
+            window.ZiziFX.flash('rgba(233,189,85,.32)');
             if (host) {
                 window.ZiziFX.floatScore(host, label || '好！', 'good');
                 window.ZiziFX.burst(host);
@@ -264,8 +264,9 @@ window.Curriculum = {
         this.boom();
         if (window.ZiziFX) {
             window.ZiziFX.shake(host);
-            window.ZiziFX.flash('rgba(255,80,80,.22)');
+            window.ZiziFX.flash('rgba(230,57,70,.45)');
             if (host) window.ZiziFX.floatScore(host, label || '再試', 'bad');
+            if (window.ZiziFX.ring) window.ZiziFX.ring(host, 'rgba(230,57,70,.95)');
         }
     },
 

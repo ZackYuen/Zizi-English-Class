@@ -3151,17 +3151,25 @@ canvas.stage-pic { display: block; }
 .z-fx-score {
   position: fixed;
   left: 50%;
-  top: 28%;
+  top: 38%;
   transform: translateX(-50%);
   z-index: 12050;
   font-weight: 800;
-  font-size: 36px;
-  color: #2ecc71;
-  text-shadow: 0 3px 0 rgba(18, 59, 99, 0.25), 0 0 12px rgba(255, 255, 255, 0.9);
+  font-size: 40px;
+  line-height: 1.1;
+  padding: 10px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1b7a3d;
+  text-shadow: none;
+  box-shadow: 0 6px 0 rgba(18, 59, 99, 0.16);
   pointer-events: none;
-  animation: z-fx-score-up 1.05s ease-out forwards;
+  animation: z-fx-score-up 1.15s ease-out forwards;
 }
-.z-fx-score.is-bad { color: #e63946; }
+.z-fx-score.is-bad {
+  color: #c1121f;
+  background: rgba(255, 236, 236, 0.96);
+}
 @keyframes z-fx-score-up {
   0% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
   100% { opacity: 0; transform: translate(-50%, -56px) scale(1); }

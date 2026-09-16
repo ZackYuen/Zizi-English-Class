@@ -21,7 +21,7 @@ window.ZiziFX = {
     boomConfetti: function (n) { log.push('confetti:' + n); },
     shake: function (el) { if (el) log.push('shake'); },
     pulse: function (el) { if (el) log.push('pulse'); },
-    ring: function (host) { if (host) log.push('ring'); }
+    ring: function (host, color) { if (host) log.push('ring' + (color ? ':bad' : '')); }
 };
 
 var Curriculum = require('../js/curriculum.js');
@@ -76,6 +76,7 @@ has('miss plays wrong', log, 'play:wrong');
 eq('miss shakes', log.indexOf('shake') !== -1, true);
 eq('miss flashes red', log.some(function (x) { return x.indexOf('flash:') === 0; }), true);
 has('miss floats label', log, 'float:唔係呢個:bad');
+has('miss rings', log, 'ring:bad');
 
 var hunt = fs.readFileSync(path.join(__dirname, '../js/hunt.js'), 'utf8');
 var puzzle = fs.readFileSync(path.join(__dirname, '../js/wordpuzzle.js'), 'utf8');
@@ -102,7 +103,7 @@ eq('fx exposes pulse', fx.indexOf('pulse: function') !== -1, true);
 eq('fx exposes ring', fx.indexOf('ring: function') !== -1, true);
 eq('css has pulse animation', css.indexOf('@keyframes z-fx-pulse') !== -1, true);
 eq('css has ring animation', css.indexOf('@keyframes z-fx-ring-out') !== -1, true);
-eq('page cache-busts fx scripts', page.indexOf('js/curriculum.js?v=20260916-fx2') !== -1 && page.indexOf('js/hunt.js?v=20260916-fx2') !== -1, true);
+eq('page cache-busts fx scripts', page.indexOf('js/curriculum.js?v=20260916-fx3') !== -1 && page.indexOf('js/hunt.js?v=20260916-fx3') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all answer fx tests passed');

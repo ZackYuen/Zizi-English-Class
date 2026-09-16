@@ -459,11 +459,8 @@ window.ZiziFX = {
         var el = document.createElement('div');
         el.className = 'z-fx-score' + (kind === 'bad' ? ' is-bad' : '');
         el.textContent = text;
-        var r = this._hostRect(host);
-        el.style.left = Math.round(r.left + r.width / 2) + 'px';
-        el.style.top = Math.round(r.top + Math.max(72, r.height * 0.28)) + 'px';
         document.body.appendChild(el);
-        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1100);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1200);
     },
 
     burst: function (host) {
@@ -500,10 +497,11 @@ window.ZiziFX = {
         setTimeout(function () { el.classList.remove('z-fx-pulse'); }, 480);
     },
 
-    ring: function (host) {
+    ring: function (host, color) {
         var r = this._hostRect(host);
         var el = document.createElement('span');
         el.className = 'z-fx-ring';
+        if (color) el.style.borderColor = color;
         el.style.left = Math.round(r.left + r.width / 2) + 'px';
         el.style.top = Math.round(r.top + r.height * 0.42) + 'px';
         document.body.appendChild(el);
