@@ -2,7 +2,12 @@ global.window = global;
 global.document = {
     body: { appendChild: function () {}, classList: { add: function () {}, remove: function () {} } },
     createElement: function () {
-        return { style: {}, classList: { add: function () {}, remove: function () {} }, className: '', textContent: '' };
+        return {
+            style: { setProperty: function () {} },
+            classList: { add: function () {}, remove: function () {} },
+            className: '',
+            textContent: ''
+        };
     },
     getElementById: function () { return null; }
 };
@@ -97,7 +102,7 @@ eq('fx exposes pulse', fx.indexOf('pulse: function') !== -1, true);
 eq('fx exposes ring', fx.indexOf('ring: function') !== -1, true);
 eq('css has pulse animation', css.indexOf('@keyframes z-fx-pulse') !== -1, true);
 eq('css has ring animation', css.indexOf('@keyframes z-fx-ring-out') !== -1, true);
-eq('page cache-busts fx scripts', page.indexOf('js/curriculum.js?v=20260916-fx') !== -1 && page.indexOf('js/hunt.js?v=20260916-fx') !== -1, true);
+eq('page cache-busts fx scripts', page.indexOf('js/curriculum.js?v=20260916-fx2') !== -1 && page.indexOf('js/hunt.js?v=20260916-fx2') !== -1, true);
 
 if (fails) process.exit(1);
 console.log('all answer fx tests passed');

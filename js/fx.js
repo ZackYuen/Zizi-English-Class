@@ -437,33 +437,50 @@ window.ZiziFX = {
         el.className = 'z-fx-flash';
         el.style.background = color || 'rgba(255,255,255,.35)';
         document.body.appendChild(el);
-        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 280);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 460);
+    },
+
+    _hostRect: function (host) {
+        if (host && typeof host.getBoundingClientRect === 'function') {
+            try {
+                var r = host.getBoundingClientRect();
+                if (r && r.width && r.height) return r;
+            } catch (e) { /* ignore */ }
+        }
+        return {
+            left: 0,
+            top: 0,
+            width: window.innerWidth || 390,
+            height: window.innerHeight || 700
+        };
     },
 
     floatScore: function (host, text, kind) {
-        var wrap = host || document.body;
         var el = document.createElement('div');
         el.className = 'z-fx-score' + (kind === 'bad' ? ' is-bad' : '');
         el.textContent = text;
-        wrap.appendChild(el);
-        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900);
+        var r = this._hostRect(host);
+        el.style.left = Math.round(r.left + r.width / 2) + 'px';
+        el.style.top = Math.round(r.top + Math.max(72, r.height * 0.28)) + 'px';
+        document.body.appendChild(el);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1100);
     },
 
     burst: function (host) {
-        var wrap = host || document.body;
+        var r = this._hostRect(host);
         var colors = ['#d97860', '#e9bd55', '#79aa82', '#6faebc', '#8b7e9e', '#d4a0ad'];
-        for (var i = 0; i < 12; i++) {
+        for (var i = 0; i < 14; i++) {
             var p = document.createElement('span');
             p.className = 'z-fx-bit';
-            p.style.left = (38 + Math.random() * 24) + '%';
-            p.style.top = (36 + Math.random() * 22) + '%';
+            p.style.left = Math.round(r.left + r.width * (0.32 + Math.random() * 0.36)) + 'px';
+            p.style.top = Math.round(r.top + r.height * (0.28 + Math.random() * 0.3)) + 'px';
             p.style.background = colors[i % colors.length];
             p.style.setProperty('--dx', (Math.random() * 180 - 90) + 'px');
             p.style.setProperty('--dy', (Math.random() * 180 - 110) + 'px');
-            wrap.appendChild(p);
+            document.body.appendChild(p);
             setTimeout((function (el) {
                 return function () { if (el.parentNode) el.parentNode.removeChild(el); };
-            })(p), 700);
+            })(p), 750);
         }
     },
 
@@ -484,11 +501,12 @@ window.ZiziFX = {
     },
 
     ring: function (host) {
-        var wrap = host || document.body;
-        if (!wrap || !wrap.appendChild) return;
+        var r = this._hostRect(host);
         var el = document.createElement('span');
         el.className = 'z-fx-ring';
-        wrap.appendChild(el);
+        el.style.left = Math.round(r.left + r.width / 2) + 'px';
+        el.style.top = Math.round(r.top + r.height * 0.42) + 'px';
+        document.body.appendChild(el);
         setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 560);
     },
 
