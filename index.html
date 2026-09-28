@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260916-fx3">
+    <link rel="stylesheet" href="style.css?v=20260928-buddy">
     <link rel="stylesheet" href="picture-book-theme.css?v=20260910-ehon">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
@@ -27,13 +27,20 @@
     </div>
 
     <div class="home-hero">
-        <div class="zizi-mascot" aria-hidden="true">
-            <div class="zizi-face">
-                <span class="zizi-eye left"></span>
-                <span class="zizi-eye right"></span>
-                <span class="zizi-smile"></span>
+        <div class="home-pals">
+            <div class="zizi-mascot" aria-hidden="true">
+                <div class="zizi-face">
+                    <span class="zizi-eye left"></span>
+                    <span class="zizi-eye right"></span>
+                    <span class="zizi-smile"></span>
+                </div>
+                <div class="zizi-cap">Z</div>
             </div>
-            <div class="zizi-cap">Z</div>
+            <button type="button" class="buddy-home" onclick="ZiziBuddy.sayHome()" aria-label="聽小伙伴鼓勵孜孜">
+                <span class="buddy-bubble" id="buddy-home-line">孜孜，我陪你學英文！</span>
+                <img src="img/characters/zizi-buddy.png" alt="" width="140" height="172">
+                <span class="buddy-caption">孜孜整嘅</span>
+            </button>
         </div>
         <h1>孜孜學英文</h1>
         <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 單詞。</p>
@@ -287,12 +294,20 @@
 <!-- Big celebration -->
 <div id="celebrate-overlay" style="display:none;" aria-live="off">
     <div class="celebrate-card">
-        <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">🌟</div>
+        <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">
+            <img class="celebrate-buddy" src="img/characters/zizi-buddy.png" alt="" width="150" height="184">
+        </div>
+        <p id="celebrate-buddy-line" class="celebrate-buddy-line">孜孜，你真係叻！</p>
         <p id="celebrate-title" class="celebrate-title">叻仔！</p>
         <p id="celebrate-sub" class="celebrate-sub"></p>
         <p id="celebrate-stars" class="celebrate-stars"></p>
         <button type="button" class="celebrate-btn" onclick="closeCelebrate()">繼續玩！</button>
     </div>
+</div>
+
+<div id="buddy-float" class="buddy-float" hidden>
+    <p class="buddy-bubble" id="buddy-float-line">加油呀孜孜！</p>
+    <img src="img/characters/zizi-buddy.png" alt="" width="92" height="114">
 </div>
 
 <!-- Settings -->
@@ -361,12 +376,13 @@
 <script src="js/secrets.js?v=20260902-write1"></script>
 <script src="js/speech.js?v=20260902-skyfly"></script>
 <script src="js/progress.js?v=20260910-ehon"></script>
-<script src="js/fx.js?v=20260916-fx3"></script>
+<script src="js/fx.js?v=20260928-buddy"></script>
+<script src="js/buddy.js?v=20260928-buddy"></script>
 <script src="js/teach.js?v=20260902-write1"></script>
 <script src="js/writing.js?v=20260902-write1"></script>
 <script src="js/ui.js?v=20260902-write1"></script>
 <script src="js/canvas.js?v=20260916-fx3"></script>
-<script src="js/curriculum.js?v=20260916-fx3"></script>
+<script src="js/curriculum.js?v=20260928-buddy"></script>
 <script src="js/art.js?v=20260910-ehon"></script>
 <script src="js/race.js?v=20260916-fx3"></script>
 <script src="js/wordpuzzle.js?v=20260916-fx3"></script>

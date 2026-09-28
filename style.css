@@ -267,6 +267,120 @@ button:disabled {
   box-shadow: 0 3px 0 rgba(18, 59, 99, 0.2);
 }
 
+.home-pals {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 auto 4px;
+}
+.home-pals .zizi-mascot {
+  margin: 0 0 18px;
+  flex: 0 0 auto;
+}
+.buddy-home {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 132px;
+  margin: 0;
+  padding: 22px 0 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  animation: mascot-bounce 2.4s ease-in-out 0.35s infinite;
+}
+.buddy-home img,
+.celebrate-buddy,
+.buddy-float img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 0 rgba(36, 62, 74, 0.12));
+}
+.buddy-caption {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3d7a45;
+}
+.buddy-bubble {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  max-width: 168px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: #fff;
+  color: #243e4a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  box-shadow: 0 4px 0 rgba(36, 62, 74, 0.12);
+  white-space: nowrap;
+}
+.buddy-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: 3px 3px 0 rgba(36, 62, 74, 0.06);
+}
+.buddy-float {
+  position: fixed;
+  right: 8px;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  z-index: 8600;
+  width: 96px;
+  pointer-events: none;
+}
+.buddy-float[hidden] { display: none !important; }
+.buddy-float .buddy-bubble {
+  left: auto;
+  right: 0;
+  top: -6px;
+  transform: none;
+  font-size: 15px;
+}
+.buddy-float .buddy-bubble::after {
+  left: auto;
+  right: 28px;
+  margin-left: 0;
+}
+.buddy-float.is-cheer img {
+  animation: buddy-hop 0.55s ease;
+}
+.buddy-float.is-comfort img {
+  animation: buddy-nod 0.5s ease;
+}
+@keyframes buddy-hop {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-16px) scale(1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes buddy-nod {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+}
+.celebrate-buddy {
+  width: 150px;
+  margin: 0 auto;
+}
+.celebrate-buddy-line {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #3d7a45;
+}
+
 #home-menu h1 {
   color: var(--navy);
   font-size: clamp(28px, 8vw, 36px);
@@ -1818,7 +1932,9 @@ button:disabled {
 .celebrate-emoji {
   font-size: 72px;
   line-height: 1;
-  margin-bottom: 8px;
+  width: 160px;
+  height: auto;
+  margin: 0 auto 4px;
   animation: mascot-bounce 1.2s ease-in-out infinite;
 }
 .celebrate-title {

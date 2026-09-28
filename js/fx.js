@@ -526,7 +526,9 @@ window.ZiziFX = {
         var sub = document.getElementById('celebrate-sub');
         var stars = document.getElementById('celebrate-stars');
 
-        if (emoji) emoji.textContent = opts.emoji || '🌟';
+        var buddyLine = document.getElementById('celebrate-buddy-line');
+        if (buddyLine && window.ZiziBuddy) buddyLine.textContent = window.ZiziBuddy.next('win');
+        if (emoji && !emoji.querySelector('.celebrate-buddy')) emoji.textContent = opts.emoji || '🌟';
         if (title) title.textContent = opts.title || '叻仔！';
         if (sub) sub.textContent = opts.sub || '';
         if (stars) {

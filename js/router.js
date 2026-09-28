@@ -34,6 +34,9 @@ function setDisplay(id, value) {
         el.classList.add('is-open');
         el.setAttribute('aria-hidden', 'false');
     }
+    if (id === 'home-menu' && window.ZiziBuddy) {
+        window.ZiziBuddy.setAtHome(value !== 'none');
+    }
 }
 
 function hideAllOverlays() {

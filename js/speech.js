@@ -774,7 +774,7 @@ window.announceHomeMenu = function () {
         ? ('你而家係第 ' + info.level + ' 級，' + info.title + '。')
         : '';
     window.announce(
-        '歡迎嚟到孜孜學英文天空島！' + levelBit +
+        '歡迎嚟到孜孜學英文天空島！你整嘅綠色小伙伴會陪住你。' + levelBit +
         '今日想玩咩？紅色嘅字母賽車：揸車入閘學英文單詞。' +
         '仲有單詞拼圖、飛天搵字、音爆射擊、手指描字、探索魔鏡、同單詞冊。' +
         '做完今日任務會升得更快！'

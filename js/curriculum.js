@@ -232,6 +232,7 @@ window.Curriculum = {
         } else {
             this.pop();
         }
+        if (window.ZiziBuddy) window.ZiziBuddy.react('hit');
     },
 
     /** Mid-step correct: letter, energy drop, or one writing stroke. */
@@ -248,6 +249,7 @@ window.Curriculum = {
         } else {
             this.pop();
         }
+        if (window.ZiziBuddy) window.ZiziBuddy.react('spark');
     },
 
     popBalloon: function (host, pts, combo) {
@@ -268,6 +270,7 @@ window.Curriculum = {
             if (host) window.ZiziFX.floatScore(host, label || '再試', 'bad');
             if (window.ZiziFX.ring) window.ZiziFX.ring(host, 'rgba(230,57,70,.95)');
         }
+        if (window.ZiziBuddy) window.ZiziBuddy.react('miss');
     },
 
     warnLowTime: function (seconds, overlay) {
