@@ -335,23 +335,26 @@ button:disabled {
 }
 .buddy-float {
   position: fixed;
-  right: 8px;
-  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: 6px;
+  top: 112px;
   z-index: 8600;
-  width: 96px;
+  width: 68px;
   pointer-events: none;
 }
 .buddy-float[hidden] { display: none !important; }
 .buddy-float .buddy-bubble {
-  left: auto;
-  right: 0;
-  top: -6px;
+  left: 74px;
+  right: auto;
+  top: 10px;
   transform: none;
   font-size: 15px;
 }
+.buddy-float .buddy-bubble[hidden] { display: none !important; }
 .buddy-float .buddy-bubble::after {
-  left: auto;
-  right: 28px;
+  left: -6px;
+  right: auto;
+  bottom: auto;
+  top: 12px;
   margin-left: 0;
 }
 .buddy-float.is-cheer img {

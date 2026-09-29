@@ -49,6 +49,8 @@ window.ZiziBuddy = {
         flo.classList.remove('is-cheer', 'is-comfort');
         void flo.offsetWidth;
         flo.classList.add(kind === 'miss' ? 'is-comfort' : 'is-cheer');
+        var line = document.getElementById('buddy-float-line');
+        if (line) line.hidden = false;
         this.showLine('buddy-float-line', this.next(kind), false);
     }
 };
