@@ -527,7 +527,10 @@ window.ZiziFX = {
         var stars = document.getElementById('celebrate-stars');
 
         var buddyLine = document.getElementById('celebrate-buddy-line');
-        if (buddyLine && window.ZiziBuddy) buddyLine.textContent = window.ZiziBuddy.next('win');
+        if (window.ZiziBuddy) {
+            if (buddyLine) buddyLine.textContent = window.ZiziBuddy.next('win');
+            window.ZiziBuddy.setPose('win', 12000);
+        }
         if (emoji && !emoji.querySelector('.celebrate-buddy')) emoji.textContent = opts.emoji || '🌟';
         if (title) title.textContent = opts.title || '叻仔！';
         if (sub) sub.textContent = opts.sub || '';

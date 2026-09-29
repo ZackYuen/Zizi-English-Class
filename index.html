@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260928-buddy">
+    <link rel="stylesheet" href="style.css?v=20260929-ehonbuddy">
     <link rel="stylesheet" href="picture-book-theme.css?v=20260910-ehon">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
@@ -27,21 +27,10 @@
     </div>
 
     <div class="home-hero">
-        <div class="home-pals">
-            <div class="zizi-mascot" aria-hidden="true">
-                <div class="zizi-face">
-                    <span class="zizi-eye left"></span>
-                    <span class="zizi-eye right"></span>
-                    <span class="zizi-smile"></span>
-                </div>
-                <div class="zizi-cap">Z</div>
-            </div>
-            <button type="button" class="buddy-home" onclick="ZiziBuddy.sayHome()" aria-label="聽小伙伴鼓勵孜孜">
-                <span class="buddy-bubble" id="buddy-home-line">孜孜，我陪你學英文！</span>
-                <img src="img/characters/zizi-buddy.png" alt="" width="140" height="172">
-                <span class="buddy-caption">孜孜整嘅</span>
-            </button>
-        </div>
+        <button type="button" class="buddy-home" onclick="ZiziBuddy.poke('home')" aria-label="聽小伙伴鼓勵孜孜">
+            <span class="buddy-bubble" id="buddy-home-line">孜孜，我陪你學英文！</span>
+            <img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="168" height="208">
+        </button>
         <h1>孜孜學英文</h1>
         <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 單詞。</p>
         <div class="home-level" id="home-level">
@@ -145,7 +134,7 @@
 <div class="top-bar" id="standard-top-bar" style="display:none;">
     <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
     <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">✍️ 手指描字</h2>
-    <span class="top-bar-spacer" aria-hidden="true"></span>
+    <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
 </div>
 
 <!-- Tracing app -->
@@ -169,6 +158,7 @@
 <!-- Camera mode -->
 <div id="camera-overlay" style="display:none;">
     <p class="cam-quest">影一樣嘢，認到就學寫呢個字！</p>
+    <button type="button" class="buddy-chip buddy-chip-cam" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
     <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
     <canvas id="crop-canvas" width="300" height="300"></canvas>
     <div id="camera-controls">
@@ -184,6 +174,7 @@
 <div id="race-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
         <button type="button" id="race-target" class="stage-ask" onclick="replayRaceWord()">拖住架車，按住就加速</button>
         <div class="stage-stars" id="race-stars">☆☆☆☆☆</div>
     </div>
@@ -207,6 +198,7 @@
 <div id="puzzle-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
         <p id="pz-prompt" class="stage-ask">撳下面啲字母填格仔</p>
         <div class="stage-stars" id="pz-stars">☆☆☆☆☆</div>
     </div>
@@ -230,6 +222,7 @@
 <div id="hunt-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
         <button type="button" id="hunt-target" class="stage-ask" onclick="replayHuntWord()">聽英文，捉住飛緊嗰幅圖</button>
         <div class="stage-stars" id="hunt-stars">☆☆☆☆☆</div>
     </div>
@@ -252,6 +245,7 @@
 <div id="shoot-overlay" class="arena-overlay" style="display:none;" aria-hidden="true">
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
+        <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
         <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">射十個波波，加滿能源</button>
         <div class="stage-stars" id="shoot-stars">☆☆☆☆☆</div>
     </div>
@@ -276,6 +270,7 @@
     <div class="album-card-wrap">
         <header class="album-top">
             <h2>📒 我嘅單詞冊</h2>
+            <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
             <p class="album-hint" id="album-hint">撳張卡睇點解咁寫，同聽英文。</p>
             <nav class="album-jumps" id="album-jumps" hidden></nav>
         </header>
@@ -295,7 +290,7 @@
 <div id="celebrate-overlay" style="display:none;" aria-live="off">
     <div class="celebrate-card">
         <div id="celebrate-emoji" class="celebrate-emoji" aria-hidden="true">
-            <img class="celebrate-buddy" src="img/characters/zizi-buddy.png" alt="" width="150" height="184">
+            <img class="celebrate-buddy buddy-pose" src="img/characters/buddy-cheer.png" alt="" width="160" height="196">
         </div>
         <p id="celebrate-buddy-line" class="celebrate-buddy-line">孜孜，你真係叻！</p>
         <p id="celebrate-title" class="celebrate-title">叻仔！</p>
@@ -303,11 +298,6 @@
         <p id="celebrate-stars" class="celebrate-stars"></p>
         <button type="button" class="celebrate-btn" onclick="closeCelebrate()">繼續玩！</button>
     </div>
-</div>
-
-<div id="buddy-float" class="buddy-float" hidden>
-    <p class="buddy-bubble" id="buddy-float-line" hidden>加油呀孜孜！</p>
-    <img src="img/characters/zizi-buddy.png" alt="" width="92" height="114">
 </div>
 
 <!-- Settings -->
@@ -376,8 +366,8 @@
 <script src="js/secrets.js?v=20260902-write1"></script>
 <script src="js/speech.js?v=20260902-skyfly"></script>
 <script src="js/progress.js?v=20260910-ehon"></script>
-<script src="js/fx.js?v=20260928-buddy"></script>
-<script src="js/buddy.js?v=20260928-buddy"></script>
+<script src="js/fx.js?v=20260929-ehonbuddy"></script>
+<script src="js/buddy.js?v=20260929-ehonbuddy"></script>
 <script src="js/teach.js?v=20260902-write1"></script>
 <script src="js/writing.js?v=20260902-write1"></script>
 <script src="js/ui.js?v=20260902-write1"></script>
