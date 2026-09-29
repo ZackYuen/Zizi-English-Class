@@ -19,7 +19,8 @@ function eq(name, got, want) {
     }
 }
 
-eq('home cheer names Zizi', buddy.next('home').indexOf('孜孜') !== -1, true);
+eq('home cheer names Zizi', buddy.lines.home.join('').indexOf('孜孜') !== -1, true);
+eq('first home tap moves past the greeting', buddy.next('home') !== buddy.lines.home[0], true);
 eq('miss comforts Zizi', buddy.lines.miss.join('').indexOf('孜孜') !== -1, true);
 eq('win line encourages', buddy.lines.win.join('').indexOf('孜孜') !== -1, true);
 eq('lines rotate', buddy.next('hit') !== buddy.next('hit') || buddy.lines.hit.length === 1, true);

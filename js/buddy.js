@@ -18,7 +18,7 @@ window.ZiziBuddy = {
         miss: ['唔緊要，再試下！', '孜孜得嘅！', '我陪住你！'],
         win: ['孜孜，你真係叻！', '小伙伴為你歡呼！']
     },
-    _i: {},
+    _i: { home: 1 },
     _last: 0,
 
     next: function (kind) {
@@ -96,8 +96,9 @@ window.ZiziBuddy = {
 
     react: function (kind) {
         var now = Date.now();
-        if (kind !== 'miss' && this._last && now - this._last < 700) return;
+        if (kind === 'spark' && this._lastKind === 'spark' && this._last && now - this._last < 500) return;
         this._last = now;
+        this._lastKind = kind;
         this.setPose(kind, kind === 'win' ? 8000 : 1500);
         this.flashBubbles(this.next(kind));
     }
