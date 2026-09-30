@@ -231,7 +231,7 @@ function pzTapLetter(ch, btn) {
 function pzFinish() {
     var g = window.PuzzleGame;
     g.phase = 'over';
-    Curriculum.award(1, { reason: '完成單詞拼圖', quest: 'write' });
+    Curriculum.award(1, { reason: '砌字拼圖', quest: 'write' });
     if (window.markQuest) window.markQuest('write');
     pzShowOver(true);
     Curriculum.finishFx({

@@ -103,7 +103,7 @@ function shootHud() {
         if (g.target) {
             Curriculum.fillTarget(tgt, g.target.w);
         } else {
-            tgt.textContent = '射十個波波，加滿能源';
+            tgt.textContent = '射十個波波，加滿能量';
         }
     }
 }
@@ -515,7 +515,7 @@ function shootExplodeShot(shot) {
             g.balloons.push(shootMakeBalloon(shootPickItem(), true));
             return;
         }
-        shootPopFx('能源滿啦！');
+        shootPopFx('能量滿啦！');
         if (result === 'finish' || result === 'word') shootClearWord();
         return;
     }
@@ -576,26 +576,26 @@ function shootFinish() {
     var g = window.ShootGame;
     g.phase = 'over';
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-    Curriculum.award(1, { reason: '完成音爆射擊', quest: 'listen' });
+    Curriculum.award(1, { reason: '音爆射擊', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
     shootShowOver(true);
     Curriculum.finishFx({
         emoji: '🎈',
-        title: '能源充滿！',
+        title: '能量滿晒！',
         sub: '射中 ' + (g.STARS * g.NEED) + ' 個波波',
         stars: 1
     });
     var title = shEl('shoot-over-title');
     var sub = shEl('shoot-over-sub');
     var list = shEl('shoot-over-words');
-    if (title) title.textContent = '能源充滿！';
+    if (title) title.textContent = '能量滿晒！';
     if (sub) sub.textContent = '每個字射中 ' + g.NEED + ' 個波波 · +1⭐';
     if (list) {
         list.innerHTML = (g.found.length ? g.found : g.queue.slice(0, g.got)).map(function (w) {
             return '<li><span>' + w.emoji + '</span> <b>' + w.w + '</b> ' + (Curriculum.yue(w.w) || '') + '</li>';
         }).join('') || '<li>再射多啲氣球！</li>';
     }
-    Curriculum.say('能源充滿！你射得好準。');
+    Curriculum.say('能量滿晒！你射得好準。');
 }
 
 window.stopShootGame = function () {

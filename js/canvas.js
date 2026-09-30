@@ -493,7 +493,7 @@ function finishLetterComplete(pointerId) {
         window.ZiziFX.celebrate({
             emoji: D[idx].emoji || '✍️',
             title: '寫好咗 ' + D[idx].l + '！',
-            sub: D[idx].w ? ('單詞：' + D[idx].w) : '真叻！',
+            sub: D[idx].w ? ('呢個字係 ' + D[idx].w) : '真叻！',
             stars: 1
         });
     }
@@ -739,8 +739,8 @@ window.magic = async function() {
     }
     
     document.getElementById('canvas-wrapper').style.transform = "scale(0.1) rotate(360deg)";
-    if (window.setSilentMsg) window.setSilentMsg('聯絡緊 Google TTS...', '#1982c4');
-    else document.getElementById('msg').innerText = "聯絡緊 Google TTS...";
+    if (window.setSilentMsg) window.setSilentMsg('讀緊英文...', '#1982c4');
+    else document.getElementById('msg').innerText = "讀緊英文...";
     
     try {
         let url;
@@ -773,7 +773,7 @@ window.magic = async function() {
         if (msgEl) {
             var doneLine = window.WritingSession && window.WritingSession.formatMagicDoneMsg
                 ? window.WritingSession.formatMagicDoneMsg()
-                : (window.currentMode === 'camera' ? '讀完喇！可以撳 📸 再影一個 繼續玩！' : '成功！');
+                : (window.currentMode === 'camera' ? '讀完喇！想再影就撳 📸 啦！' : '得喇！');
             if (window.setSilentMsg) window.setSilentMsg(doneLine, '#06d6a0');
             else {
                 msgEl.setAttribute('data-silent', '1');

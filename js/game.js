@@ -356,7 +356,7 @@ window.playGameSound = async function () {
             window.speakEnglish(targetLetter + '. ' + window.currentWord, { rate: 0.8 });
         } else {
             var msg = document.getElementById('game-msg');
-            if (msg) msg.innerText = '❌ 語音系統錯誤';
+            if (msg) msg.innerText = '❌ 聽唔到聲喎';
         }
     }
 };

@@ -32,7 +32,7 @@
             <img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="168" height="208">
         </button>
         <h1>孜孜學英文</h1>
-        <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 單詞。</p>
+        <p class="home-tagline">揸車、砌圖、捉飛圖、射火箭，用遊戲學 SATIPN 英文字。</p>
         <div class="home-level" id="home-level">
             <div class="home-level-top">
                 <span class="home-level-badge">Lv.<span id="home-level-num">1</span></span>
@@ -41,7 +41,7 @@
             <div class="home-level-bar" aria-hidden="true">
                 <div id="home-level-fill" class="home-level-fill"></div>
             </div>
-            <div id="home-level-label" class="home-level-label">0 / 10 升下一級</div>
+            <div id="home-level-label" class="home-level-label">0 / 10 就升一級</div>
         </div>
     </div>
 
@@ -59,13 +59,13 @@
         <div class="home-stat">
             <span class="home-stat-emoji" aria-hidden="true">🔥</span>
             <span id="home-streak-count" class="home-stat-num">0</span>
-            <span class="home-stat-label">日數</span>
+            <span class="home-stat-label">日日玩</span>
         </div>
     </div>
 
     <div class="home-quest" id="home-quest">
         <div class="home-quest-head">
-            <span class="home-quest-title">今日任務</span>
+            <span class="home-quest-title">今日要做</span>
             <span id="home-quest-meta" class="home-quest-meta">0 / 4</span>
         </div>
         <ul id="home-quest-list" class="home-quest-list"></ul>
@@ -99,7 +99,7 @@
             <span class="home-btn-emoji" aria-hidden="true">🎈</span>
             <span class="home-btn-text">
                 <span class="home-btn-title">音爆射擊</span>
-                <span class="home-btn-sub">射十個波波，加滿能源</span>
+                <span class="home-btn-sub">射十個波波，加滿能量</span>
             </span>
         </button>
         <button type="button" class="home-btn home-btn-write" onclick="enterMode('standard')">
@@ -132,7 +132,7 @@
 </div>
 
 <div class="top-bar" id="standard-top-bar" style="display:none;">
-    <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返回</button>
+    <button type="button" id="back-to-home-btn" class="mode-back-btn" onclick="backToHome()">🏠 返去</button>
     <h2 style="color:#ff595e; margin:0; flex:1; text-align:center;">✍️ 手指描字</h2>
     <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
 </div>
@@ -164,10 +164,10 @@
     <div id="camera-controls">
         <button type="button" id="capture-btn" onclick="takePhoto()">📸 影低佢！</button>
         <button type="button" id="confirm-crop-btn" onclick="confirmCrop()" style="display:none;">✅ 認呢樣</button>
-        <button type="button" id="close-camera-btn" onclick="backToHome()">❌ 取消</button>
-        <button type="button" id="cancel-analyze-btn" style="display:none;">🛑 取消分析</button>
+        <button type="button" id="close-camera-btn" onclick="backToHome()">❌ 返去</button>
+        <button type="button" id="cancel-analyze-btn" style="display:none;">🛑 停一停</button>
     </div>
-    <div id="loading-msg" style="display:none;">聯絡緊 AI 睇下係咩嚟... 🤖</div>
+    <div id="loading-msg" style="display:none;">我睇緊係咩嚟... 🤖</div>
 </div>
 
 <!-- 🏎️ Letter racing -->
@@ -189,7 +189,7 @@
             <p id="race-over-sub"></p>
             <ul id="race-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startRaceGame()">再嚟一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返去玩</button>
         </div>
     </div>
 </div>
@@ -209,11 +209,11 @@
     </div>
     <div id="pz-over" class="stage-over" style="display:none;">
         <div class="arena-card">
-            <h3 id="pz-over-title">拼圖完成！</h3>
+            <h3 id="pz-over-title">砌完喇！</h3>
             <p id="pz-over-sub"></p>
             <ul id="pz-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startWordPuzzle()">再砌一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返去玩</button>
         </div>
     </div>
 </div>
@@ -236,7 +236,7 @@
             <p id="hunt-over-sub"></p>
             <ul id="hunt-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startPictureHunt()">再捉一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返去玩</button>
         </div>
     </div>
 </div>
@@ -246,21 +246,21 @@
     <div class="stage-bar">
         <button type="button" class="mode-back-btn" onclick="backToHome()">🏠</button>
         <button type="button" class="buddy-chip" onclick="ZiziBuddy.poke()" aria-label="聽小伙伴鼓勵孜孜"><span class="buddy-bubble" hidden></span><img class="buddy-pose" src="img/characters/buddy-idle.png" alt="" width="56" height="68"></button>
-        <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">射十個波波，加滿能源</button>
+        <button type="button" id="shoot-target" class="stage-ask" onclick="replayShootWord()">射十個波波，加滿能量</button>
         <div class="stage-stars" id="shoot-stars">☆☆☆☆☆</div>
     </div>
     <div id="shoot-play" class="stage-field">
-        <div id="shoot-energy" class="shoot-energy" aria-label="能源"></div>
+        <div id="shoot-energy" class="shoot-energy" aria-label="能量"></div>
         <div id="shoot-field" class="shoot-field"></div>
         <div id="shoot-coach" class="zizi-coach is-empty" hidden></div>
     </div>
     <div id="shoot-over" class="stage-over" style="display:none;">
         <div class="arena-card">
-            <h3 id="shoot-over-title">射擊完成！</h3>
+            <h3 id="shoot-over-title">射完喇！</h3>
             <p id="shoot-over-sub"></p>
             <ul id="shoot-over-words" class="arena-words"></ul>
             <button type="button" class="arena-go" onclick="startShootGame()">再射一轉</button>
-            <button type="button" class="arena-home" onclick="backToHome()">🏠 返主選單</button>
+            <button type="button" class="arena-home" onclick="backToHome()">🏠 返去玩</button>
         </div>
     </div>
 </div>
@@ -276,7 +276,7 @@
         </header>
         <div id="album-empty" class="album-empty">仲未有單詞呀！去賽車、拼圖或者飛天搵字學新字啦！</div>
         <div class="album-scroll" id="album-scroll"></div>
-        <button type="button" class="album-close-btn" onclick="closeWordAlbum()">關閉</button>
+        <button type="button" class="album-close-btn" onclick="closeWordAlbum()">返去</button>
         <div id="album-detail" class="album-detail" hidden>
             <div class="album-detail-card" role="dialog" aria-modal="true" aria-labelledby="album-detail-word">
                 <div id="album-detail-body"></div>

@@ -347,7 +347,7 @@ function huntFinish() {
     g.phase = 'over';
     g.busy = false;
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-    Curriculum.award(1, { reason: '完成飛天搵字', quest: 'match' });
+    Curriculum.award(1, { reason: '飛天搵字', quest: 'match' });
     if (window.markQuest) window.markQuest('match');
     huntShowOver(true);
     Curriculum.finishFx({

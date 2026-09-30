@@ -152,7 +152,7 @@ window.Arcade = {
                     msg.style.color = '#06d6a0';
                 }
             }
-            this.say('賽車贏咗！撳綠色魔術掣聽英文！');
+            this.say('賽車贏咗！撳綠色掣聽英文！');
         }
     },
 
