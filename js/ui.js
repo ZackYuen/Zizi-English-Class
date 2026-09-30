@@ -22,10 +22,10 @@ window.setMode = function (mode) {
     const msg = document.getElementById('msg');
     if (msg) {
         if (window.setSilentMsg) {
-            window.setSilentMsg('由綠色點出發，畫到尾為止！', '#1982c4');
+            window.setSilentMsg('由綠色點出發，畫到尾！', '#1982c4');
         } else {
             msg.setAttribute('data-silent', '1');
-            msg.innerText = '由綠色點出發，畫到尾為止！';
+            msg.innerText = '由綠色點出發，畫到尾！';
             msg.style.color = '#1982c4';
         }
     }

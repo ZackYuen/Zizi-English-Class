@@ -574,7 +574,7 @@ window.isSilentUiText = function (text) {
     if (/第\s*\d+\s*筆/.test(t)) return true;
     if (/^跟住綠點/.test(t)) return true;
     if (/^由綠色點出發/.test(t)) return true;
-    if (/^第\s*\d+\s*\/\s*\d+\s*題/.test(t)) return true;
+    if (/^第\s*\d+\s*\/\s*\d+\s*[題條]/.test(t)) return true;
     if (/^\d+\s*\/\s*\d+$/.test(t)) return true;
     return false;
 };
@@ -774,10 +774,10 @@ window.announceHomeMenu = function () {
         ? ('你而家係第 ' + info.level + ' 級，' + info.title + '。')
         : '';
     window.announce(
-        '歡迎嚟到孜孜學英文天空島！你整嘅綠色小伙伴會陪住你。' + levelBit +
-        '今日想玩咩？紅色嘅字母賽車：揸車入閘學英文單詞。' +
+        '嚟到孜孜學英文天空島喇！你整嘅綠色小伙伴會陪住你。' + levelBit +
+        '今日想玩咩？紅色嘅字母賽車：揸車入閘學英文字。' +
         '仲有單詞拼圖、飛天搵字、音爆射擊、手指描字、探索魔鏡、同單詞冊。' +
-        '做完今日任務會升得更快！'
+        '做完今日要做嘅嘢，就升得更快！'
     , { force: true });
 };
 

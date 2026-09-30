@@ -88,7 +88,7 @@ window.getLevelInfo = function (stars) {
 };
 
 function levelTitle(level) {
-    if (level >= 20) return '拼音大王';
+    if (level >= 20) return '識音大王';
     if (level >= 12) return '字母勇士';
     if (level >= 7) return '識字小飛俠';
     if (level >= 4) return '勇敢探險家';
@@ -140,7 +140,7 @@ window.getDailyQuest = function () {
         { key: 'listen', label: '玩一局賽車或射擊', emoji: '🎈', done: !!data.questDone.listen },
         { key: 'match', label: '玩一局飛天搵字', emoji: '🦋', done: !!data.questDone.match },
         { key: 'stars3', label: '今日攞 3 粒星', emoji: '⭐', done: (data.todayStars || 0) >= 3 || !!data.questDone.stars3 },
-        { key: 'newword', label: '學一個新單詞', emoji: '📚', done: !!data.questDone.newword }
+        { key: 'newword', label: '學一個新英文字', emoji: '📚', done: !!data.questDone.newword }
     ];
     const doneCount = items.filter(function (i) { return i.done; }).length;
     return { items: items, doneCount: doneCount, total: items.length, allDone: doneCount >= items.length };
@@ -184,7 +184,7 @@ window.refreshHomeProgress = function () {
     if (levelNum) levelNum.textContent = String(info.level);
     if (levelTitleEl) levelTitleEl.textContent = info.title;
     if (levelFill) levelFill.style.width = info.pct + '%';
-    if (levelLabel) levelLabel.textContent = info.into + ' / ' + info.need + ' 升下一級';
+    if (levelLabel) levelLabel.textContent = info.into + ' / ' + info.need + ' 就升一級';
 
     const quest = window.getDailyQuest();
     const questList = document.getElementById('home-quest-list');
@@ -510,7 +510,7 @@ window.openWordAlbum = function () {
         if (hint) hint.textContent = '撳張卡睇點解咁寫，同聽英文。';
     } else {
         if (empty) empty.style.display = 'none';
-        if (hint) hint.textContent = '已經識咗 ' + model.total + ' 個字 · 撳卡睇拆字';
+        if (hint) hint.textContent = '已經識咗 ' + model.total + ' 個字 · 撳卡睇點解咁寫';
 
         var groupBtns = '';
         var letterBtns = '';

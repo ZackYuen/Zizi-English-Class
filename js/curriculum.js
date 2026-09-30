@@ -291,7 +291,7 @@ window.Curriculum = {
         if (window.ZiziFX && window.ZiziFX.celebrate) {
             window.ZiziFX.celebrate({
                 emoji: opts.emoji || '🌟',
-                title: opts.title || '太棒了！',
+                title: opts.title || '叻呀！',
                 sub: opts.sub || '',
                 stars: opts.stars || 0
             });
@@ -324,7 +324,7 @@ window.Curriculum = {
                 return window.ZiziTeach.showWordStory(word, coachId);
             }
             var yue = self.yue(word);
-            if (yue) return self.say(word + '，廣東話係 ' + yue);
+            if (yue) return self.say(word + '，廣東話叫 ' + yue);
             return null;
         });
     },

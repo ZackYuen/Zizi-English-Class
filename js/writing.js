@@ -111,9 +111,9 @@ window.WritingSession = {
     /** After magic TTS finishes */
     formatMagicDoneMsg: function () {
         if (this.isCamera()) {
-            return '讀完喇！可以撳 📸 再影一個 繼續玩！';
+            return '讀完喇！想再影就撳 📸 啦！';
         }
-        return '成功！';
+        return '得喇！';
     },
 
     onLetterPassed: function () {

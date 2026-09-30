@@ -215,7 +215,7 @@ window.ZiziTeach = (function () {
             parts: w.parts,
             from: w.from,
             also: w.also,
-            speak: '答案係' + meaning + '。' + w.speakParts + '。揀發光嗰幅圖。'
+            speak: '係呢個，' + meaning + '。' + w.speakParts + '。揀發光嗰幅圖。'
         };
     }
 

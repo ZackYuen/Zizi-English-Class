@@ -248,7 +248,7 @@ function ensureCanvasControls() {
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
     clearBtn.id = 'clear-draw-btn';
-    clearBtn.innerText = '清除圈畫';
+    clearBtn.innerText = '抹走圈圈';
     clearBtn.onclick = () => {
         const cropCanvas = document.getElementById('crop-canvas');
         if (!cropCanvas || !window.snapImg) return;
@@ -256,7 +256,7 @@ function ensureCanvasControls() {
         ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
         ctx.drawImage(window.snapImg, 0, 0, cropCanvas.width, cropCanvas.height);
         window.cropPoints = [];
-        if (window.playCantoneseTTS) window.playCantoneseTTS('已經清除圈畫！');
+        if (window.playCantoneseTTS) window.playCantoneseTTS('抹走咗圈圈喇！');
     };
 
     ctrl.appendChild(retake);
@@ -267,7 +267,7 @@ function ensureCanvasControls() {
 window.confirmCrop = function() {
     if (!window.cropPoints || window.cropPoints.length < 2) {
         if (window.playCantoneseTTS) window.playCantoneseTTS("你仲未圈出要認嘅嘢喎！");
-        alert("未圈好喎！請用手指畫個圈。");
+        alert("未圈好喎！用手指畫個圈啦。");
         return;
     }
     
@@ -291,7 +291,7 @@ window.confirmCrop = function() {
     window.lastCapturedImg = finalCanvas.toDataURL('image/jpeg', 0.8);
     
     safeDisplay('loading-msg', 'block');
-    if (window.playCantoneseTTS) window.playCantoneseTTS("收到！等我睇下呢個係咩先。");
+    if (window.playCantoneseTTS) window.playCantoneseTTS("得喇！等我睇下呢個係咩先。");
     
     // disable controls while analyzing
     setTimeout(() => { setCameraControlsEnabled(false); }, 0);
@@ -518,7 +518,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
         loadingMsg.style.display = 'block';
         loadingMsg.style.zIndex = '100';
         loadingMsg.style.pointerEvents = 'none';
-        loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 分析緊相...';
+        loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 睇緊張相...';
     }
 
     var cancelBtn = getEl('cancel-analyze-btn');
@@ -572,7 +572,7 @@ window.identifyWithAI = async function identifyWithAI(croppedBase64OrDataUrl) {
         if (!window.isAnalyzing) break;
 
         if (loadingMsg) {
-            loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 分析緊相...';
+            loadingMsg.innerHTML = '<span class="thinking-anim">🧠</span> 睇緊張相...';
         }
 
         var aborter = new AbortController();

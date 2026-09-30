@@ -372,7 +372,7 @@ function raceFinish() {
     var overlay = raceEl('race-overlay');
     if (overlay) overlay.classList.remove('is-boosting');
     if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-    Curriculum.award(1, { reason: '完成字母賽車', quest: 'listen' });
+    Curriculum.award(1, { reason: '字母賽車', quest: 'listen' });
     if (window.markQuest) window.markQuest('listen');
     raceShowOver(true);
     Curriculum.finishFx({

@@ -81,7 +81,7 @@ window.openSettings = function () {
 
     setDisplay('settings-modal', 'flex');
     if (window.announce) {
-        window.announce('設定頁面。而家預設用同小學預備班一樣嘅 Google 高質聲線。', { force: true });
+        window.announce('呢度係家長設定。而家預設用同小學預備班一樣嘅 Google 高質聲線。', { force: true });
     }
 };
 
@@ -113,13 +113,13 @@ window.saveSettings = function () {
 
     if (window.unlockAudio) window.unlockAudio();
     if (window.playCantoneseTTS) {
-        window.playCantoneseTTS('設定儲存成功！而家用呢把聲同你講嘢。', { interrupt: true });
+        window.playCantoneseTTS('收好喇！而家用呢把聲同你講嘢。', { interrupt: true });
     }
 };
 
 window.closeSettings = function () {
     setDisplay('settings-modal', 'none');
-    if (window.announce) window.announce('已關閉設定。', { force: true });
+    if (window.announce) window.announce('收埋設定喇。', { force: true });
 };
 
 window.testVoice = function () {
@@ -140,7 +140,7 @@ window.testVoice = function () {
     if (tts && tts.value.trim()) localStorage.setItem('google_tts_key', tts.value.trim());
 
     var yueLine = '你好呀孜孜！呢把係而家嘅廣東話聲線，聽唔聽得清楚？';
-    var enLine = 'Hello Zizi! This is the English voice.';
+    var enLine = 'Hi Zizi! This is English. Can you hear me?';
     var p = window.playCantoneseTTS
         ? window.playCantoneseTTS(yueLine, { interrupt: true, force: true })
         : Promise.resolve();
@@ -211,7 +211,7 @@ window.enterMode = function (mode) {
 
         if (typeof startApp === 'function') startApp('standard');
         if (window.announce) {
-            window.announce('手指描字。跟住綠點畫字母，唔識可以撳提示。', { force: true, interrupt: true });
+            window.announce('手指描字。跟住綠點畫字母，唔識就撳「點畫？」。', { force: true, interrupt: true });
         }
     } else if (mode === 'camera') {
         setDisplay('app', 'none');
@@ -222,7 +222,7 @@ window.enterMode = function (mode) {
         window.currentMode = 'none';
         if (window.openWordAlbum) window.openWordAlbum();
         if (window.announce) {
-            window.announce('呢度係你嘅單詞冊。撳吓卡片可以再聽英文讀音。', { force: true });
+            window.announce('呢度係你嘅單詞冊。撳張卡就可以再聽英文。', { force: true });
         }
     }
 };
@@ -270,7 +270,7 @@ window.backToHome = function () {
     }
     if (window.refreshHomeProgress) window.refreshHomeProgress();
     if (window.announce) {
-        window.announce('返到主選單喇。想聽選單可以撳黃色喇叭掣。', { force: true });
+        window.announce('返到開頭喇。想聽菜單可以撳黃色喇叭。', { force: true });
     }
 };
 

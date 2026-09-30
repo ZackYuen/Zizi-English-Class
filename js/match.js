@@ -39,7 +39,7 @@ function updateMatchProgress() {
     const roundEl = document.getElementById('match-round');
     const fill = document.getElementById('match-progress-fill');
     const label = document.getElementById('match-progress-label');
-    if (roundEl) roundEl.innerText = '第 ' + current + ' / ' + total + ' 題';
+    if (roundEl) roundEl.innerText = '第 ' + current + ' / ' + total + ' 條';
     if (fill) fill.style.width = Math.round((current / total) * 100) + '%';
     if (label) label.innerText = current + ' / ' + total;
 }
@@ -90,7 +90,7 @@ function setMatchFinishUi(score, total) {
     }
     if (emoji) emoji.textContent = score >= total ? '🌟' : '🎉';
     if (title) {
-        title.textContent = score >= total ? '全部答啱！超級叻仔！' : '做得好！繼續加油！';
+        title.textContent = score >= total ? '全部答啱！超級叻仔！' : '叻呀！再玩多次！';
     }
     if (finish) {
         finish.style.display = 'block';
@@ -164,9 +164,9 @@ window.nextMatchQuestion = async function () {
 
     const pool = matchPool();
     if (pool.length < 3) {
-        setMatchMsg('詞庫唔夠玩喎！', '#e63946');
+        setMatchMsg('字唔夠玩喎！', '#e63946');
         if (window.playCantoneseTTS) {
-            await window.playCantoneseTTS('詞庫唔夠玩喎！', { interrupt: true });
+            await window.playCantoneseTTS('字唔夠玩喎！', { interrupt: true });
         }
         return;
     }
@@ -300,7 +300,7 @@ window.finishMatchGame = async function () {
 
     updateMatchProgress();
     setMatchFinishUi(score, total);
-    setMatchMsg('完成！答啱 ' + score + ' / ' + total + ' 題', '#06d6a0');
+    setMatchMsg('玩完喇！答啱 ' + score + ' / ' + total + ' 條', '#06d6a0');
 
     celebrateMatchFinish(score, total);
     if (window.markQuest) window.markQuest('match');
@@ -308,13 +308,13 @@ window.finishMatchGame = async function () {
 
     var praise = score >= total
         ? '全部答啱！超級叻仔！'
-        : '做得好！答啱 ' + score + ' 題，共 ' + total + ' 題！';
+        : '叻呀！答啱 ' + score + ' 條，一共 ' + total + ' 條！';
 
     if (window.ZiziFX && window.ZiziFX.celebrate) {
         window.ZiziFX.celebrate({
             emoji: score >= total ? '🏆' : '🎉',
-            title: score >= total ? '全部答啱！' : '做得好！',
-            sub: '答啱 ' + score + ' / ' + total + ' 題',
+            title: score >= total ? '全部答啱！' : '叻呀！',
+            sub: '答啱 ' + score + ' / ' + total + ' 條',
             stars: score >= total ? 2 : 0
         });
     }
